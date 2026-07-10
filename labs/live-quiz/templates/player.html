@@ -1,23 +1,93 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Live Quiz — Play</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live Quiz — Play · KOSEN·KMITL Software Security</title>
+  <link rel="stylesheet" href="/static/style.css">
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 </head>
 <body>
-  <div id="join-area">
-    <h1>Join a quiz</h1>
-    <input id="pin-input" placeholder="Game PIN" maxlength="6">
-    <input id="nickname-input" placeholder="Nickname (not your real name)">
-    <button id="join-btn">Join</button>
-    <div id="join-error"></div>
+  <!-- shape glyphs: answers are always coded by COLOR + SHAPE + TEXT -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="s-tri" viewBox="0 0 100 100"><path d="M50 12 L91 84 Q93 88 88 88 L12 88 Q7 88 9 84 Z"/></symbol>
+    <symbol id="s-dia" viewBox="0 0 100 100"><path d="M50 8 L92 50 L50 92 L8 50 Z"/></symbol>
+    <symbol id="s-cir" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/></symbol>
+    <symbol id="s-sq"  viewBox="0 0 100 100"><rect x="14" y="14" width="72" height="72" rx="8"/></symbol>
+    <symbol id="s-ck"  viewBox="0 0 24 24"><path d="M20 6 L9 17 L4 12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </svg>
+
+  <div class="pwrap">
+    <!-- join -->
+    <section id="join" class="pjoin">
+      <div class="mark">
+        <div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
+        <div class="sub">Software Security · Live Quiz</div>
+      </div>
+      <form class="join-card" id="join-form">
+        <h1>Join the game</h1>
+        <div class="field">
+          <label for="pin-input">Game PIN</label>
+          <input id="pin-input" inputmode="numeric" autocomplete="off" pattern="[0-9]*" placeholder="000 000" maxlength="6">
+        </div>
+        <div class="field">
+          <label for="nickname-input">Nickname</label>
+          <input id="nickname-input" autocomplete="off" maxlength="24" placeholder="e.g. cyb3rcat">
+        </div>
+        <div class="join-err" id="join-error" aria-live="polite"></div>
+        <button class="btn blue" id="join-btn" type="submit">Join ▸</button>
+        <p class="pdpa">Use a pseudonymous nickname — not your real name. Same privacy
+          posture as the course scoreboard.</p>
+      </form>
+    </section>
+
+    <!-- in-game -->
+    <section id="game" class="pgame" hidden>
+      <div class="pstatus">
+        <div class="prow">
+          <div class="q">Q<b id="p-qnum">1</b> / <span id="p-qtotal">?</span></div>
+          <div class="brand"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
+        </div>
+        <div class="ptimer" id="p-timer">
+          <div class="track"><div class="fill" id="p-timer-fill"></div></div>
+          <div class="sec" id="p-timer-sec">20</div>
+        </div>
+      </div>
+
+      <!-- waiting for host -->
+      <div id="p-wait" class="pwait">
+        <div class="shapes" aria-hidden="true">
+          <svg style="color:var(--a-red)"><use href="#s-tri"/></svg>
+          <svg style="color:var(--a-blue)"><use href="#s-dia"/></svg>
+          <svg style="color:var(--a-yellow)"><use href="#s-cir"/></svg>
+          <svg style="color:var(--a-green)"><use href="#s-sq"/></svg>
+        </div>
+        <div class="big" id="p-wait-big">You’re in!</div>
+        <div class="sub" id="p-wait-sub">Watch the big screen — the first question is coming.</div>
+      </div>
+
+      <!-- question -->
+      <div id="p-question" hidden style="display:contents">
+        <div class="pstem" id="p-stem"></div>
+        <div class="ptiles" id="p-tiles" role="group" aria-label="Tap your answer"></div>
+        <div class="plock" id="p-lock" hidden>Locked in ✓ — waiting for the room…</div>
+      </div>
+
+      <!-- feedback + results -->
+      <div class="pfeedback" id="p-feedback" hidden aria-live="polite"></div>
+      <div class="pboard" id="p-board" hidden></div>
+
+      <footer class="pfooter">
+        <div class="av" id="p-av">?</div>
+        <div class="pf-txt"><span class="pf-l">You</span><span class="pf-name" id="p-name"></span></div>
+        <div class="pf-right">
+          <div class="pf-pts"><span id="p-score">0</span> <small>pts</small></div>
+          <span class="pf-rank" id="p-rank" hidden></span>
+        </div>
+      </footer>
+    </section>
   </div>
-  <div id="game-area" style="display:none">
-    <div id="question-area"></div>
-    <div id="feedback-area"></div>
-    <div id="leaderboard-area"></div>
-  </div>
+
   <script src="/static/player.js"></script>
 </body>
 </html>
