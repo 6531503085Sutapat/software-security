@@ -10,6 +10,7 @@ We do NOT list the vulnerabilities here — finding them is the assignment.
 Run:  docker compose up   (then http://localhost:8080)
 """
 import hashlib
+import hmac
 import os
 import sqlite3
 import subprocess
@@ -20,6 +21,17 @@ from flask import Flask, request, jsonify, render_template_string, redirect, mak
 app = Flask(__name__)
 DB = "/tmp/notevault.db"
 SECRET = "notevault-dev-secret"  # used to sign session tokens
+
+# Anti-copying: every team's build is seeded with a marker derived from their own TEAM_ID, so
+# any evidence a team submits (SQLi dump, IDOR response, admin-panel screenshot) that shows the
+# admin's notes carries a value traceable to exactly one team — see instructor/anti-cheating.md.
+TEAM_ID = os.environ.get("TEAM_ID", "unassigned")
+TEAM_SALT = os.environ.get("TEAM_SALT", "notevault-anti-copy-dev-salt")
+
+
+def team_marker():
+    return hmac.new(TEAM_SALT.encode(), TEAM_ID.encode(), hashlib.sha256).hexdigest()[:12]
+
 
 PAGE = """
 <!doctype html><title>NoteVault</title>
@@ -57,7 +69,8 @@ def seed():
                      ("admin", hashlib.md5(b"admin123").hexdigest(), "admin")])
     con.executemany("INSERT INTO notes (owner, title, body) VALUES (?,?,?)",
                     [("alice", "groceries", "milk, eggs"),
-                     ("admin", "infra", "prod db password is hunter2")])
+                     ("admin", "infra", "prod db password is hunter2"),
+                     ("admin", "build-tag", "team=%s marker=%s" % (TEAM_ID, team_marker()))])
     con.commit()
     con.close()
 

@@ -16,10 +16,18 @@ but it was built quickly, without a security review. Your job is to fix that.
 ## Run it
 ```bash
 cd project/starter-app
+export TEAM_ID=<your-team-name>   # seeds a traceability marker — see below
 docker compose up          # http://localhost:8080
 # seeded logins:  alice / alicepw   ·   admin / admin123
 ```
-Local (no Docker): `pip install -r requirements.txt && python app.py`
+Local (no Docker): `TEAM_ID=<your-team-name> python app.py` (after `pip install -r requirements.txt`)
+
+> **Set `TEAM_ID` before your first build.** It seeds a small marker derived from your team
+> name into the app's own data — the same idea as the per-student flags in the weekly labs,
+> just per-team here since every team starts from the same codebase. It doesn't change any
+> app behavior or interfere with your assignment; it exists purely so your submitted
+> evidence (screenshots, dumped data, git history) is provably yours if two reports look
+> unusually similar.
 
 ## Your assignment (maps to the rubric in [../REPORT-TEMPLATE.md](../REPORT-TEMPLATE.md))
 1. **Threat-model** NoteVault — DFD + STRIDE, trust boundaries, top risks. *(Week 1)*

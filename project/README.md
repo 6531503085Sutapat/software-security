@@ -4,7 +4,7 @@
 
 Take a small web/API application (provided starter, or your own with instructor approval), assess it like an attacker, fix it like a defender, and harden its build/release pipeline.
 
-**Default target:** [`starter-app/`](starter-app/README.md) — *NoteVault*, an intentionally weak note-sharing app spanning the course's vulnerability classes. `cd project/starter-app && docker compose up`.
+**Default target:** [`starter-app/`](starter-app/README.md) — *NoteVault*, an intentionally weak note-sharing app spanning the course's vulnerability classes. `cd project/starter-app && export TEAM_ID=<your-team-name> && docker compose up` — set `TEAM_ID` before your first build (see the starter-app README; every team gets the same codebase, so this seeds a per-team traceable marker).
 
 ## Deliverables
 
@@ -13,7 +13,7 @@ Take a small web/API application (provided starter, or your own with instructor 
 3. **Remediated code** — the fixes, in a branch with clear commits referencing each finding.
 4. **Supply-chain hardening** — generate an **SBOM** (CycloneDX) and **sign the release artifact** with Cosign.
 5. **Security CI pipeline** — a GitHub Actions workflow running SAST + SCA + secret scanning that fails on high-severity findings.
-6. **Demo** — a short live walkthrough: attack → root cause → fix (WIP demo in the **Week 16** capstone studio; graded final demo in **Week 19**).
+6. **Demo** — a short live walkthrough: attack → root cause → fix (WIP demo in the **Week 16** capstone studio; graded final demo in **Week 19**). Expect a couple of unscripted follow-up questions from the instructor during the graded demo (e.g. *"why this fix and not X?"*) — a live viva check that the team genuinely did the work, same spirit as the AIR-Sec viva spot-checks used elsewhere in the course.
 
 ## Suggested timeline
 
@@ -50,6 +50,21 @@ contribution:
 
 This protects diligent students and removes the "carry a free-rider" problem — the reason team
 weight is kept bounded (15%) while mastery is graded individually.
+
+## Team-to-team integrity
+
+Every team gets the **same default target** (NoteVault), so it's fair to ask how copying between
+teams is prevented — three layers, all cheap since they reuse mechanisms already in the course:
+1. **Per-team traceable marker** — `TEAM_ID` seeds a value into your own build's data (see
+   [`starter-app/README.md`](starter-app/README.md)); a report or dump that carries another
+   team's marker is a direct tell.
+2. **Similarity checking** — team repos and reports are run through the same MOSS/JPlag pass used
+   on weekly labs (see `instructor/anti-cheating.md`).
+3. **Live viva at the Week 19 demo** — see the Demo deliverable above.
+
+Two teams independently fixing the same bug the "obviously correct" way will naturally look
+similar — that's expected, not a red flag. These layers target verbatim copying, not convergent
+correct fixes.
 
 ## Report
 
