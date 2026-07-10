@@ -109,10 +109,19 @@ class GameSession:
             avg_ms = sum(p.response_times_ms) / len(p.response_times_ms) if p.response_times_ms else 0
             rows.append(
                 {
-                    "nickname": p.nickname,
+                    "nickname": _csv_safe(p.nickname),
                     "total_score": p.score,
                     "correct_count": p.correct_count,
                     "avg_response_time_ms": round(avg_ms),
                 }
             )
         return rows
+
+
+def _csv_safe(value):
+    """Neutralize spreadsheet formula injection (CWE-1236): a nickname starting with =, +, -, @
+    (or a control prefix) would run as a formula when the exported CSV is opened directly in
+    Excel/Sheets. Prefixing a single quote makes the cell render as literal text."""
+    if value[:1] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + value
+    return value

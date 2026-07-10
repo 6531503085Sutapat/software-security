@@ -1,7 +1,7 @@
 /* Player (phone) screen logic. The server is authoritative for scoring/timing —
-   the countdown here is display-only. Personal correct/wrong feedback is held
-   until the room-wide reveal so a fast finisher can't shout the answer.
-   Every string interpolated into innerHTML goes through esc(). */
+   the countdown here is display-only and the score comes from the server. Personal
+   correct/wrong feedback is held until the room-wide reveal so a fast finisher can't
+   shout the answer. Every string interpolated into innerHTML goes through esc(). */
 
 function esc(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({
@@ -16,6 +16,7 @@ const OPT_META = [
   { key: "green",  varName: "--a-green",  shape: "s-sq",  label: "Square · Green" },
 ];
 
+const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const $ = (id) => document.getElementById(id);
 const socket = io();
 
@@ -26,6 +27,8 @@ let score = 0;
 let answered = false;
 let pickedIndex = null;
 let pendingFeedback = null; // held until question:results
+let shownIndex = null;      // current question index on screen (dedupes reconnect re-shows)
+let currentOptions = [];    // options of the live question (to name the correct answer for AT)
 let timerHandle = null;
 
 // ---- join ----
@@ -40,8 +43,9 @@ $("join-form").addEventListener("submit", (e) => {
   socket.emit("player_join", { pin, nickname });
 });
 
-socket.on("join_ok", () => {
+socket.on("join_ok", (data) => {
   joined = true;
+  nickname = data.nickname; // the server may have trimmed/normalized it
   $("join").hidden = true;
   $("game").hidden = false;
   $("p-name").textContent = nickname;
@@ -51,6 +55,10 @@ socket.on("join_ok", () => {
 });
 
 socket.on("join_error", (data) => {
+  // bounce back to the join screen so the player can fix the PIN / pick a free nickname
+  joined = false;
+  $("game").hidden = true;
+  $("join").hidden = false;
   $("join-error").textContent = data.message;
 });
 
@@ -61,19 +69,21 @@ socket.on("connect", () => {
 socket.on("disconnect", () => showNetbar("Reconnecting…"));
 socket.io.on("reconnect", () => hideNetbar());
 
-// ---- countdown (display-only) ----
+// ---- countdown (display-only; steps in whole seconds under reduced-motion) ----
 function startTimer(seconds) {
   stopTimer();
   const t0 = Date.now();
   const wrap = $("p-timer");
   wrap.classList.remove("low");
   timerHandle = setInterval(() => {
-    const remaining = Math.max(0, seconds - (Date.now() - t0) / 1000);
-    $("p-timer-sec").textContent = Math.ceil(remaining);
-    $("p-timer-fill").style.width = (remaining / seconds) * 100 + "%";
-    if (remaining <= 5) wrap.classList.add("low");
-    if (remaining <= 0) stopTimer();
-  }, 100);
+    const raw = Math.max(0, seconds - (Date.now() - t0) / 1000);
+    const shown = Math.ceil(raw);
+    $("p-timer-sec").textContent = shown;
+    const frac = REDUCED_MOTION ? shown : raw;
+    $("p-timer-fill").style.width = (frac / seconds) * 100 + "%";
+    if (raw <= 5) wrap.classList.add("low");
+    if (raw <= 0) stopTimer();
+  }, REDUCED_MOTION ? 250 : 100);
 }
 function stopTimer() {
   if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
@@ -81,6 +91,10 @@ function stopTimer() {
 
 // ---- question ----
 socket.on("question:show", (data) => {
+  // a reconnect re-shows the SAME question — keep the tiles and any answer already locked in
+  if (data.index === shownIndex) return;
+  shownIndex = data.index;
+  currentOptions = data.options;
   answered = false;
   pickedIndex = null;
   pendingFeedback = null;
@@ -123,9 +137,13 @@ socket.on("question:show", (data) => {
   startTimer(data.time_limit);
 });
 
-// personal result arrives immediately but is only shown at the reveal
+// personal result: the banner waits for the reveal, but the score is authoritative now
 socket.on("answer:feedback", (data) => {
   pendingFeedback = data;
+  if (typeof data.score === "number") {
+    score = data.score;
+    $("p-score").textContent = score.toLocaleString();
+  }
 });
 
 // ---- reveal ----
@@ -143,21 +161,22 @@ socket.on("question:results", (data) => {
     });
   }
 
+  // keep the score server-authoritative (covers a mid-game reload where the client counter reset)
+  const me = data.leaderboard.find((p) => p.nickname === nickname);
+  if (me) { score = me.score; $("p-score").textContent = score.toLocaleString(); }
+
+  const correctText = data.correct != null ? currentOptions[data.correct] : null;
+  const answerLine = correctText ? `Correct answer: ${esc(correctText)}` : "Get ready for the next one!";
   const fb = $("p-feedback");
   fb.hidden = false;
   if (pendingFeedback) {
-    score += pendingFeedback.points;
-    $("p-score").textContent = score.toLocaleString();
     fb.className = "pfeedback " + (pendingFeedback.correct ? "good" : "bad");
     fb.innerHTML = pendingFeedback.correct
       ? `Correct! +${pendingFeedback.points.toLocaleString()}<span class="sub">Speed counts — nice.</span>`
-      : `Not this time +0<span class="sub">The highlighted tile was the answer.</span>`;
-  } else if (answered) {
-    fb.className = "pfeedback bad";
-    fb.textContent = "Answer received…";
+      : `Not this time +0<span class="sub">${answerLine}</span>`;
   } else {
     fb.className = "pfeedback bad";
-    fb.innerHTML = `Time’s up — no answer<span class="sub">Get ready for the next one!</span>`;
+    fb.innerHTML = `Time’s up — no answer<span class="sub">${answerLine}</span>`;
   }
 
   renderBoard(data.leaderboard, false);
@@ -172,6 +191,8 @@ socket.on("game:finished", (data) => {
   $("p-wait").hidden = false;
 
   const board = data.leaderboard; // full ranking at game end
+  const me = board.find((p) => p.nickname === nickname);
+  if (me) { score = me.score; $("p-score").textContent = score.toLocaleString(); }
   const myRank = board.findIndex((p) => p.nickname === nickname) + 1;
   if (myRank > 0) {
     const suffix = ["th", "st", "nd", "rd"][(myRank % 10 <= 3 && Math.floor(myRank % 100 / 10) !== 1) ? myRank % 10 : 0];

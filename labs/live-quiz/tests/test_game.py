@@ -161,3 +161,15 @@ def test_export_results_shape():
     assert row["correct_count"] == 1
     assert row["total_score"] > 0
     assert row["avg_response_time_ms"] >= 0
+
+
+def test_export_neutralizes_csv_formula_injection():
+    game = GameSession("123456", [])
+    for nick in ("=HYPERLINK(1)", "+1", "@x", "safe"):
+        game.join(nick)
+    by_nick = {r["nickname"].lstrip("'"): r["nickname"] for r in game.export_results()}
+    # formula-triggering prefixes are quoted; an ordinary nickname is left alone
+    assert by_nick["=HYPERLINK(1)"].startswith("'=")
+    assert by_nick["+1"] == "'+1"
+    assert by_nick["@x"] == "'@x"
+    assert by_nick["safe"] == "safe"

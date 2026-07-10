@@ -16,8 +16,9 @@
   --paper-2: #FFFFFF;
   --ink: #181512;
   --ink-2: #3A342E;
-  --muted: #726A61;
-  --faint: #857C71; /* ≥4.5:1 on paper — informational text stays AA */
+  --muted: #726A61;   /* 5.06:1 on paper */
+  --faint: #615948;   /* 6.59:1 on paper, 5.26:1 on the dark gradient — AA for informational text */
+  --decor: #A89F94;   /* decorative only (e.g. the "·" separator); never load-bearing text */
   --hair: rgba(24, 21, 18, .14);
   --hair-2: rgba(24, 21, 18, .08);
 
@@ -69,7 +70,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .mark .word { font: 700 clamp(20px, 2.3vw, 30px)/1 var(--serif); letter-spacing: .005em; }
 .mark .word .k { color: var(--kosen-blue); }
 .mark .word .m { color: var(--kmitl-orange); }
-.mark .word .dot { color: var(--faint); padding: 0 2px; }
+.mark .word .dot { color: var(--decor); padding: 0 2px; }
 .mark .sub { font: 600 10px/1 var(--mono); letter-spacing: .34em; text-transform: uppercase; color: var(--muted); }
 
 .live { display: flex; align-items: center; gap: 8px; }
@@ -108,7 +109,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .btn {
   appearance: none; border: none; cursor: pointer; border-radius: 14px;
   padding: 16px 28px; font: 800 17px/1 var(--sans); letter-spacing: .02em;
-  color: #fff; background: linear-gradient(180deg, #F06120, var(--kmitl-orange));
+  color: #fff; background: linear-gradient(180deg, var(--kmitl-orange-deep), #9A3600);
   box-shadow: 0 14px 28px -12px rgba(227, 82, 5, .65), inset 0 1px 0 rgba(255, 255, 255, .3);
   transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
 }
@@ -118,7 +119,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   cursor: default; color: #fff; background: #C9C2B8; box-shadow: none; transform: none; filter: none;
 }
 .btn.blue {
-  background: linear-gradient(180deg, #1D93DD, var(--kosen-blue));
+  background: linear-gradient(180deg, var(--kosen-blue-deep), #014A78);
   box-shadow: 0 14px 28px -12px rgba(1, 123, 196, .6), inset 0 1px 0 rgba(255, 255, 255, .3);
 }
 .btn-ghost {
@@ -162,7 +163,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .qmeta { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
 .progress { display: flex; flex-direction: column; gap: 11px; min-width: 220px; }
 .progress .plabel { font: 600 15px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
-.progress .plabel b { color: var(--kmitl-orange); font-weight: 800; }
+.progress .plabel b { color: var(--kmitl-orange-deep); font-weight: 800; }
 .progress .plabel .cat { color: var(--faint); font-weight: 600; margin-left: 10px; text-transform: none; letter-spacing: .02em; }
 .segs { display: flex; gap: 6px; }
 .segs i { flex: 1; max-width: 34px; height: 6px; border-radius: 3px; background: var(--hair); }
@@ -252,7 +253,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .reveal .rb-a { font: 600 clamp(22px, 2.6vw, 34px)/1.1 var(--serif); color: var(--ink); }
 .reveal .rb-pill {
   margin-left: auto; flex: none; display: flex; align-items: center; gap: 9px;
-  padding: 11px 18px; border-radius: 999px; background: var(--kmitl-orange);
+  padding: 11px 18px; border-radius: 999px; background: var(--kmitl-orange-deep);
   box-shadow: 0 10px 22px -10px rgba(227, 82, 5, .7);
 }
 .reveal .rb-pill .ck { width: 20px; height: 20px; color: #fff; }
@@ -264,7 +265,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   font: 600 13px/1 var(--mono); letter-spacing: .22em; text-transform: uppercase; color: var(--muted);
   padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--hair);
 }
-.col-h .accent { color: var(--kmitl-orange); }
+.col-h .accent { color: var(--kmitl-orange-deep); }
 
 .bars { display: flex; flex-direction: column; gap: 17px; }
 .bar { display: flex; align-items: center; gap: 15px; }
@@ -299,7 +300,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   display: flex; align-items: center; justify-content: center;
   font: 800 14px/1 var(--mono); color: var(--muted);
 }
-.lrow.first .rk { background: var(--kmitl-orange); border-color: var(--kmitl-orange); color: #fff; }
+.lrow.first .rk { background: var(--kmitl-orange-deep); border-color: var(--kmitl-orange-deep); color: #fff; }
 .lrow .nm { font: 600 18px/1 var(--mono); color: var(--ink); letter-spacing: .01em; overflow-wrap: anywhere; }
 .lrow .pts { margin-left: auto; font: 700 19px/1 var(--sans); color: var(--ink-2); font-variant-numeric: tabular-nums; }
 
@@ -350,11 +351,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .pstatus { padding: 18px 18px 14px; border-bottom: 1px solid var(--hair); background: var(--paper); }
 .pstatus .prow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .pstatus .q { font: 700 13px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
-.pstatus .q b { color: var(--kmitl-orange); }
+.pstatus .q b { color: var(--kmitl-orange-deep); }
 .pstatus .brand { font: 700 14px/1 var(--serif); }
 .pstatus .brand .k { color: var(--kosen-blue); }
 .pstatus .brand .m { color: var(--kmitl-orange); }
-.pstatus .brand .dot { color: var(--faint); }
+.pstatus .brand .dot { color: var(--decor); }
 .ptimer { display: flex; align-items: center; gap: 12px; }
 .ptimer .track { flex: 1; height: 10px; border-radius: 6px; background: rgba(24, 21, 18, .09); overflow: hidden; }
 .ptimer .fill { height: 100%; width: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--kmitl-orange), #F5792F); }
@@ -430,7 +431,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .pfooter .pf-right { margin-left: auto; text-align: right; line-height: 1; }
 .pfooter .pf-pts { font: 800 20px/1 var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
 .pfooter .pf-pts small { font: 600 11px var(--mono); color: var(--muted); }
-.pfooter .pf-rank { margin-top: 5px; display: inline-block; font: 800 11px/1 var(--mono); letter-spacing: .1em; color: #fff; background: var(--kmitl-orange); padding: 5px 9px; border-radius: 999px; }
+.pfooter .pf-rank { margin-top: 5px; display: inline-block; font: 800 11px/1 var(--mono); letter-spacing: .1em; color: #fff; background: var(--kmitl-orange-deep); padding: 5px 9px; border-radius: 999px; }
 
 /* ---------- confetti ---------- */
 .confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 50; }

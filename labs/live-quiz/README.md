@@ -49,11 +49,17 @@ TLS reverse proxy) rather than standing up new infrastructure — see
   diamond / circle / square), a text label, and an A/B/C/D key. All motion is disabled under
   `prefers-reduced-motion`.
 - **Reconnect is seamless.** Players are keyed by `(PIN, nickname)`, so a dropped phone that
-  rejoins resumes its score; if a question is live when they rejoin, the server re-sends it so they
-  can still answer (rather than staring at a blank screen until the next question).
-- **A closed tab no longer stalls the round.** A socket disconnect marks that player away, so the
-  "everyone answered → reveal early" path still fires for the players who are still connected
-  instead of waiting out the full 20s timer.
+  rejoins resumes its score (the score shown is the server's, not a client guess). If a question is
+  live when they rejoin, the server re-sends it and the client keeps any answer already locked in,
+  rather than wiping it or stranding them on a blank screen.
+- **A closed tab no longer skews the room.** A socket disconnect marks that player away, so they
+  stop counting toward the projector's "answered" tally and the connected-player count. Every round
+  is bounded by the 20-second timer and ends early once the still-connected players have all
+  answered. (A disconnect is deliberately *not* treated as an instant "everyone answered" — a brief
+  wifi blip of the last un-answered player must not rob them of the round.)
+- **Answers are rejected once the round is revealed**, and nicknames are length-capped and
+  control-char-stripped server-side, so neither a late tap nor a bypassed client `maxlength` can
+  score or corrupt the export.
 
 ## Scoring
 
@@ -74,27 +80,24 @@ the actual blocker, not a replacement.
 
 ## Known limitations (not blocking for classroom use)
 
-- **A truly last-instant answer can miss the round's on-screen tally.** The client disables the
-  answer tiles the moment you tap and again at the reveal, so the normal ways to answer "late" are
-  closed. The remaining edge is an answer that lands in the same instant the 20-second timeout
-  reveals the results: it's still scored correctly server-side and shows up in the next round's
-  leaderboard, but won't retroactively edit the distribution already painted for that round. Narrow
-  and self-healing; doesn't affect end-of-game totals.
-- **CSV export (`/host/<pin>/export`) writes nicknames unescaped.** This is a CSV/spreadsheet
-  formula-injection consideration (a nickname starting with `=`, `+`, `-`, or `@` could execute as
-  a formula if the CSV is opened directly in Excel/Sheets without import sanitization) — separate
-  from the innerHTML/XSS class of bug already handled in the client. Not fixed in this build; if the
-  exported CSV is ever opened directly (rather than parsed programmatically), treat nickname cells
-  as untrusted and don't trust formula results from them.
-- **Getting the item banks onto the deploy host still needs a documented step.** The app now fails
-  loudly when no banks are found (startup warning + an on-screen "no item banks" message) and lets
-  you point `ITEM_BANK_PATHS` anywhere, so it no longer degrades silently. What's still undocumented
-  is *how* `instructor/quizzes/*` should be synced onto the CTFd challenge-host for a real remote
-  session — decide that (a bind-mount, a copy step, or an `ITEM_BANK_PATHS` pointing at a synced
-  location) before go-live.
 - **Host endpoints (`/host`, `/host/create`, `host_next`, `/host/<pin>/export`) have no
   authentication.** Anyone who reaches the host URL, or who knows/guesses a game's 6-digit PIN,
   can advance someone else's game or download its results CSV. This mirrors Kahoot's own
   PIN-based trust model and is low-stakes for pseudonymous classroom play, but is worth noting
   since this deploys on a public-IP host for remote/hybrid access rather than staying on
   localhost. Not fixed in this build.
+- **Nicknames aren't unique.** Two students who pick the same nickname share one score row (and one
+  reconnect slot). Harmless for casual play; if it matters for grading, ask students to use their
+  pseudonymous student code. A future fix would reject or auto-suffix a duplicate at join time.
+- **Getting the item banks onto the deploy host still needs a documented step.** The app now fails
+  loudly when no banks are found (startup warning + an on-screen "no item banks" message) and lets
+  you point `ITEM_BANK_PATHS` anywhere, so it no longer degrades silently. What's still undocumented
+  is *how* `instructor/quizzes/*` should be synced onto the CTFd challenge-host for a real remote
+  session — decide that (a bind-mount, a copy step, or an `ITEM_BANK_PATHS` pointing at a synced
+  location) before go-live.
+
+Resolved since the first build (kept here as a record): CSV export now neutralizes spreadsheet
+formula-injection prefixes; answers are rejected once a round is revealed (no post-timeout scoring);
+reconnecting mid-question re-shows the question and keeps the score server-authoritative; the
+countdown steps rather than sweeps under `prefers-reduced-motion`; and brand-orange chrome uses the
+deep shade so white text on it clears WCAG-AA.

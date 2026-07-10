@@ -94,11 +94,17 @@ def on_player_join(data):
     if game is None:
         emit("join_error", {"message": "unknown game PIN"})
         return
-    game.join(data["nickname"])
+    # trust nothing from the socket: cap length and drop control chars server-side
+    # (the client maxlength is cosmetic and bypassable), then require something left
+    nickname = "".join(c for c in (data.get("nickname") or "") if c.isprintable()).strip()[:24]
+    if not nickname:
+        emit("join_error", {"message": "pick a nickname"})
+        return
+    game.join(nickname)
     join_room(data["pin"])
-    SID_TO_PLAYER[request.sid] = (data["pin"], data["nickname"])
-    CURRENT_SID[(data["pin"], data["nickname"])] = request.sid
-    emit("join_ok", {"nickname": data["nickname"]})
+    SID_TO_PLAYER[request.sid] = (data["pin"], nickname)
+    CURRENT_SID[(data["pin"], nickname)] = request.sid
+    emit("join_ok", {"nickname": nickname})
     # if a question is already live, show it to this (re)joining player instead of a blank wait
     q = game.current_question()
     if q is not None and not getattr(game, "_revealed_this_round", False):
@@ -139,9 +145,10 @@ def on_disconnect():
         return
     game.disconnect(nickname)
     _broadcast_lobby(game, pin)
-    # the dropped player no longer owes an answer, so a pending round may now be complete
-    if game.current_question() is not None and not getattr(game, "_revealed_this_round", False) and game.all_answered():
-        _reveal_results(pin)
+    # We deliberately do NOT reveal the round here: a disconnect can be a brief wifi blip of the
+    # last un-answered player, and revealing on it would prematurely end the round and rob that
+    # player of their answer. The round stays bounded by the 20s timer and still ends early when
+    # the remaining connected players all answer (handled in on_answer_submit).
 
 
 @socketio.on("host_next")
@@ -208,17 +215,23 @@ def on_answer_submit(data):
     game = GAMES.get(data["pin"])
     if game is None:
         return
+    if getattr(game, "_revealed_this_round", False):
+        return  # the round is already revealed; a late tap must not score after the fact
     try:
         result = game.submit_answer(data["nickname"], data["choice"])
     except ValueError:
         return
     if result is None:
         return
-    emit("answer:feedback", result)
-    # keep the projector's "answered" counter climbing live as responses arrive
+    # feedback carries the player's authoritative cumulative score so the phone never has to
+    # guess it (client-side accumulation drifts across a reconnect)
+    player = game.players.get(data["nickname"])
+    emit("answer:feedback", {**result, "score": player.score if player else 0})
+    # keep the projector's "answered" counter climbing live — count only still-connected answerers
+    answered = sum(1 for n in game.answers_this_round if game.players[n].connected)
     socketio.emit(
         "answer:tally",
-        {"answered": len(game.answers_this_round), "total": _connected_count(game)},
+        {"answered": answered, "total": _connected_count(game)},
         to=data["pin"],
     )
     if game.all_answered():

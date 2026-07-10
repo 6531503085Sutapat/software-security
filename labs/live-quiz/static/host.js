@@ -70,13 +70,16 @@ function initHost(pin) {
     const arc = $("timer-arc");
     const timerEl = $("timer");
     timerEl.classList.remove("low");
+    // under reduced-motion the ring steps in whole seconds instead of sweeping continuously
     timerHandle = setInterval(() => {
-      const remaining = Math.max(0, seconds - (Date.now() - t0) / 1000);
-      $("timer-sec").textContent = Math.ceil(remaining);
-      arc.style.strokeDashoffset = ARC_LEN * (1 - remaining / seconds);
-      if (remaining <= 5) timerEl.classList.add("low");
-      if (remaining <= 0) stopTimer();
-    }, 100);
+      const raw = Math.max(0, seconds - (Date.now() - t0) / 1000);
+      const shown = Math.ceil(raw);
+      $("timer-sec").textContent = shown;
+      const frac = REDUCED_MOTION ? shown : raw;
+      arc.style.strokeDashoffset = ARC_LEN * (1 - frac / seconds);
+      if (raw <= 5) timerEl.classList.add("low");
+      if (raw <= 0) stopTimer();
+    }, REDUCED_MOTION ? 250 : 100);
   }
   function stopTimer() {
     if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }

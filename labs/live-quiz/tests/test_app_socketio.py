@@ -70,6 +70,39 @@ def test_disconnect_lets_remaining_players_finish_the_round():
     assert len(results) == 1
 
 
+def test_answer_after_reveal_is_rejected():
+    GAMES.clear()
+    GAMES["666666"] = GameSession("666666", QUESTIONS)
+
+    host = socketio.test_client(app)
+    alice = socketio.test_client(app)
+    host.emit("host_join", {"pin": "666666"})
+    alice.emit("player_join", {"pin": "666666", "nickname": "alice"})
+    host.emit("host_next", {"pin": "666666"})
+
+    alice.emit("answer_submit", {"pin": "666666", "nickname": "alice", "choice": 1})  # scores + reveals
+    score_after_first = GAMES["666666"].players["alice"].score
+    assert score_after_first > 0
+
+    # a second (post-reveal) tap must not score — the round is already revealed
+    alice.emit("answer_submit", {"pin": "666666", "nickname": "alice", "choice": 1})
+    assert GAMES["666666"].players["alice"].score == score_after_first
+
+
+def test_nickname_is_sanitized_server_side():
+    GAMES.clear()
+    GAMES["555555"] = GameSession("555555", QUESTIONS)
+
+    empty = socketio.test_client(app)
+    empty.emit("player_join", {"pin": "555555", "nickname": "   "})
+    assert any(e["name"] == "join_error" for e in empty.get_received())  # blank rejected
+
+    long = socketio.test_client(app)
+    long.emit("player_join", {"pin": "555555", "nickname": "x" * 100})
+    ok = [e for e in long.get_received() if e["name"] == "join_ok"]
+    assert ok and len(ok[0]["args"][0]["nickname"]) == 24  # capped server-side
+
+
 def test_joining_mid_question_shows_the_active_question():
     GAMES.clear()
     GAMES["777777"] = GameSession("777777", QUESTIONS)
