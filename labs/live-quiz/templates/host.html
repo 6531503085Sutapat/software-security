@@ -1,30 +1,122 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Live Quiz — Host</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live Quiz — Host · KOSEN·KMITL Software Security</title>
+  <link rel="stylesheet" href="/static/style.css">
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 </head>
 <body>
-  {% if not created_pin %}
-    <h1>Start a quiz</h1>
-    <form method="post" action="/host/create">
-      <select name="topic">
-        {% for t in topics %}
-          <option value="{{ t }}">{{ t }}</option>
-        {% endfor %}
-      </select>
-      <button type="submit">Create game</button>
-    </form>
-  {% else %}
-    <h1>PIN: <span id="pin">{{ created_pin }}</span></h1>
-    <div id="waiting">Waiting for players to join at this device's address...</div>
-    <button id="next-btn">Next question</button>
-    <div id="question-area"></div>
-    <div id="results-area"></div>
-    <a id="export-link" href="/host/{{ created_pin }}/export">Download results (CSV)</a>
-    <script src="/static/host.js"></script>
-    <script>initHost("{{ created_pin }}");</script>
-  {% endif %}
+  <!-- shape glyphs: answers are always coded by COLOR + SHAPE + TEXT -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="s-tri" viewBox="0 0 100 100"><path d="M50 12 L91 84 Q93 88 88 88 L12 88 Q7 88 9 84 Z"/></symbol>
+    <symbol id="s-dia" viewBox="0 0 100 100"><path d="M50 8 L92 50 L50 92 L8 50 Z"/></symbol>
+    <symbol id="s-cir" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/></symbol>
+    <symbol id="s-sq"  viewBox="0 0 100 100"><rect x="14" y="14" width="72" height="72" rx="8"/></symbol>
+    <symbol id="s-ck"  viewBox="0 0 24 24"><path d="M20 6 L9 17 L4 12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </svg>
+
+  <div class="stage">
+    <header class="masthead">
+      <div class="mark">
+        <div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
+        <div class="sub">Software Security</div>
+      </div>
+      {% if created_pin %}
+        <div class="live"><span class="d"></span><span class="t" id="live-label">Lobby</span></div>
+        <div class="pin-chip"><span class="lab">Game PIN</span><span class="digits">{{ created_pin[:3] }} {{ created_pin[3:] }}</span></div>
+      {% endif %}
+    </header>
+    <div class="drule"></div>
+
+    {% if not created_pin %}
+      <div class="setup-wrap">
+        <!-- This SAST rule checks for Django's csrf_token template tag; this is a Flask/Jinja2 app
+             with no Django code, no session-based auth, and no such tag to add. The form only
+             creates a new quiz session — no destructive or session-scoped action a forged
+             cross-site submit could hijack (host endpoints are intentionally unauthenticated
+             PIN-trust, same as Kahoot's own model — see README's Known limitations). -->
+        <form class="setup-card" method="post" action="/host/create"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+          <h1>Start a live quiz</h1>
+          <p class="lead">Pick a topic from the course item banks. You’ll get a game PIN
+            students use to join from their phones — pseudonymous nicknames only.</p>
+          {% if topics %}
+            <div class="field">
+              <label for="topic">Topic</label>
+              <div class="select-wrap">
+                <select id="topic" name="topic">
+                  {% for t in topics %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+                </select>
+              </div>
+            </div>
+            <button class="btn" type="submit">Create game ▸</button>
+          {% else %}
+            <div class="empty-banks">
+              No item banks found, so there are no topics to play. Mount the bank files
+              (see <code>docker-compose.yml</code>) or point <code>ITEM_BANK_PATHS</code> at them.
+            </div>
+          {% endif %}
+        </form>
+      </div>
+    {% else %}
+      <!-- lobby -->
+      <section id="lobby" class="lobby" aria-live="polite">
+        <div class="join-line">Join at <code id="join-url"></code> · PIN <code>{{ created_pin[:3] }} {{ created_pin[3:] }}</code></div>
+        <div class="pcount"><span class="n" id="lobby-count">0</span><span class="l">players joined</span></div>
+        <div class="roster" id="roster"></div>
+      </section>
+
+      <!-- live question -->
+      <section id="question" hidden>
+        <div class="qmeta">
+          <div class="progress">
+            <div class="plabel">Question <b id="q-num">1</b> / <span id="q-total">?</span></div>
+            <div class="segs" id="segs"></div>
+          </div>
+          <div class="status">
+            <div class="answered"><span class="n" id="answered-n">0</span><span class="l" id="answered-l">answered</span></div>
+            <div class="timer" id="timer">
+              <svg viewBox="0 0 96 96"><circle class="track" cx="48" cy="48" r="44"/><circle class="arc" id="timer-arc" cx="48" cy="48" r="44"/></svg>
+              <div class="cap"><span class="sec" id="timer-sec">20</span><span class="of">/ <span id="timer-of">20</span>s</span></div>
+            </div>
+          </div>
+        </div>
+        <h1 class="stem" id="stem"></h1>
+        <div class="answers" id="answers" role="group" aria-label="Answer options"></div>
+      </section>
+
+      <!-- results -->
+      <section id="results" hidden>
+        <div class="reveal" id="reveal" aria-live="polite"></div>
+        <div class="results-grid">
+          <div class="responses">
+            <div class="col-h"><span>How the room answered</span><span class="accent" id="resp-count"></span></div>
+            <div class="bars" id="bars"></div>
+          </div>
+          <aside class="leaderboard">
+            <div class="col-h"><span>Leaderboard</span><span class="accent">Top 5</span></div>
+            <div class="lb" id="board"></div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- final -->
+      <section id="finished" class="finished" hidden>
+        <h1 class="fin-title">Final results 🏆</h1>
+        <div class="podium" id="podium"></div>
+        <div class="fin-rest" id="fin-rest"></div>
+      </section>
+
+      <footer class="host-foot">
+        <a class="btn-ghost" id="export-link" href="/host/{{ created_pin }}/export">⬇ Results CSV</a>
+        <span class="foot-hint" id="foot-hint">Waiting for players — start when everyone’s in</span>
+        <button class="btn" id="next-btn" disabled>Start game ▸</button>
+      </footer>
+
+      <script src="/static/host.js"></script>
+      <script>initHost({{ created_pin | tojson }});</script>
+    {% endif %}
+  </div>
 </body>
 </html>
