@@ -177,6 +177,12 @@ Consolidate Weeks 10–16 (+ first-half callbacks). *🎯 "Security Jeopardy: Ch
 - **Houses** — large, persistent, **mixed-ability** groups for the whole term. They drive the season-long **CTFd leaderboard**, Hall of Fame, and the weekly games. **Houses are not graded** (pure engagement — free-riding can't affect anyone's grade).
 - **Project teams of 2–3** **nest inside** a House. This is the only *graded* group unit, protected by per-student flags + the peer-contribution evaluation.
 
+**Late submissions.** −10% of that item's score per day late, up to 3 days; not accepted after
+day 3 without an approved extension. Weekly quizzes are the exception — they're timed and taken
+in class, so there is no late window (an absence there is covered instead by the drop-lowest-1–2
+rule in the table above). Documented emergencies (medical, bereavement) get a case-by-case
+extension at the instructor's discretion, arranged before the deadline where possible.
+
 ---
 
 ## 7. Academic Integrity & Ethics Policy

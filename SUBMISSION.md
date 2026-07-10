@@ -58,7 +58,7 @@ All offensive work is on the provided sandbox targets only — see [ETHICS.md](E
 ## Rules for every submission
 - **Name + Student ID** on every file; teamwork only where stated (labs/quizzes/exams are individual).
 - **AI-tool disclosure:** state how you used any AI tool (search, code, translate) — a section is built into the worksheet/report.
-- **Late:** score deduction per the syllabus; submit what you have.
+- **Late:** −10%/day, up to 3 days (see `syllabus.md` §6); submit what you have.
 
 ---
 

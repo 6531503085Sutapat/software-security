@@ -165,6 +165,11 @@ Same weighting as the KOSEN-KMITL offering — content and grading are unchanged
 
 **Term project.** Same as the KOSEN offering, and *not* tied to a single session — teams of 2–3 work on it across the whole term, with a dedicated prep window between Sessions 6 and 7 (see §5). Deliverables: a threat model, a vulnerability report mapped to CWE/OWASP, the fixed code, and a short demo. Each member's mark is scaled by a short peer-contribution evaluation (see [`project/README.md`](project/README.md)).
 
+**Late submissions.** Same policy as the KOSEN offering: −10% of that item's score per day late,
+up to 3 days; not accepted after day 3 without an approved extension. In-session quizzes have no
+late window (an absence is covered by the drop-lowest rule above). Documented emergencies get a
+case-by-case extension at the instructor's discretion.
+
 ---
 
 ## 7. Academic Integrity & Ethics Policy
