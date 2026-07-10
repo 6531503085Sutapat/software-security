@@ -32,6 +32,12 @@
 
     {% if not created_pin %}
       <div class="setup-wrap">
+        <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+        <!-- This rule checks for Django's {% csrf_token %} tag; this is a Flask/Jinja2 app with
+             no Django code, no session-based auth, and no csrf_token tag to add. The form only
+             creates a new quiz session — no destructive or session-scoped action a forged
+             cross-site submit could hijack (host endpoints are intentionally unauthenticated
+             PIN-trust, same as Kahoot's own model — see README's Known limitations). -->
         <form class="setup-card" method="post" action="/host/create">
           <h1>Start a live quiz</h1>
           <p class="lead">Pick a topic from the course item banks. You’ll get a game PIN
