@@ -4,11 +4,12 @@ Lecture slides live here, one Marp deck per week (`week01.md` … `week19.md`).
 
 ## Per-week standard
 
-- **Teaching weeks** (1–6, 10–16): ~**14–18 slides** each, fixed skeleton —
+- **Teaching weeks** (1–6, 10–15): ~**14–18 slides** each, fixed skeleton —
   Title → Agenda → Recap → Motivation/definitions → core content (what/how/example/impact) → OWASP/CWE map → Defenses → **signature game** + lab steps → Deliverable → Key takeaways → Questions.
+- **Capstone week** (16): ~7–8 slides — studio day, not a lecture: WIP demos + peer review + practice CTF tournament.
 - **Review weeks** (7, 17): ~7–8 slides — topic map + Jeopardy + mock CTF.
 - **Exam weeks** (8, 9, 18, 19): ~5–6 slides — format, scope, rules/tips.
-- Each teaching week also ships **1 lab** (the matching `labs/weekNN…/README.md`).
+- Each teaching week also ships **1 lab** (the matching `labs/weekNN…/README.md`); Week 16's lab is the capstone/scrimmage materials.
 
 > Status: skeletons exist for **all 19 weeks** and follow the standard. Weeks 1–3 have been expanded and synced with their updated labs (Elevation of Privilege + Secure by Design in Wk1; fuzzing + Bug/Fuzzing Race in Wk2; Capture the Hash in Wk3).
 

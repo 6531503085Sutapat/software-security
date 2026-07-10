@@ -70,7 +70,7 @@ A one-page **"Lab 0" setup guide** is provided in Week 1 so the whole environmen
 
 ## 5. Weekly Outline (19 weeks)
 
-> Each teaching week: **Lecture** (concepts) → **signature game/lab** (hands-on, leaderboard-scored) → optional reading. The course runs **13 teaching weeks** (1–6, 10–16), **2 reflection/review weeks** (7, 17), and **2 exam blocks** (8–9 midterm, 18–19 final).
+> Each teaching week: **Lecture** (concepts) → **signature game/lab** (hands-on, leaderboard-scored) → optional reading. The course runs **12 teaching weeks** (1–6, 10–15), **1 capstone week** (16), **2 reflection/review weeks** (7, 17), and **2 exam blocks** (8–9 midterm, 18–19 final).
 
 | Block | Weeks |
 |---|---|

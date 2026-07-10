@@ -18,7 +18,7 @@
 | **🔁 Reflection & Review** | **17** | Consolidate Wk 10–16, mock CTF, exam prep |
 | **📝 FINAL EXAM** | **18–19** | Wk18 = written (cumulative, emphasis Wk10–16) · Wk19 = capstone CTF tournament + project demos |
 
-**13 teaching weeks** (1–6, 10–16) · **2 review weeks** (7, 17) · **2 exam blocks** (8–9, 18–19).
+**12 teaching weeks** (1–6, 10–15) · **1 capstone week** (16) · **2 review weeks** (7, 17) · **2 exam blocks** (8–9, 18–19).
 
 ---
 
@@ -125,7 +125,7 @@ AI-resilient structure (see [AGENDA.md](AGENDA.md) for time-boxing):
 - **Concept:** Logging/monitoring/alerting (**A09**), failing safely (**A10**), secure CI/CD, vulnerability management, coordinated disclosure & bug bounties, **"Secure by Design" (CISA)**.
 - **🔴🔵 Signature game — "Break the Build" (Red vs Blue):** Blue team builds a **GitHub Actions** pipeline running SAST (Semgrep) + SCA (Trivy) + secret scanning (Gitleaks) that **fails on high-severity findings**; Red team submits PRs trying to sneak vulns past it. Points for each catch / each bypass.
 - **Why it's exciting:** direct adversarial competition; ties every prior week together.
-- **♻️ Existing repo:** `labs/week14-devsecops…` + `scan.sh` already started.
+- **♻️ Existing repo:** `labs/week15-devsecops-pipeline/` already built.
 
 ### Week 16 — Capstone Studio & CTF Warm-up
 - **Format:** Team capstone work-in-progress demos (attack → root cause → fix walkthrough) + a **practice CTF tournament** that previews the final.

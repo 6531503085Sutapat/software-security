@@ -108,4 +108,4 @@ review weeks (W7 pre-midterm, W17 pre-final).
 ---
 
 ## ⚠️ Note (drift to resolve)
-Current `worksheet.md` Part-3 durations vary (90–180 min). This plan standardizes **lab = 180 min** for every teaching week. Weeks 1–3 worksheets are currently lighter (~90–95 min of tasks) and would need a few more tasks / extension activities to fill the 180-min block.
+Current `worksheet.md` Part-3 durations vary (145–180 min). This plan standardizes **lab = 180 min** for every teaching week. Weeks 4–6 and 10–12 worksheets are currently lighter (145–150 min of tasks) and would need a few more tasks / extension activities to fill the 180-min block.
