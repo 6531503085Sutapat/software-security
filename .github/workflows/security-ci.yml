@@ -34,6 +34,12 @@ jobs:
           fetch-depth: 0
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
+        env:
+          # gitleaks-action v2 calls the GitHub API to scan a pull_request's diff and now refuses
+          # to run without a token for that (previously optional, now a hard requirement — see
+          # https://github.com/gitleaks/gitleaks-action#-announcement). The default Actions token
+          # already has the read access this needs; no new repo permission is required.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   sca:
     name: SCA + image scan (Trivy)
