@@ -41,6 +41,9 @@ if app.config["SECRET_KEY"] == "dev-not-secret-override-in-prod":
 
 # Harden the session cookie: never readable from JS, and not sent on cross-site requests.
 app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
+# Bound request bodies at ingestion (Werkzeug 413s anything larger before a handler buffers it).
+# 256 KB comfortably fits the 100 KB markdown cap + multipart/form overhead; anything past it is abuse.
+app.config["MAX_CONTENT_LENGTH"] = 256 * 1024
 # SESSION_COOKIE_SECURE is opt-in via env so local http dev still works while TLS prod is hardened.
 if os.environ.get("COOKIE_SECURE", "").lower() in ("1", "true", "yes"):
     app.config["SESSION_COOKIE_SECURE"] = True

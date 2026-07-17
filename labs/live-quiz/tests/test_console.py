@@ -122,3 +122,29 @@ def test_missing_csrf_rejected(tmp_path, monkeypatch):
     alice = _register(appmod, "alice")
     r = alice.post("/console/sets/new", data={"title": "x", "source_md": SET_MD})  # no csrf_token
     assert r.status_code == 400
+
+
+def test_oversize_markdown_is_form_error_not_500(tmp_path, monkeypatch):
+    # 150 KB is over the 100 KB source cap but under MAX_CONTENT_LENGTH (256 KB), so it reaches the
+    # handler and gets the friendly 200 rejection rather than a 413 or a 500.
+    appmod = _app(tmp_path, monkeypatch)
+    alice = _register(appmod, "alice")
+    big = SET_MD + ("x" * (150 * 1024))
+    r = alice.post("/console/sets/new",
+                   data={"title": "big", "source_md": big, "csrf_token": _tok(alice)})
+    assert r.status_code == 200 and b"too large" in r.get_data().lower()   # not a 500, not a 413
+    assert appmod.dbmod.list_sets(appmod.get_db(),
+              appmod.dbmod.get_teacher_by_username(appmod.get_db(), "alice")["id"]) == []  # nothing saved
+
+
+def test_create_from_file_upload(tmp_path, monkeypatch):
+    # exercises the _read_source file-upload branch (req.files["source_file"]), previously untested
+    import io
+    appmod = _app(tmp_path, monkeypatch)
+    alice = _register(appmod, "alice")
+    r = alice.post("/console/sets/new",
+                   data={"title": "FromFile", "source_file": (io.BytesIO(SET_MD.encode()), "wk.md"),
+                         "csrf_token": _tok(alice)},
+                   content_type="multipart/form-data", follow_redirects=False)
+    assert r.status_code in (302, 303)                                     # created -> redirect
+    assert b"FromFile" in alice.get("/console").get_data()

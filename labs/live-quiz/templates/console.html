@@ -11,6 +11,8 @@
 
   <!-- The CSRF token is always emitted here (even with zero sets) so every state-changing form on
        the page can carry it. Titles below are rendered with Jinja autoescaping — never |safe. -->
+  <!-- always expose the session CSRF token here so the page carries one even with zero sets
+       (the per-set delete forms below also each embed it). -->
   <form hidden><input type="hidden" name="csrf_token" value="{{ csrf_token }}"></form>
 
   <section class="setup-wrap"><div class="setup-card">
