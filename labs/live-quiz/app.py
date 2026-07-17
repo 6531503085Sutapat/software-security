@@ -69,6 +69,7 @@ def _check_csrf():
 
 GAMES = {}  # pin -> GameSession
 GAME_OWNER = {}  # pin -> teacher_id, so only the creating teacher can export a game's results
+HOST_SIDS = {}  # pin -> the socket id currently authorized to drive that game's host controls
 SID_TO_PLAYER = {}  # socket id -> (pin, nickname), so a dropped socket can mark its player away
 CURRENT_SID = {}    # (pin, nickname) -> latest socket id, to ignore a stale reconnect's disconnect
 
@@ -297,7 +298,15 @@ def console_set_delete(set_id):
 
 @socketio.on("host_join")
 def on_host_join(data):
-    join_room(data["pin"])
+    pin = data["pin"]
+    # host and players share this Socket.IO room by design (broadcasts like question:show reach
+    # everyone) — room membership is not the security boundary, HOST_SIDS below is. Only a socket
+    # whose Flask session belongs to the game's actual owner gets bound as its authorized host;
+    # `pin in GAME_OWNER` is required explicitly so an unauthenticated socket (current_teacher_id()
+    # is None) can never bind to a pin that also happens to have no registered owner.
+    join_room(pin)
+    if pin in GAME_OWNER and auth.current_teacher_id() == GAME_OWNER[pin]:
+        HOST_SIDS[pin] = request.sid
 
 
 @socketio.on("player_join")
@@ -365,6 +374,8 @@ def on_disconnect():
 
 @socketio.on("host_next")
 def on_host_next(data):
+    if HOST_SIDS.get(data["pin"]) != request.sid:
+        return  # only the socket bound as this game's host in on_host_join may drive it
     game = GAMES.get(data["pin"])
     if game is None:
         return
@@ -424,20 +435,26 @@ def _reveal_results(pin):
 
 @socketio.on("answer_submit")
 def on_answer_submit(data):
+    # the answering identity comes from this socket's own join record, never from the payload —
+    # otherwise any connected player could submit/score under another player's nickname
+    info = SID_TO_PLAYER.get(request.sid)
+    if info is None or info[0] != data["pin"]:
+        return
+    nickname = info[1]
     game = GAMES.get(data["pin"])
     if game is None:
         return
     if getattr(game, "_revealed_this_round", False):
         return  # the round is already revealed; a late tap must not score after the fact
     try:
-        result = game.submit_answer(data["nickname"], data["choice"])
+        result = game.submit_answer(nickname, data["choice"])
     except ValueError:
         return
     if result is None:
         return
     # feedback carries the player's authoritative cumulative score so the phone never has to
     # guess it (client-side accumulation drifts across a reconnect)
-    player = game.players.get(data["nickname"])
+    player = game.players.get(nickname)
     emit("answer:feedback", {**result, "score": player.score if player else 0})
     # keep the projector's "answered" counter climbing live — count only still-connected answerers
     answered = sum(1 for n in game.answers_this_round if game.players[n].connected)
