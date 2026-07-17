@@ -21,3 +21,11 @@ def test_csrf_token_verify():
     assert auth.csrf_ok(tok, tok)
     assert not auth.csrf_ok(tok, "other")
     assert not auth.csrf_ok(tok, None)
+    assert not auth.csrf_ok(None, tok)            # missing session token also rejected
+
+
+def test_gates_fail_closed_on_non_ascii_not_crash():
+    # attacker-controlled non-ASCII must return False, never raise (hmac.compare_digest rejects
+    # non-ASCII str operands) — otherwise every POST with a non-ASCII token 500s.
+    assert auth.invite_ok("café", "LETMEIN") is False
+    assert auth.csrf_ok(auth.new_csrf_token(), "café") is False

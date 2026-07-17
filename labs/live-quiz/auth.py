@@ -5,7 +5,7 @@ import hmac
 import secrets
 
 import bcrypt
-from flask import session, redirect, url_for, request, abort
+from flask import session, redirect, url_for, request
 
 
 def hash_password(pw):
@@ -20,10 +20,13 @@ def verify_password(pw, stored_hash):
 
 
 def invite_ok(supplied, configured):
-    # constant-time compare; an empty/unset configured code closes registration entirely
+    # constant-time compare; an empty/unset configured code closes registration entirely.
+    # Compare as bytes: hmac.compare_digest raises TypeError on a non-ASCII str, and `supplied`
+    # is attacker-controlled (the form field) — bytes never raise, so a non-ASCII value fails
+    # closed (mismatch) instead of 500-ing the register endpoint.
     if not configured:
         return False
-    return hmac.compare_digest(str(supplied or ""), str(configured))
+    return hmac.compare_digest(str(supplied or "").encode("utf-8"), str(configured).encode("utf-8"))
 
 
 def new_csrf_token():
@@ -31,9 +34,11 @@ def new_csrf_token():
 
 
 def csrf_ok(session_token, form_token):
+    # bytes compare for the same reason as invite_ok: form_token is attacker-controlled, and a
+    # non-ASCII value must fail closed, not raise TypeError on every state-changing POST.
     if not session_token or not form_token:
         return False
-    return hmac.compare_digest(str(session_token), str(form_token))
+    return hmac.compare_digest(str(session_token).encode("utf-8"), str(form_token).encode("utf-8"))
 
 
 def current_teacher_id():
