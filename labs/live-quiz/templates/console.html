@@ -40,7 +40,11 @@
         </div>
         <div class="set-actions">
           {% if topics %}
-          <form class="start-form" method="post" action="/host/create">
+          <!-- This SAST rule checks for Django's csrf_token template tag; this is a Flask/Jinja2
+               app with no Django code, so that tag doesn't exist here. CSRF is enforced by this
+               project's own mechanism instead: the hidden csrf_token field below, verified
+               server-side by auth.csrf_ok()/_check_csrf() in app.py (see tests/test_auth.py). -->
+          <form class="start-form" method="post" action="/host/create"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="set_id" value="{{ s.id }}">
             <span class="select-sm">
@@ -52,8 +56,10 @@
           </form>
           {% endif %}
           <a class="btn-ghost btn-sm" href="/console/sets/{{ s.id }}/edit">Edit</a>
+          <!-- Same Django csrf_token-tag false positive as the start-form above — this form has
+               its own real csrf_token field, verified server-side; see app.py's _check_csrf(). -->
           <form method="post" action="/console/sets/{{ s.id }}/delete"
-                onsubmit="return confirm('Delete this set? This cannot be undone.');">
+                onsubmit="return confirm('Delete this set? This cannot be undone.');"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button class="btn-ghost btn-sm danger" type="submit">Delete</button>
           </form>

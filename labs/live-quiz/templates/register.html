@@ -4,7 +4,11 @@
 <body><div class="pwrap"><section class="pjoin">
   <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
     <div class="sub">Live Quiz · Teacher registration</div></div>
-  <form class="join-card" method="post" action="/register">
+  <!-- This SAST rule checks for Django's csrf_token template tag; this is a Flask/Jinja2 app with
+       no Django code, so that tag doesn't exist here. CSRF is enforced by this project's own
+       mechanism instead: the hidden csrf_token field below, verified server-side by
+       auth.csrf_ok()/_check_csrf() in app.py (see tests/test_auth.py, test_auth_routes.py). -->
+  <form class="join-card" method="post" action="/register"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
     <h1>Register</h1>
     <p class="lead">Create a teacher account with the invite code your coordinator gave you.</p>
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
