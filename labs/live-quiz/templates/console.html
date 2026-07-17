@@ -1,0 +1,84 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Console — KOSEN·KMITL Live Quiz</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><div class="stage">
+  <header class="masthead">
+    <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
+      <div class="sub">Live Quiz · Teacher console</div></div>
+    <a class="btn-ghost" href="/logout">Sign out</a>
+  </header>
+  <div class="drule"></div>
+
+  <!-- Session CSRF token, always present so every state-changing form on the page can carry it
+       (the per-set start/delete forms below each embed it). All titles/topics render through Jinja
+       autoescaping — never |safe. -->
+  <form hidden><input type="hidden" name="csrf_token" value="{{ csrf_token }}"></form>
+
+  <div class="console-body">
+    <div class="console-top">
+      <div class="ct-txt">
+        <h1>Your question sets</h1>
+        <p class="lead">Paste a Markdown item bank, preview how many questions parse, and save it as a
+          reusable set. Only you can see, edit, or start a game from your own sets.</p>
+      </div>
+      <a class="btn blue" href="/console/sets/new">+ New question set</a>
+    </div>
+
+    {% if sets %}
+    <ul class="set-list">
+      {% for s in sets %}
+      {% set meta = set_meta.get(s.id, {"topics": [], "count": 0}) %}
+      {% set topics = meta.topics %}
+      <li class="set-card">
+        <div class="set-main">
+          <span class="set-title">{{ s.title }}</span>
+          <div class="set-meta">
+            <span class="set-count">{{ meta.count }} question{{ '' if meta.count == 1 else 's' }}</span>
+            {% for t in topics[:3] %}<span class="topic-chip">{{ t }}</span>{% endfor %}
+            {% if topics|length > 3 %}<span class="topic-chip more">+{{ topics|length - 3 }} more</span>{% endif %}
+          </div>
+        </div>
+        <div class="set-actions">
+          {% if topics %}
+          <!-- This SAST rule checks for Django's csrf_token template tag; this is a Flask/Jinja2
+               app with no Django code, so that tag doesn't exist here. CSRF is enforced by this
+               project's own mechanism instead: the hidden csrf_token field below, verified
+               server-side by auth.csrf_ok()/_check_csrf() in app.py (see tests/test_auth.py). -->
+          <form class="start-form" method="post" action="/host/create"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="set_id" value="{{ s.id }}">
+            <span class="select-sm">
+              <select name="topic" aria-label="Topic to host from {{ s.title }}">
+                {% for t in topics %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+              </select>
+            </span>
+            <button class="btn blue btn-sm" type="submit">Start game ▸</button>
+          </form>
+          {% endif %}
+          <a class="btn-ghost btn-sm" href="/console/sets/{{ s.id }}/edit">Edit</a>
+          <!-- Same Django csrf_token-tag false positive as the start-form above — this form has
+               its own real csrf_token field, verified server-side; see app.py's _check_csrf(). -->
+          <form method="post" action="/console/sets/{{ s.id }}/delete" onsubmit="return confirm('Delete this set? This cannot be undone.');"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="btn-ghost btn-sm danger" type="submit">Delete</button>
+          </form>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="empty-state">
+      <div class="es-shapes" aria-hidden="true">
+        <svg viewBox="0 0 24 24" style="fill:var(--a-red)"><path d="M12 3 22 20H2Z"/></svg>
+        <svg viewBox="0 0 24 24" style="fill:var(--a-blue)"><path d="M12 2 22 12 12 22 2 12Z"/></svg>
+        <svg viewBox="0 0 24 24" style="fill:var(--a-yellow)"><circle cx="12" cy="12" r="10"/></svg>
+        <svg viewBox="0 0 24 24" style="fill:var(--a-green)"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
+      </div>
+      <div class="es-title">No question sets yet</div>
+      <p class="es-sub">Create your first set to run a live game. Paste a Markdown item bank and we'll
+        parse it into questions.</p>
+      <a class="btn blue" href="/console/sets/new" style="margin-top:6px;">+ New question set</a>
+    </div>
+    {% endif %}
+  </div>
+</div></body></html>

@@ -1,0 +1,24 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Register — KOSEN·KMITL Live Quiz</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><div class="pwrap"><section class="pjoin">
+  <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
+    <div class="sub">Live Quiz · Teacher registration</div></div>
+  <!-- This SAST rule checks for Django's csrf_token template tag; this is a Flask/Jinja2 app with
+       no Django code, so that tag doesn't exist here. CSRF is enforced by this project's own
+       mechanism instead: the hidden csrf_token field below, verified server-side by
+       auth.csrf_ok()/_check_csrf() in app.py (see tests/test_auth.py, test_auth_routes.py). -->
+  <form class="join-card" method="post" action="/register"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+    <h1>Register</h1>
+    <p class="lead">Create a teacher account with the invite code your coordinator gave you.</p>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {% if error %}<div class="join-err">{{ error }}</div>{% endif %}
+    <div class="field"><label for="username">Username</label>
+      <input id="username" name="username" autocomplete="username"></div>
+    <div class="field"><label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="new-password"></div>
+    <div class="field"><label for="invite">Invite code</label>
+      <input id="invite" name="invite" autocomplete="off"></div>
+    <button class="btn blue" type="submit">Create account ▸</button>
+    <p class="pdpa">Already have an account? <a href="/login">Sign in</a>.</p>
+  </form></section></div></body></html>

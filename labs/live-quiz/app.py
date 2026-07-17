@@ -1,50 +1,77 @@
 # app.py
 import csv
+import datetime
 import io
+import json
 import os
 
-from flask import Flask, render_template, request, send_file
+from flask import (
+    Flask,
+    render_template,
+    request,
+    send_file,
+    session,
+    redirect,
+    url_for,
+    abort,
+)
 from flask_socketio import SocketIO, join_room, emit
 
+import auth
+import db as dbmod
+import quiz_loader
 from game import GameSession, generate_pin
-from quiz_loader import load_all_topics
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-not-secret-override-in-prod")
 socketio = SocketIO(app, async_mode="eventlet")
 
+# --- Platform data + config (teachers, question sets, sessions) -------------------------------
+# DB_PATH resolves from the env (tests point it at a tmp file; the container defaults to the
+# persistent /data volume). The connection + schema are established once, at import time.
+DB_PATH = os.environ.get("DB_PATH", "/data/live-quiz.db")
+INVITE_CODE = os.environ.get("INVITE_CODE", "")
+_conn = dbmod.connect(DB_PATH)
+dbmod.init_db(_conn)
+if not INVITE_CODE:
+    print("WARNING: INVITE_CODE is unset — teacher registration is CLOSED until you set it.", flush=True)
+if app.config["SECRET_KEY"] == "dev-not-secret-override-in-prod":
+    print("WARNING: SECRET_KEY is the insecure default — set a real one before any real use.", flush=True)
+
+# Harden the session cookie: never readable from JS, and not sent on cross-site requests.
+app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
+# Bound request bodies at ingestion (Werkzeug 413s anything larger before a handler buffers it).
+# 256 KB comfortably fits the 100 KB markdown cap + multipart/form overhead; anything past it is abuse.
+app.config["MAX_CONTENT_LENGTH"] = 256 * 1024
+# SESSION_COOKIE_SECURE is opt-in via env so local http dev still works while TLS prod is hardened.
+if os.environ.get("COOKIE_SECURE", "").lower() in ("1", "true", "yes"):
+    app.config["SESSION_COOKIE_SECURE"] = True
+
+
+def get_db():
+    return _conn
+
+
+def _now():
+    return datetime.datetime.utcnow().isoformat(timespec="seconds")
+
+
+def _issue_csrf():
+    # One CSRF token per session, embedded as a hidden field in every state-changing form.
+    if "csrf" not in session:
+        session["csrf"] = auth.new_csrf_token()
+    return session["csrf"]
+
+
+def _check_csrf():
+    if not auth.csrf_ok(session.get("csrf"), request.form.get("csrf_token")):
+        abort(400)
+
 GAMES = {}  # pin -> GameSession
+GAME_OWNER = {}  # pin -> teacher_id, so only the creating teacher can export a game's results
+HOST_SIDS = {}  # pin -> the socket id currently authorized to drive that game's host controls
 SID_TO_PLAYER = {}  # socket id -> (pin, nickname), so a dropped socket can mark its player away
 CURRENT_SID = {}    # (pin, nickname) -> latest socket id, to ignore a stale reconnect's disconnect
-
-# Default item-bank mount points (see docker-compose.yml). Override for local dev or a
-# different deployment layout with ITEM_BANK_PATHS (an os.pathsep-separated list of paths).
-_DEFAULT_ITEM_BANKS = [
-    "/item-banks/weekly-item-bank.md",
-    "/item-banks/review-quiz-item-bank.md",
-]
-
-
-def resolve_item_bank_paths(configured, default):
-    """Pick which item-bank files to load: the ITEM_BANK_PATHS env value if set (a
-    pathsep-separated list), else the defaults — keeping only paths that exist on disk."""
-    candidates = configured.split(os.pathsep) if configured else list(default)
-    return [p for p in candidates if os.path.isfile(p)]
-
-
-ITEM_BANK_PATHS = resolve_item_bank_paths(os.environ.get("ITEM_BANK_PATHS"), _DEFAULT_ITEM_BANKS)
-if not ITEM_BANK_PATHS:
-    print(
-        "WARNING: no item-bank files found — the host topic list will be empty. "
-        "Mount the banks (see docker-compose.yml) or set ITEM_BANK_PATHS.",
-        flush=True,
-    )
-
-
-def _topics():
-    if not ITEM_BANK_PATHS:
-        return {}
-    return load_all_topics(ITEM_BANK_PATHS)
 
 
 @app.route("/")
@@ -53,26 +80,46 @@ def index():
 
 
 @app.route("/host", methods=["GET"])
+@auth.login_required
 def host_page():
-    return render_template("host.html", topics=sorted(_topics().keys()))
+    # the set+topic are chosen in the console, which POSTs straight to /host/create;
+    # a bare GET /host just sends the teacher to their console to pick one.
+    return redirect(url_for("console_page"))
 
 
 @app.route("/host/create", methods=["POST"])
+@auth.login_required
 def host_create():
-    topic = request.form["topic"]
-    questions = _topics().get(topic, [])
+    _check_csrf()
+    tid = auth.current_teacher_id()
+    try:
+        set_id = int(request.form.get("set_id", ""))
+    except ValueError:
+        abort(404)                                   # malformed id -> same not-found as unowned
+    if not (0 < set_id <= 2**63 - 1):
+        abort(404)                                   # out of SQLite INTEGER range -> not-found, never a 500
+    s = dbmod.get_set(get_db(), set_id, tid)
+    if s is None:
+        abort(404)                                   # not this teacher's set (IDOR-safe)
+    topics = quiz_loader.parse_topics_from_text(s["source_md"])
+    topic = request.form.get("topic") or next(iter(topics), None)
+    questions = topics.get(topic, [])
+    if not questions:
+        abort(400)
     pin = generate_pin()
     while pin in GAMES:  # avoid an extremely unlikely PIN collision
         pin = generate_pin()
     GAMES[pin] = GameSession(pin, questions)
-    return render_template("host.html", topics=sorted(_topics().keys()), created_pin=pin)
+    GAME_OWNER[pin] = tid
+    return render_template("host.html", created_pin=pin)
 
 
 @app.route("/host/<pin>/export")
+@auth.login_required
 def host_export(pin):
     game = GAMES.get(pin)
-    if game is None:
-        return "unknown game", 404
+    if game is None or GAME_OWNER.get(pin) != auth.current_teacher_id():
+        return "not found", 404                      # unknown OR not this teacher's game
     buf = io.StringIO()
     writer = csv.DictWriter(
         buf, fieldnames=["nickname", "total_score", "correct_count", "avg_response_time_ms"]
@@ -83,9 +130,183 @@ def host_export(pin):
     return send_file(mem, mimetype="text/csv", as_attachment=True, download_name=f"quiz-{pin}-results.csv")
 
 
+# --- Teacher auth: register / login / logout --------------------------------------------------
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register_page():
+    if request.method == "GET":
+        return render_template("register.html", csrf_token=_issue_csrf(), error=None)
+    _check_csrf()
+    username = (request.form.get("username") or "").strip()[:40]
+    password = request.form.get("password") or ""
+    if not auth.invite_ok(request.form.get("invite"), INVITE_CODE):
+        return render_template("register.html", csrf_token=_issue_csrf(), error="Invalid invite code."), 200
+    if len(username) < 3 or len(password) < 8:
+        return render_template("register.html", csrf_token=_issue_csrf(),
+                               error="Username ≥ 3 chars, password ≥ 8 chars."), 200
+    # DELIBERATE DEVIATION FROM PLAN: bcrypt 5.x RAISES `ValueError: password cannot be longer
+    # than 72 bytes` (no silent truncation), so an over-long password would 500 hash_password.
+    # Reject it here with a friendly 200 form error instead of letting the route crash.
+    if len(password.encode("utf-8")) > 72:
+        return render_template("register.html", csrf_token=_issue_csrf(),
+                               error="Password must be 8–72 characters."), 200
+    if dbmod.get_teacher_by_username(get_db(), username):
+        return render_template("register.html", csrf_token=_issue_csrf(), error="Username taken."), 200
+    tid = dbmod.create_teacher(get_db(), username, auth.hash_password(password), _now())
+    session["teacher_id"] = tid
+    return redirect(url_for("console_page"))
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login_page():
+    if request.method == "GET":
+        return render_template("login.html", csrf_token=_issue_csrf(), error=None)
+    _check_csrf()
+    t = dbmod.get_teacher_by_username(get_db(), (request.form.get("username") or "").strip())
+    if t and auth.verify_password(request.form.get("password") or "", t["password_hash"]):
+        session.clear()                              # anti session-fixation: drop any pre-login state
+        session["teacher_id"] = t["id"]
+        session["csrf"] = auth.new_csrf_token()      # a fresh token bound to the new session
+        return redirect(url_for("console_page"))
+    return render_template("login.html", csrf_token=_issue_csrf(), error="Wrong username or password."), 200
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login_page"))
+
+
+# --- Teacher console: question-set CRUD + live parse preview ----------------------------------
+# Every route below is login-gated AND owner-scoped: a set is only ever fetched/updated/deleted
+# with owner_id = the logged-in teacher's id (db.get_set/update_set/delete_set enforce
+# `teacher_id = owner_id` in SQL). A teacher poking at another teacher's set id therefore gets a
+# 404 (get_set -> None -> abort) and update/delete no-op (rowcount 0 -> abort) — never a data leak
+# or a cross-tenant write (IDOR-safe).
+
+MAX_TITLE_LEN = 120            # a set title is capped, not a crash risk
+MAX_SOURCE_BYTES = 100 * 1024  # 100 KB cap on a set's pasted/uploaded markdown
+
+
+def _read_source(req):
+    # Accept either a pasted textarea or an uploaded .md file. Read a little past the cap so
+    # oversize input is *rejected* by _source_too_big below rather than silently truncated.
+    f = req.files.get("source_file")
+    if f and f.filename:
+        raw = f.read(MAX_SOURCE_BYTES + 1024)
+        return raw.decode("utf-8", errors="replace")
+    return req.form.get("source_md") or ""
+
+
+def _source_too_big(source_md):
+    return len(source_md.encode("utf-8")) > MAX_SOURCE_BYTES
+
+
+def _parse_or_none(source_md):
+    # Returns the parsed topics only if at least one question was recognised, else None so the
+    # route can refuse an empty/unparseable set with a friendly form error (never store junk).
+    topics = quiz_loader.parse_topics_from_text(source_md or "")
+    total = sum(len(v) for v in topics.values())
+    return topics if total > 0 else None
+
+
+def _set_form(error=None, editing=None, title="", source_md=""):
+    # Render the create/edit form. `editing` (a set Row) switches the form to edit mode; when
+    # re-rendering after a validation error we echo the submitted title/source so work isn't lost.
+    return render_template(
+        "set_form.html",
+        csrf_token=_issue_csrf(),
+        error=error,
+        editing=editing,
+        title=title,
+        source_md=source_md,
+    )
+
+
+@app.route("/console")
+@auth.login_required
+def console_page():
+    sets = dbmod.list_sets(get_db(), auth.current_teacher_id())
+    # Per-set metadata for the console cards: the topic names (populate the "Start game" dropdown)
+    # plus a question count so a teacher can see a set's size at a glance.
+    set_meta = {}
+    for s in sets:
+        parsed = quiz_loader.parse_topics_from_text(s["source_md"])
+        set_meta[s["id"]] = {"topics": list(parsed.keys()),
+                             "count": sum(len(v) for v in parsed.values())}
+    return render_template("console.html", sets=sets, set_meta=set_meta, csrf_token=_issue_csrf())
+
+
+@app.route("/console/preview", methods=["POST"])
+@auth.login_required
+def console_preview():
+    _check_csrf()
+    # Bound the work: parse at most the size cap so a giant paste can't tie up the worker.
+    source_md = (request.form.get("source_md") or "")[:MAX_SOURCE_BYTES]
+    topics = quiz_loader.parse_topics_from_text(source_md)
+    payload = {"topics": [{"topic": k, "count": len(v)} for k, v in topics.items()]}
+    return app.response_class(json.dumps(payload), mimetype="application/json")
+
+
+@app.route("/console/sets/new", methods=["GET", "POST"])
+@auth.login_required
+def console_set_new():
+    if request.method == "GET":
+        return _set_form()
+    _check_csrf()
+    title = (request.form.get("title") or "").strip()[:MAX_TITLE_LEN] or "Untitled set"
+    source_md = _read_source(request)
+    if _source_too_big(source_md):
+        return _set_form(error="That set is too large (max 100 KB).", title=title, source_md=""), 200
+    if _parse_or_none(source_md) is None:
+        return _set_form(error="That set has no questions the parser can read — check the format.",
+                         title=title, source_md=source_md), 200
+    dbmod.create_set(get_db(), auth.current_teacher_id(), title, source_md, _now())
+    return redirect(url_for("console_page"))
+
+
+@app.route("/console/sets/<int:set_id>/edit", methods=["GET", "POST"])
+@auth.login_required
+def console_set_edit(set_id):
+    s = dbmod.get_set(get_db(), set_id, auth.current_teacher_id())
+    if s is None:
+        abort(404)                                   # not this teacher's set (IDOR-safe)
+    if request.method == "GET":
+        return _set_form(editing=s, title=s["title"], source_md=s["source_md"])
+    _check_csrf()
+    title = (request.form.get("title") or "").strip()[:MAX_TITLE_LEN] or s["title"]
+    source_md = _read_source(request)
+    if _source_too_big(source_md):
+        return _set_form(error="That set is too large (max 100 KB).",
+                         editing=s, title=title, source_md=s["source_md"]), 200
+    if _parse_or_none(source_md) is None:
+        return _set_form(error="That set has no questions the parser can read — check the format.",
+                         editing=s, title=title, source_md=source_md), 200
+    dbmod.update_set(get_db(), set_id, auth.current_teacher_id(), title, source_md, _now())
+    return redirect(url_for("console_page"))
+
+
+@app.route("/console/sets/<int:set_id>/delete", methods=["POST"])
+@auth.login_required
+def console_set_delete(set_id):
+    _check_csrf()
+    if dbmod.delete_set(get_db(), set_id, auth.current_teacher_id()) == 0:
+        abort(404)                                   # unknown OR not this teacher's set
+    return redirect(url_for("console_page"))
+
+
 @socketio.on("host_join")
 def on_host_join(data):
-    join_room(data["pin"])
+    pin = data["pin"]
+    # host and players share this Socket.IO room by design (broadcasts like question:show reach
+    # everyone) — room membership is not the security boundary, HOST_SIDS below is. Only a socket
+    # whose Flask session belongs to the game's actual owner gets bound as its authorized host;
+    # `pin in GAME_OWNER` is required explicitly so an unauthenticated socket (current_teacher_id()
+    # is None) can never bind to a pin that also happens to have no registered owner.
+    join_room(pin)
+    if pin in GAME_OWNER and auth.current_teacher_id() == GAME_OWNER[pin]:
+        HOST_SIDS[pin] = request.sid
 
 
 @socketio.on("player_join")
@@ -153,6 +374,8 @@ def on_disconnect():
 
 @socketio.on("host_next")
 def on_host_next(data):
+    if HOST_SIDS.get(data["pin"]) != request.sid:
+        return  # only the socket bound as this game's host in on_host_join may drive it
     game = GAMES.get(data["pin"])
     if game is None:
         return
@@ -212,20 +435,26 @@ def _reveal_results(pin):
 
 @socketio.on("answer_submit")
 def on_answer_submit(data):
+    # the answering identity comes from this socket's own join record, never from the payload —
+    # otherwise any connected player could submit/score under another player's nickname
+    info = SID_TO_PLAYER.get(request.sid)
+    if info is None or info[0] != data["pin"]:
+        return
+    nickname = info[1]
     game = GAMES.get(data["pin"])
     if game is None:
         return
     if getattr(game, "_revealed_this_round", False):
         return  # the round is already revealed; a late tap must not score after the fact
     try:
-        result = game.submit_answer(data["nickname"], data["choice"])
+        result = game.submit_answer(nickname, data["choice"])
     except ValueError:
         return
     if result is None:
         return
     # feedback carries the player's authoritative cumulative score so the phone never has to
     # guess it (client-side accumulation drifts across a reconnect)
-    player = game.players.get(data["nickname"])
+    player = game.players.get(nickname)
     emit("answer:feedback", {**result, "score": player.score if player else 0})
     # keep the projector's "answered" counter climbing live — count only still-connected answerers
     answered = sum(1 for n in game.answers_this_round if game.players[n].connected)

@@ -4,6 +4,10 @@ services:
     ports: ["5050:5000"]
     environment:
       - SECRET_KEY=${SECRET_KEY:-change-me-in-real-deployment}
+      - INVITE_CODE=${INVITE_CODE:-}        # unset => registration closed; set to open it
+      - DB_PATH=/data/live-quiz.db
+      - COOKIE_SECURE=${COOKIE_SECURE:-}    # set to 1 when served over TLS
     volumes:
-      - ../../instructor/quizzes/weekly/item-bank.md:/item-banks/weekly-item-bank.md:ro
-      - ../../instructor/quizzes/review-quiz-item-bank.md:/item-banks/review-quiz-item-bank.md:ro
+      - live-quiz-data:/data                # teachers + question sets persist here
+volumes:
+  live-quiz-data:

@@ -27,34 +27,38 @@ def _clean(s):
 
 
 def parse_topics(path):
+    with open(path, encoding="utf-8") as f:
+        return parse_topics_from_text(f.read())
+
+
+def parse_topics_from_text(text):
     topics = {}
     topic = "?"
-    with open(path, encoding="utf-8") as f:
-        for raw in f:
-            line = raw.rstrip("\n")
-            h = re.match(r"^##\s+(.*)", line)
-            if h:
-                topic = h.group(1).strip()
-                continue
-            if not re.match(r"^\d+\.\s", line) or "✓" not in line:
-                continue
-            m = re.search(r"\ba\)\s", line)
-            if not m:
-                continue
-            stem = re.sub(r"^\d+\.\s*", "", line[: m.start()]).strip().rstrip("·").strip()
-            opts, correct = [], None
-            for piece in _optsplit.split(line[m.start() :]):
-                piece = _optlead.sub("", piece).strip()
-                if "✓" in piece:
-                    correct = len(opts)  # 0-based
-                    piece = piece.replace("✓", "").strip()
-                opts.append(_clean(piece))
-            opts = [o for o in opts if o]
-            if correct is None or len(opts) < 2:
-                continue
-            topics.setdefault(topic, []).append(
-                {"stem": _clean(stem), "options": opts[:4], "correct": correct}
-            )
+    for raw in text.splitlines():
+        line = raw.rstrip("\n")
+        h = re.match(r"^##\s+(.*)", line)
+        if h:
+            topic = h.group(1).strip()
+            continue
+        if not re.match(r"^\d+\.\s", line) or "✓" not in line:
+            continue
+        m = re.search(r"\ba\)\s", line)
+        if not m:
+            continue
+        stem = re.sub(r"^\d+\.\s*", "", line[: m.start()]).strip().rstrip("·").strip()
+        opts, correct = [], None
+        for piece in _optsplit.split(line[m.start() :]):
+            piece = _optlead.sub("", piece).strip()
+            if "✓" in piece:
+                correct = len(opts)  # 0-based
+                piece = piece.replace("✓", "").strip()
+            opts.append(_clean(piece))
+        opts = [o for o in opts if o]
+        if correct is None or len(opts) < 2:
+            continue
+        topics.setdefault(topic, []).append(
+            {"stem": _clean(stem), "options": opts[:4], "correct": correct}
+        )
     return topics
 
 

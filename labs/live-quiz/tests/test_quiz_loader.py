@@ -46,3 +46,17 @@ def test_load_all_topics_merges_multiple_files(tmp_path):
     )
     merged = load_all_topics([FIXTURE, str(second_file)])
     assert len(merged["Week 4: Injection"]) == 2  # 1 from FIXTURE + 1 from second_file
+
+
+def test_parse_topics_from_text_matches_file(tmp_path):
+    import quiz_loader
+    md = "## Week 1\n1. Q? a) x ✓ · b) y · c) z · d) w\n"
+    p = tmp_path / "s.md"; p.write_text(md, encoding="utf-8")
+    assert quiz_loader.parse_topics_from_text(md) == quiz_loader.parse_topics(str(p))
+
+
+def test_parse_topics_from_text_shape():
+    import quiz_loader
+    t = quiz_loader.parse_topics_from_text("## T\n1. Q? a) A ✓ · b) B · c) C · d) D\n")
+    assert list(t) == ["T"]
+    assert t["T"][0]["correct"] == 0 and t["T"][0]["options"][0] == "A"

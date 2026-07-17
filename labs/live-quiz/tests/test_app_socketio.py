@@ -3,21 +3,39 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from app import app, socketio, GAMES
+from app import app, socketio, GAMES, GAME_OWNER, get_db
+import db as dbmod
 from game import GameSession
 
 QUESTIONS = [{"stem": "Q1?", "options": ["a", "b", "c", "d"], "correct": 1}]
+
+
+def _authed_host_socket(pin):
+    """host_next now requires the emitting socket to be bound (in on_host_join) as the game's
+    owner, verified via the same Flask-session auth.current_teacher_id() the HTTP routes use — so
+    a bare unauthenticated socketio.test_client(app) can no longer drive host_next. Give this pin
+    a real owning teacher and hand back a Socket.IO test client authenticated as that teacher
+    (idempotent: safe to call again for the same pin across test runs against a persistent DB)."""
+    username = f"host_{pin}"
+    t = dbmod.get_teacher_by_username(get_db(), username)
+    tid = t["id"] if t else dbmod.create_teacher(get_db(), username, "unused-hash", now="t")
+    GAME_OWNER[pin] = tid
+    client = app.test_client()
+    with client.session_transaction() as sess:
+        sess["teacher_id"] = tid
+    sock = socketio.test_client(app, flask_test_client=client)
+    sock.emit("host_join", {"pin": pin})
+    return sock
 
 
 def test_full_round_trip_join_question_answer_results():
     GAMES.clear()
     GAMES["999999"] = GameSession("999999", QUESTIONS)
 
-    host = socketio.test_client(app)
+    host = _authed_host_socket("999999")
     alice = socketio.test_client(app)
     bob = socketio.test_client(app)
 
-    host.emit("host_join", {"pin": "999999"})
     alice.emit("player_join", {"pin": "999999", "nickname": "alice"})
     bob.emit("player_join", {"pin": "999999", "nickname": "bob"})
 
@@ -53,10 +71,9 @@ def test_disconnect_lets_remaining_players_finish_the_round():
     GAMES.clear()
     GAMES["888888"] = GameSession("888888", QUESTIONS)
 
-    host = socketio.test_client(app)
+    host = _authed_host_socket("888888")
     alice = socketio.test_client(app)
     bob = socketio.test_client(app)
-    host.emit("host_join", {"pin": "888888"})
     alice.emit("player_join", {"pin": "888888", "nickname": "alice"})
     bob.emit("player_join", {"pin": "888888", "nickname": "bob"})
     host.emit("host_next", {"pin": "888888"})
@@ -74,9 +91,8 @@ def test_answer_after_reveal_is_rejected():
     GAMES.clear()
     GAMES["666666"] = GameSession("666666", QUESTIONS)
 
-    host = socketio.test_client(app)
+    host = _authed_host_socket("666666")
     alice = socketio.test_client(app)
-    host.emit("host_join", {"pin": "666666"})
     alice.emit("player_join", {"pin": "666666", "nickname": "alice"})
     host.emit("host_next", {"pin": "666666"})
 
@@ -107,8 +123,7 @@ def test_joining_mid_question_shows_the_active_question():
     GAMES.clear()
     GAMES["777777"] = GameSession("777777", QUESTIONS)
 
-    host = socketio.test_client(app)
-    host.emit("host_join", {"pin": "777777"})
+    host = _authed_host_socket("777777")
     host.emit("host_next", {"pin": "777777"})  # question is live before anyone joins
 
     late = socketio.test_client(app)
