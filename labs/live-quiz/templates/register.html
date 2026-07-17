@@ -6,6 +6,7 @@
     <div class="sub">Live Quiz · Teacher registration</div></div>
   <form class="join-card" method="post" action="/register">
     <h1>Register</h1>
+    <p class="lead">Create a teacher account with the invite code your coordinator gave you.</p>
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     {% if error %}<div class="join-err">{{ error }}</div>{% endif %}
     <div class="field"><label for="username">Username</label>

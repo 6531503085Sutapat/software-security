@@ -6,6 +6,7 @@
     <div class="sub">Live Quiz · Teacher sign-in</div></div>
   <form class="join-card" method="post" action="/login">
     <h1>Sign in</h1>
+    <p class="lead">Sign in to build question sets and run live games.</p>
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     {% if error %}<div class="join-err">{{ error }}</div>{% endif %}
     <div class="field"><label for="username">Username</label>

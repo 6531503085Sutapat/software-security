@@ -227,8 +227,14 @@ def _set_form(error=None, editing=None, title="", source_md=""):
 @auth.login_required
 def console_page():
     sets = dbmod.list_sets(get_db(), auth.current_teacher_id())
-    set_topics = {s["id"]: list(quiz_loader.parse_topics_from_text(s["source_md"]).keys()) for s in sets}
-    return render_template("console.html", sets=sets, set_topics=set_topics, csrf_token=_issue_csrf())
+    # Per-set metadata for the console cards: the topic names (populate the "Start game" dropdown)
+    # plus a question count so a teacher can see a set's size at a glance.
+    set_meta = {}
+    for s in sets:
+        parsed = quiz_loader.parse_topics_from_text(s["source_md"])
+        set_meta[s["id"]] = {"topics": list(parsed.keys()),
+                             "count": sum(len(v) for v in parsed.values())}
+    return render_template("console.html", sets=sets, set_meta=set_meta, csrf_token=_issue_csrf())
 
 
 @app.route("/console/preview", methods=["POST"])

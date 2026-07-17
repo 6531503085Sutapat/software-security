@@ -9,48 +9,71 @@
   </header>
   <div class="drule"></div>
 
-  <!-- The CSRF token is always emitted here (even with zero sets) so every state-changing form on
-       the page can carry it. Titles below are rendered with Jinja autoescaping — never |safe. -->
-  <!-- always expose the session CSRF token here so the page carries one even with zero sets
-       (the per-set delete forms below also each embed it). -->
+  <!-- Session CSRF token, always present so every state-changing form on the page can carry it
+       (the per-set start/delete forms below each embed it). All titles/topics render through Jinja
+       autoescaping — never |safe. -->
   <form hidden><input type="hidden" name="csrf_token" value="{{ csrf_token }}"></form>
 
-  <section class="setup-wrap"><div class="setup-card">
-    <h1>Your question sets</h1>
-    <p class="lead">Paste a Markdown item bank, preview how many questions parse, and save it as a
-      reusable set. Only you can see, edit, or start a game from your own sets.</p>
-    <a class="btn blue" href="/console/sets/new" style="align-self:flex-start;text-decoration:none;">+ New question set</a>
+  <div class="console-body">
+    <div class="console-top">
+      <div class="ct-txt">
+        <h1>Your question sets</h1>
+        <p class="lead">Paste a Markdown item bank, preview how many questions parse, and save it as a
+          reusable set. Only you can see, edit, or start a game from your own sets.</p>
+      </div>
+      <a class="btn blue" href="/console/sets/new">+ New question set</a>
+    </div>
 
     {% if sets %}
-    <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">
+    <ul class="set-list">
       {% for s in sets %}
-      <li style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;border:1px solid var(--hair);border-radius:12px;background:var(--paper-2);flex-wrap:wrap;">
-        <span style="font:600 17px/1.3 var(--serif);color:var(--ink);word-break:break-word;">{{ s.title }}</span>
-        <span style="display:inline-flex;align-items:center;gap:8px;flex:none;">
-          {% set topics = set_topics.get(s.id, []) %}
+      {% set meta = set_meta.get(s.id, {"topics": [], "count": 0}) %}
+      {% set topics = meta.topics %}
+      <li class="set-card">
+        <div class="set-main">
+          <span class="set-title">{{ s.title }}</span>
+          <div class="set-meta">
+            <span class="set-count">{{ meta.count }} question{{ '' if meta.count == 1 else 's' }}</span>
+            {% for t in topics[:3] %}<span class="topic-chip">{{ t }}</span>{% endfor %}
+            {% if topics|length > 3 %}<span class="topic-chip more">+{{ topics|length - 3 }} more</span>{% endif %}
+          </div>
+        </div>
+        <div class="set-actions">
           {% if topics %}
-          <form method="post" action="/host/create" style="display:inline-flex;align-items:center;gap:6px;">
+          <form class="start-form" method="post" action="/host/create">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="set_id" value="{{ s.id }}">
-            <select name="topic" aria-label="Topic to host from {{ s.title }}">
-              {% for t in topics %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
-            </select>
-            <button class="btn blue" type="submit">Start game ▸</button>
+            <span class="select-sm">
+              <select name="topic" aria-label="Topic to host from {{ s.title }}">
+                {% for t in topics %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+              </select>
+            </span>
+            <button class="btn blue btn-sm" type="submit">Start game ▸</button>
           </form>
           {% endif %}
-          <a class="btn-ghost" href="/console/sets/{{ s.id }}/edit">Edit</a>
+          <a class="btn-ghost btn-sm" href="/console/sets/{{ s.id }}/edit">Edit</a>
           <form method="post" action="/console/sets/{{ s.id }}/delete"
-                onsubmit="return confirm('Delete this set? This cannot be undone.');" style="display:inline;">
+                onsubmit="return confirm('Delete this set? This cannot be undone.');">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <button class="btn-ghost" type="submit"
-                    style="color:var(--a-red-d);border-color:rgba(226,27,60,.4);">Delete</button>
+            <button class="btn-ghost btn-sm danger" type="submit">Delete</button>
           </form>
-        </span>
+        </div>
       </li>
       {% endfor %}
     </ul>
     {% else %}
-    <p class="lead" style="color:var(--muted);">No sets yet — create your first one above.</p>
+    <div class="empty-state">
+      <div class="es-shapes" aria-hidden="true">
+        <svg viewBox="0 0 24 24" style="fill:var(--a-red)"><path d="M12 3 22 20H2Z"/></svg>
+        <svg viewBox="0 0 24 24" style="fill:var(--a-blue)"><path d="M12 2 22 12 12 22 2 12Z"/></svg>
+        <svg viewBox="0 0 24 24" style="fill:var(--a-yellow)"><circle cx="12" cy="12" r="10"/></svg>
+        <svg viewBox="0 0 24 24" style="fill:var(--a-green)"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
+      </div>
+      <div class="es-title">No question sets yet</div>
+      <p class="es-sub">Create your first set to run a live game. Paste a Markdown item bank and we'll
+        parse it into questions.</p>
+      <a class="btn blue" href="/console/sets/new" style="margin-top:6px;">+ New question set</a>
+    </div>
     {% endif %}
-  </div></section>
+  </div>
 </div></body></html>
