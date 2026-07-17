@@ -1,0 +1,19 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Register — KOSEN·KMITL Live Quiz</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><div class="pwrap"><section class="pjoin">
+  <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
+    <div class="sub">Live Quiz · Teacher registration</div></div>
+  <form class="join-card" method="post" action="/register">
+    <h1>Register</h1>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {% if error %}<div class="join-err">{{ error }}</div>{% endif %}
+    <div class="field"><label for="username">Username</label>
+      <input id="username" name="username" autocomplete="username"></div>
+    <div class="field"><label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="new-password"></div>
+    <div class="field"><label for="invite">Invite code</label>
+      <input id="invite" name="invite" autocomplete="off"></div>
+    <button class="btn blue" type="submit">Create account ▸</button>
+    <p class="pdpa">Already have an account? <a href="/login">Sign in</a>.</p>
+  </form></section></div></body></html>

@@ -1,17 +1,67 @@
 # app.py
 import csv
+import datetime
 import io
 import os
 
-from flask import Flask, render_template, request, send_file
+from flask import (
+    Flask,
+    render_template,
+    request,
+    send_file,
+    session,
+    redirect,
+    url_for,
+    abort,
+)
 from flask_socketio import SocketIO, join_room, emit
 
+import auth
+import db as dbmod
 from game import GameSession, generate_pin
 from quiz_loader import load_all_topics
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-not-secret-override-in-prod")
 socketio = SocketIO(app, async_mode="eventlet")
+
+# --- Platform data + config (teachers, question sets, sessions) -------------------------------
+# DB_PATH resolves from the env (tests point it at a tmp file; the container defaults to the
+# persistent /data volume). The connection + schema are established once, at import time.
+DB_PATH = os.environ.get("DB_PATH", "/data/live-quiz.db")
+INVITE_CODE = os.environ.get("INVITE_CODE", "")
+_conn = dbmod.connect(DB_PATH)
+dbmod.init_db(_conn)
+if not INVITE_CODE:
+    print("WARNING: INVITE_CODE is unset — teacher registration is CLOSED until you set it.", flush=True)
+if app.config["SECRET_KEY"] == "dev-not-secret-override-in-prod":
+    print("WARNING: SECRET_KEY is the insecure default — set a real one before any real use.", flush=True)
+
+# Harden the session cookie: never readable from JS, and not sent on cross-site requests.
+app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
+# SESSION_COOKIE_SECURE is opt-in via env so local http dev still works while TLS prod is hardened.
+if os.environ.get("COOKIE_SECURE", "").lower() in ("1", "true", "yes"):
+    app.config["SESSION_COOKIE_SECURE"] = True
+
+
+def get_db():
+    return _conn
+
+
+def _now():
+    return datetime.datetime.utcnow().isoformat(timespec="seconds")
+
+
+def _issue_csrf():
+    # One CSRF token per session, embedded as a hidden field in every state-changing form.
+    if "csrf" not in session:
+        session["csrf"] = auth.new_csrf_token()
+    return session["csrf"]
+
+
+def _check_csrf():
+    if not auth.csrf_ok(session.get("csrf"), request.form.get("csrf_token")):
+        abort(400)
 
 GAMES = {}  # pin -> GameSession
 SID_TO_PLAYER = {}  # socket id -> (pin, nickname), so a dropped socket can mark its player away
@@ -81,6 +131,62 @@ def host_export(pin):
     writer.writerows(game.export_results())
     mem = io.BytesIO(buf.getvalue().encode("utf-8"))
     return send_file(mem, mimetype="text/csv", as_attachment=True, download_name=f"quiz-{pin}-results.csv")
+
+
+# --- Teacher auth: register / login / logout --------------------------------------------------
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register_page():
+    if request.method == "GET":
+        return render_template("register.html", csrf_token=_issue_csrf(), error=None)
+    _check_csrf()
+    username = (request.form.get("username") or "").strip()[:40]
+    password = request.form.get("password") or ""
+    if not auth.invite_ok(request.form.get("invite"), INVITE_CODE):
+        return render_template("register.html", csrf_token=_issue_csrf(), error="Invalid invite code."), 200
+    if len(username) < 3 or len(password) < 8:
+        return render_template("register.html", csrf_token=_issue_csrf(),
+                               error="Username ≥ 3 chars, password ≥ 8 chars."), 200
+    # DELIBERATE DEVIATION FROM PLAN: bcrypt 5.x RAISES `ValueError: password cannot be longer
+    # than 72 bytes` (no silent truncation), so an over-long password would 500 hash_password.
+    # Reject it here with a friendly 200 form error instead of letting the route crash.
+    if len(password.encode("utf-8")) > 72:
+        return render_template("register.html", csrf_token=_issue_csrf(),
+                               error="Password must be 8–72 characters."), 200
+    if dbmod.get_teacher_by_username(get_db(), username):
+        return render_template("register.html", csrf_token=_issue_csrf(), error="Username taken."), 200
+    tid = dbmod.create_teacher(get_db(), username, auth.hash_password(password), _now())
+    session["teacher_id"] = tid
+    return redirect(url_for("console_page"))
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login_page():
+    if request.method == "GET":
+        return render_template("login.html", csrf_token=_issue_csrf(), error=None)
+    _check_csrf()
+    t = dbmod.get_teacher_by_username(get_db(), (request.form.get("username") or "").strip())
+    if t and auth.verify_password(request.form.get("password") or "", t["password_hash"]):
+        session.clear()                              # anti session-fixation: drop any pre-login state
+        session["teacher_id"] = t["id"]
+        session["csrf"] = auth.new_csrf_token()      # a fresh token bound to the new session
+        return redirect(url_for("console_page"))
+    return render_template("login.html", csrf_token=_issue_csrf(), error="Wrong username or password."), 200
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login_page"))
+
+
+@app.route("/console")
+@auth.login_required
+def console_page():
+    # Minimal placeholder so url_for("console_page") resolves and login-gating is testable now.
+    # Task 5 replaces this with the real teacher console (question-set CRUD + preview).
+    return "console"
 
 
 @socketio.on("host_join")
