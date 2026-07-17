@@ -44,6 +44,15 @@ def test_cannot_create_game_from_others_set(tmp_path, monkeypatch):
     assert r.status_code == 404                                    # bob can't host alice's set
 
 
+def test_create_game_rejects_out_of_range_set_id(tmp_path, monkeypatch):
+    appmod = _app(tmp_path, monkeypatch)
+    c, _, csrf = _reg_with_set(appmod, "alice")
+    # A numerically valid but oversized id parses fine as a Python int, then overflows SQLite's
+    # INTEGER — must 404 (fail closed), never 500.
+    r = c.post("/host/create", data={"set_id": "99999999999999999999", "topic": "Week 1", "csrf_token": csrf})
+    assert r.status_code == 404
+
+
 def test_export_owner_only(tmp_path, monkeypatch):
     appmod = _app(tmp_path, monkeypatch)
     c_a, sid_a, csrf_a = _reg_with_set(appmod, "alice")

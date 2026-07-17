@@ -95,6 +95,8 @@ def host_create():
         set_id = int(request.form.get("set_id", ""))
     except ValueError:
         abort(404)                                   # malformed id -> same not-found as unowned
+    if not (0 < set_id <= 2**63 - 1):
+        abort(404)                                   # out of SQLite INTEGER range -> not-found, never a 500
     s = dbmod.get_set(get_db(), set_id, tid)
     if s is None:
         abort(404)                                   # not this teacher's set (IDOR-safe)
