@@ -1,4 +1,4 @@
-import os, sys, time
+import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import db
 
@@ -42,6 +42,18 @@ def test_set_crud_and_owner_isolation(tmp_path):
     assert db.get_set(d, sid, owner_id=b) is None         # IDOR-safe: not bob's
     db.update_set(d, sid, owner_id=a, title="W1b", source_md="## T2\n1. q a) x ✓ · b) y", now="t2")
     assert db.get_set(d, sid, owner_id=a)["title"] == "W1b"
+    assert db.update_set(d, sid, owner_id=b, title="hax", source_md="## X", now="t3") == 0  # bob can't edit alice's
+    assert db.get_set(d, sid, owner_id=a)["title"] == "W1b"                                 # unchanged
     assert db.delete_set(d, sid, owner_id=b) == 0         # bob can't delete alice's
     assert db.delete_set(d, sid, owner_id=a) == 1
     assert db.get_set(d, sid, owner_id=a) is None
+
+
+def test_delete_teacher_cascades_sets(tmp_path):
+    # pins ON DELETE CASCADE, which is only active because connect() sets PRAGMA foreign_keys=ON;
+    # without this test, dropping that pragma would silently orphan every teacher's sets.
+    d = _fresh(tmp_path)
+    a = db.create_teacher(d, "alice", "h", now="t")
+    db.create_set(d, a, "W1", "## T\n1. q a) x ✓ · b) y", now="t")
+    d.execute("DELETE FROM teachers WHERE id = ?", (a,)); d.commit()
+    assert d.execute("SELECT COUNT(*) FROM question_sets").fetchone()[0] == 0
