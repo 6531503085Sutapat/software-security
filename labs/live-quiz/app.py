@@ -2,6 +2,7 @@
 import csv
 import datetime
 import io
+import json
 import os
 
 from flask import (
@@ -18,6 +19,7 @@ from flask_socketio import SocketIO, join_room, emit
 
 import auth
 import db as dbmod
+import quiz_loader
 from game import GameSession, generate_pin
 from quiz_loader import load_all_topics
 
@@ -181,12 +183,115 @@ def logout():
     return redirect(url_for("login_page"))
 
 
+# --- Teacher console: question-set CRUD + live parse preview ----------------------------------
+# Every route below is login-gated AND owner-scoped: a set is only ever fetched/updated/deleted
+# with owner_id = the logged-in teacher's id (db.get_set/update_set/delete_set enforce
+# `teacher_id = owner_id` in SQL). A teacher poking at another teacher's set id therefore gets a
+# 404 (get_set -> None -> abort) and update/delete no-op (rowcount 0 -> abort) — never a data leak
+# or a cross-tenant write (IDOR-safe).
+
+MAX_TITLE_LEN = 120            # a set title is capped, not a crash risk
+MAX_SOURCE_BYTES = 100 * 1024  # 100 KB cap on a set's pasted/uploaded markdown
+
+
+def _read_source(req):
+    # Accept either a pasted textarea or an uploaded .md file. Read a little past the cap so
+    # oversize input is *rejected* by _source_too_big below rather than silently truncated.
+    f = req.files.get("source_file")
+    if f and f.filename:
+        raw = f.read(MAX_SOURCE_BYTES + 1024)
+        return raw.decode("utf-8", errors="replace")
+    return req.form.get("source_md") or ""
+
+
+def _source_too_big(source_md):
+    return len(source_md.encode("utf-8")) > MAX_SOURCE_BYTES
+
+
+def _parse_or_none(source_md):
+    # Returns the parsed topics only if at least one question was recognised, else None so the
+    # route can refuse an empty/unparseable set with a friendly form error (never store junk).
+    topics = quiz_loader.parse_topics_from_text(source_md or "")
+    total = sum(len(v) for v in topics.values())
+    return topics if total > 0 else None
+
+
+def _set_form(error=None, editing=None, title="", source_md=""):
+    # Render the create/edit form. `editing` (a set Row) switches the form to edit mode; when
+    # re-rendering after a validation error we echo the submitted title/source so work isn't lost.
+    return render_template(
+        "set_form.html",
+        csrf_token=_issue_csrf(),
+        error=error,
+        editing=editing,
+        title=title,
+        source_md=source_md,
+    )
+
+
 @app.route("/console")
 @auth.login_required
 def console_page():
-    # Minimal placeholder so url_for("console_page") resolves and login-gating is testable now.
-    # Task 5 replaces this with the real teacher console (question-set CRUD + preview).
-    return "console"
+    sets = dbmod.list_sets(get_db(), auth.current_teacher_id())
+    return render_template("console.html", sets=sets, csrf_token=_issue_csrf())
+
+
+@app.route("/console/preview", methods=["POST"])
+@auth.login_required
+def console_preview():
+    _check_csrf()
+    # Bound the work: parse at most the size cap so a giant paste can't tie up the worker.
+    source_md = (request.form.get("source_md") or "")[:MAX_SOURCE_BYTES]
+    topics = quiz_loader.parse_topics_from_text(source_md)
+    payload = {"topics": [{"topic": k, "count": len(v)} for k, v in topics.items()]}
+    return app.response_class(json.dumps(payload), mimetype="application/json")
+
+
+@app.route("/console/sets/new", methods=["GET", "POST"])
+@auth.login_required
+def console_set_new():
+    if request.method == "GET":
+        return _set_form()
+    _check_csrf()
+    title = (request.form.get("title") or "").strip()[:MAX_TITLE_LEN] or "Untitled set"
+    source_md = _read_source(request)
+    if _source_too_big(source_md):
+        return _set_form(error="That set is too large (max 100 KB).", title=title, source_md=""), 200
+    if _parse_or_none(source_md) is None:
+        return _set_form(error="That set has no questions the parser can read — check the format.",
+                         title=title, source_md=source_md), 200
+    dbmod.create_set(get_db(), auth.current_teacher_id(), title, source_md, _now())
+    return redirect(url_for("console_page"))
+
+
+@app.route("/console/sets/<int:set_id>/edit", methods=["GET", "POST"])
+@auth.login_required
+def console_set_edit(set_id):
+    s = dbmod.get_set(get_db(), set_id, auth.current_teacher_id())
+    if s is None:
+        abort(404)                                   # not this teacher's set (IDOR-safe)
+    if request.method == "GET":
+        return _set_form(editing=s, title=s["title"], source_md=s["source_md"])
+    _check_csrf()
+    title = (request.form.get("title") or "").strip()[:MAX_TITLE_LEN] or s["title"]
+    source_md = _read_source(request)
+    if _source_too_big(source_md):
+        return _set_form(error="That set is too large (max 100 KB).",
+                         editing=s, title=title, source_md=s["source_md"]), 200
+    if _parse_or_none(source_md) is None:
+        return _set_form(error="That set has no questions the parser can read — check the format.",
+                         editing=s, title=title, source_md=source_md), 200
+    dbmod.update_set(get_db(), set_id, auth.current_teacher_id(), title, source_md, _now())
+    return redirect(url_for("console_page"))
+
+
+@app.route("/console/sets/<int:set_id>/delete", methods=["POST"])
+@auth.login_required
+def console_set_delete(set_id):
+    _check_csrf()
+    if dbmod.delete_set(get_db(), set_id, auth.current_teacher_id()) == 0:
+        abort(404)                                   # unknown OR not this teacher's set
+    return redirect(url_for("console_page"))
 
 
 @socketio.on("host_join")

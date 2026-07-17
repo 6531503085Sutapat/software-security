@@ -1,0 +1,89 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% if editing %}Edit set{% else %}New set{% endif %} — KOSEN·KMITL Live Quiz</title>
+<link rel="stylesheet" href="/static/style.css"></head>
+<body><div class="stage">
+  <header class="masthead">
+    <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
+      <div class="sub">Live Quiz · {% if editing %}Edit question set{% else %}New question set{% endif %}</div></div>
+    <a class="btn-ghost" href="/console">&larr; Back to console</a>
+  </header>
+  <div class="drule"></div>
+
+  <section class="setup-wrap"><div class="setup-card">
+    <h1>{% if editing %}Edit set{% else %}New question set{% endif %}</h1>
+    {% if error %}<div class="join-err">{{ error }}</div>{% endif %}
+
+    <!-- action stays on the edit URL when editing so a validation error re-renders in edit mode.
+         All values below are Jinja-autoescaped; the preview script uses textContent only. -->
+    <form method="post" enctype="multipart/form-data"
+          action="{% if editing %}/console/sets/{{ editing.id }}/edit{% else %}/console/sets/new{% endif %}">
+      <input type="hidden" id="csrf" name="csrf_token" value="{{ csrf_token }}">
+
+      <div class="field" style="margin-bottom:16px;">
+        <label for="title">Set title</label>
+        <input id="title" name="title" maxlength="120" value="{{ title }}"
+               placeholder="e.g. Week 1 — Threat modelling"
+               style="padding:14px 16px;font:600 16px/1.2 var(--sans);color:var(--ink);background:var(--paper-2);border:1.5px solid var(--hair);border-radius:12px;">
+      </div>
+
+      <div class="field" style="margin-bottom:16px;">
+        <label for="source_md">Markdown item bank</label>
+        <textarea id="source_md" name="source_md" rows="14"
+          placeholder="## Week 1&#10;1. 2+2? a) 3 · b) 4 &#10003; · c) 5 · d) 6"
+          style="font:500 14px/1.5 var(--mono);padding:14px 16px;color:var(--ink);background:var(--paper-2);border:1.5px solid var(--hair);border-radius:12px;resize:vertical;">{{ source_md }}</textarea>
+      </div>
+
+      <div class="field" style="margin-bottom:16px;">
+        <label for="source_file">&hellip;or upload a .md file (optional, max 100 KB)</label>
+        <input id="source_file" name="source_file" type="file" accept=".md,text/markdown,text/plain">
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <button id="preview-btn" class="btn-ghost" type="button">Preview parse</button>
+        <button class="btn blue" type="submit">{% if editing %}Save changes &#9656;{% else %}Create set &#9656;{% endif %}</button>
+      </div>
+      <div id="preview-out" style="font:500 14px/1.6 var(--sans);color:var(--ink-2);min-height:20px;margin-top:6px;"></div>
+    </form>
+  </div></section>
+</div>
+
+<script>
+// Live parse preview. Everything rendered goes through textContent / createElement — topic names
+// come from the (untrusted) pasted markdown, so we never touch innerHTML here.
+(function () {
+  var btn = document.getElementById("preview-btn");
+  var out = document.getElementById("preview-out");
+  if (!btn || !out) return;
+  btn.addEventListener("click", function () {
+    var body = new URLSearchParams();
+    body.set("source_md", document.getElementById("source_md").value);
+    body.set("csrf_token", document.getElementById("csrf").value);
+    out.textContent = "Parsing…";
+    fetch("/console/preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString(),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        out.textContent = "";
+        var topics = (data && data.topics) || [];
+        if (!topics.length) { out.textContent = "No questions parsed yet — check the format."; return; }
+        var total = 0;
+        topics.forEach(function (t) {
+          total += t.count;
+          var row = document.createElement("div");
+          row.textContent = t.topic + " — " + t.count + (t.count === 1 ? " question" : " questions");
+          out.appendChild(row);
+        });
+        var sum = document.createElement("strong");
+        sum.textContent = topics.length + (topics.length === 1 ? " topic, " : " topics, ")
+          + total + (total === 1 ? " question total" : " questions total");
+        out.appendChild(sum);
+      })
+      .catch(function () { out.textContent = "Preview failed — try again."; });
+  });
+})();
+</script>
+</body></html>
