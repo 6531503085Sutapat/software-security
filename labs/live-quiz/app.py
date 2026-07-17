@@ -21,7 +21,6 @@ import auth
 import db as dbmod
 import quiz_loader
 from game import GameSession, generate_pin
-from quiz_loader import load_all_topics
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-not-secret-override-in-prod")
@@ -69,37 +68,9 @@ def _check_csrf():
         abort(400)
 
 GAMES = {}  # pin -> GameSession
+GAME_OWNER = {}  # pin -> teacher_id, so only the creating teacher can export a game's results
 SID_TO_PLAYER = {}  # socket id -> (pin, nickname), so a dropped socket can mark its player away
 CURRENT_SID = {}    # (pin, nickname) -> latest socket id, to ignore a stale reconnect's disconnect
-
-# Default item-bank mount points (see docker-compose.yml). Override for local dev or a
-# different deployment layout with ITEM_BANK_PATHS (an os.pathsep-separated list of paths).
-_DEFAULT_ITEM_BANKS = [
-    "/item-banks/weekly-item-bank.md",
-    "/item-banks/review-quiz-item-bank.md",
-]
-
-
-def resolve_item_bank_paths(configured, default):
-    """Pick which item-bank files to load: the ITEM_BANK_PATHS env value if set (a
-    pathsep-separated list), else the defaults — keeping only paths that exist on disk."""
-    candidates = configured.split(os.pathsep) if configured else list(default)
-    return [p for p in candidates if os.path.isfile(p)]
-
-
-ITEM_BANK_PATHS = resolve_item_bank_paths(os.environ.get("ITEM_BANK_PATHS"), _DEFAULT_ITEM_BANKS)
-if not ITEM_BANK_PATHS:
-    print(
-        "WARNING: no item-bank files found — the host topic list will be empty. "
-        "Mount the banks (see docker-compose.yml) or set ITEM_BANK_PATHS.",
-        flush=True,
-    )
-
-
-def _topics():
-    if not ITEM_BANK_PATHS:
-        return {}
-    return load_all_topics(ITEM_BANK_PATHS)
 
 
 @app.route("/")
@@ -108,26 +79,44 @@ def index():
 
 
 @app.route("/host", methods=["GET"])
+@auth.login_required
 def host_page():
-    return render_template("host.html", topics=sorted(_topics().keys()))
+    # the set+topic are chosen in the console, which POSTs straight to /host/create;
+    # a bare GET /host just sends the teacher to their console to pick one.
+    return redirect(url_for("console_page"))
 
 
 @app.route("/host/create", methods=["POST"])
+@auth.login_required
 def host_create():
-    topic = request.form["topic"]
-    questions = _topics().get(topic, [])
+    _check_csrf()
+    tid = auth.current_teacher_id()
+    try:
+        set_id = int(request.form.get("set_id", ""))
+    except ValueError:
+        abort(404)                                   # malformed id -> same not-found as unowned
+    s = dbmod.get_set(get_db(), set_id, tid)
+    if s is None:
+        abort(404)                                   # not this teacher's set (IDOR-safe)
+    topics = quiz_loader.parse_topics_from_text(s["source_md"])
+    topic = request.form.get("topic") or next(iter(topics), None)
+    questions = topics.get(topic, [])
+    if not questions:
+        abort(400)
     pin = generate_pin()
     while pin in GAMES:  # avoid an extremely unlikely PIN collision
         pin = generate_pin()
     GAMES[pin] = GameSession(pin, questions)
-    return render_template("host.html", topics=sorted(_topics().keys()), created_pin=pin)
+    GAME_OWNER[pin] = tid
+    return render_template("host.html", created_pin=pin)
 
 
 @app.route("/host/<pin>/export")
+@auth.login_required
 def host_export(pin):
     game = GAMES.get(pin)
-    if game is None:
-        return "unknown game", 404
+    if game is None or GAME_OWNER.get(pin) != auth.current_teacher_id():
+        return "not found", 404                      # unknown OR not this teacher's game
     buf = io.StringIO()
     writer = csv.DictWriter(
         buf, fieldnames=["nickname", "total_score", "correct_count", "avg_response_time_ms"]
@@ -236,7 +225,8 @@ def _set_form(error=None, editing=None, title="", source_md=""):
 @auth.login_required
 def console_page():
     sets = dbmod.list_sets(get_db(), auth.current_teacher_id())
-    return render_template("console.html", sets=sets, csrf_token=_issue_csrf())
+    set_topics = {s["id"]: list(quiz_loader.parse_topics_from_text(s["source_md"]).keys()) for s in sets}
+    return render_template("console.html", sets=sets, set_topics=set_topics, csrf_token=_issue_csrf())
 
 
 @app.route("/console/preview", methods=["POST"])

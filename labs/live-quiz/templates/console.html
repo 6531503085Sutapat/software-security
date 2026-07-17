@@ -24,9 +24,20 @@
     {% if sets %}
     <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">
       {% for s in sets %}
-      <li style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;border:1px solid var(--hair);border-radius:12px;background:var(--paper-2);">
+      <li style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;border:1px solid var(--hair);border-radius:12px;background:var(--paper-2);flex-wrap:wrap;">
         <span style="font:600 17px/1.3 var(--serif);color:var(--ink);word-break:break-word;">{{ s.title }}</span>
-        <span style="display:inline-flex;gap:8px;flex:none;">
+        <span style="display:inline-flex;align-items:center;gap:8px;flex:none;">
+          {% set topics = set_topics.get(s.id, []) %}
+          {% if topics %}
+          <form method="post" action="/host/create" style="display:inline-flex;align-items:center;gap:6px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="set_id" value="{{ s.id }}">
+            <select name="topic" aria-label="Topic to host from {{ s.title }}">
+              {% for t in topics %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+            </select>
+            <button class="btn blue" type="submit">Start game ▸</button>
+          </form>
+          {% endif %}
           <a class="btn-ghost" href="/console/sets/{{ s.id }}/edit">Edit</a>
           <form method="post" action="/console/sets/{{ s.id }}/delete"
                 onsubmit="return confirm('Delete this set? This cannot be undone.');" style="display:inline;">
