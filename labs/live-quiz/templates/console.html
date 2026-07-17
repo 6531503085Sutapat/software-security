@@ -58,8 +58,7 @@
           <a class="btn-ghost btn-sm" href="/console/sets/{{ s.id }}/edit">Edit</a>
           <!-- Same Django csrf_token-tag false positive as the start-form above — this form has
                its own real csrf_token field, verified server-side; see app.py's _check_csrf(). -->
-          <form method="post" action="/console/sets/{{ s.id }}/delete"
-                onsubmit="return confirm('Delete this set? This cannot be undone.');"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+          <form method="post" action="/console/sets/{{ s.id }}/delete" onsubmit="return confirm('Delete this set? This cannot be undone.');"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button class="btn-ghost btn-sm danger" type="submit">Delete</button>
           </form>
