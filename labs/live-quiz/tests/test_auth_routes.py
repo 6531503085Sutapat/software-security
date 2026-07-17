@@ -50,6 +50,25 @@ def test_missing_csrf_rejected(tmp_path, monkeypatch):
     assert r.status_code == 400
 
 
+def test_forged_csrf_token_rejected(tmp_path, monkeypatch):
+    # a PRESENT-but-wrong token must hit the compare_digest mismatch path, not just the
+    # absent-token guard — proves forged tokens are rejected at the route, not only in unit tests
+    appmod, c = _client(tmp_path, monkeypatch)
+    real = _csrf(c, "/login")
+    r = c.post("/login", data={"username": "x", "password": "y", "csrf_token": real + "x"})
+    assert r.status_code == 400
+
+
+def test_unset_invite_closes_registration(tmp_path, monkeypatch):
+    # INVITE_CODE unset ⇒ registration fully closed: no invite value should get through
+    appmod, c = _client(tmp_path, monkeypatch, invite="")
+    tok = _csrf(c, "/register")
+    r = c.post("/register", data={"username": "eve", "password": "pw123456",
+                                  "invite": "", "csrf_token": tok})
+    assert r.status_code == 200 and b"invite" in r.get_data().lower()   # stayed on form, not created
+    assert appmod.get_db().execute("SELECT COUNT(*) FROM teachers").fetchone()[0] == 0
+
+
 def test_overlong_password_is_form_error_not_500(tmp_path, monkeypatch):
     # DELIBERATE DEVIATION FROM PLAN. bcrypt 5.x RAISES `ValueError: password cannot be longer
     # than 72 bytes` (it does NOT silently truncate like some older builds), so a >72-byte
