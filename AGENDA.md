@@ -1,4 +1,4 @@
-# Weekly Agenda & Time Plan (DRAFT for review)
+# Weekly Agenda & Time Plan
 
 **Standard contact time:** 5 hrs/week = **120 min lecture + 180 min lab** (per syllabus: 2 lecture + 3 lab hrs).
 **Quizzes:** a short **weekly quiz (~10 min) at the start of every teaching week** (retrieval

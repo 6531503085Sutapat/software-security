@@ -1,0 +1,10 @@
+# Local dev database — created by the README's `DB_PATH=./dev.db ... python app.py`
+# command. It contains teacher usernames + bcrypt password hashes + question-set
+# content. This repo is PUBLIC — never commit it.
+*.db
+dev.db
+
+# Python runtime cruft
+__pycache__/
+*.pyc
+.pytest_cache/

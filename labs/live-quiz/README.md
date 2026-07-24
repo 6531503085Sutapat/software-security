@@ -6,7 +6,9 @@ Markdown — same source format as the course's other item banks (a `## <topic>`
 by `N. <stem> a) opt · b) opt ✓ · c) opt · d) opt` question lines) — and starts games from them.
 Students still join anonymously by PIN, no account needed on that side. Built to remove
 Kahoot/Quizizz's free-tier player caps as a blocker at N≈120 and to work for remote/hybrid access
-(MFU) — see `docs/superpowers/specs/2026-07-06-live-quiz-design.md` for the full design rationale.
+(MFU) — see `docs/superpowers/specs/2026-07-10-live-quiz-platform-design.md` for the full design
+rationale (the current multi-teacher platform design; the earlier `2026-07-06-live-quiz-design.md`
+is the superseded pre-pivot single-classroom draft).
 
 The interface is a KOSEN·KMITL-branded, projector-first host screen and a phone-first player
 screen: a live lobby that fills as students join, a ticking countdown, big answer tiles coded by

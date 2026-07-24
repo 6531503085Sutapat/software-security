@@ -139,7 +139,7 @@ AI-resilient structure (see [AGENDA.md](AGENDA.md) for time-boxing):
 - **🧪 Mock final CTF** in the exact format of Week 19.
 
 ## 📝 Weeks 18–19 — FINAL EXAM
-- **Week 18 — Written exam:** cumulative, with emphasis on Weeks 10–16 (API, memory safety, supply chain, cloud, AI/LLM, DevSecOps). *(Assumption — tell me if you want it second-half-only.)*
+- **Week 18 — Written exam:** cumulative, with emphasis on Weeks 10–16 (API, memory safety, supply chain, cloud, AI/LLM, DevSecOps) — this is what `labs/week18-final-written/exam.md` implements.
 - **Week 19 — Capstone CTF tournament + final project demos:** the big finale — a full CTF covering the whole term, plus each team presents their secured build (threat model → vulns → remediation → SBOM/signing → CI pipeline).
 
 ---
