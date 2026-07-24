@@ -73,9 +73,9 @@ Software Security · Nutthakorn Chalaemwongwan
 
 ## Real-world incidents
 
-- **Bing Chat "Sydney" (2023):** hidden page text overrode system rules
-- **EchoLeak (2025):** *zero-click* indirect injection in M365 Copilot → data exfil (CVE-2025-32711)
-- **Auto-GPT wallet theft (2024):** injected web/email content made an agent move crypto
+- **Bing Chat "Sydney" (2023):** a typed *"ignore previous instructions"* leaked the hidden system prompt — **direct** injection
+- **EchoLeak (2025):** *zero-click* **indirect** injection in M365 Copilot → data exfil (CVE-2025-32711)
+- **Agentic tool-abuse:** injected web/email content makes a tool-using agent take real actions (send mail, move funds, run code) — it trusts the text as instructions
 - **Résumé injection:** hidden white text inflated an AI screening score
 
 > Injection needs no exploit code — just text the model trusts.

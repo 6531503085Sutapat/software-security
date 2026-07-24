@@ -83,7 +83,7 @@ owasp/dependency-check --scan /src --format HTML
 - **SLSA** — levels of build provenance & tamper-resistance
 - **A08:2025** Software/Data Integrity Failures
 
-<!-- SBOM = the food-label analogy: you can't manage what you can't list. When the next Log4Shell drops, an SBOM answers "are we affected?" in seconds. SLSA = levels (1-4) of how tamper-resistant your build pipeline is. ~5 min. -->
+<!-- SBOM = the food-label analogy: you can't manage what you can't list. When the next Log4Shell drops, an SBOM answers "are we affected?" in seconds. SLSA Build Track = levels L0–L3 of build provenance / tamper-resistance (L3 is the top; the old "1–4" numbering was v0.1 and is deprecated). ~5 min. -->
 
 ---
 
@@ -103,12 +103,12 @@ cosign verify myapp:lab                                 # verify
 
 ## Tooling — GitHub Advanced Security (GHAS)
 
-- **Secret scanning** + **push protection** — block secrets before commit
+- **Secret scanning** + **push protection** — block secrets at push time (before they reach the remote)
 - **CodeQL** code scanning — semantic SAST queries
 - **Dependabot** — alerts + auto-PRs for vulnerable deps
 - Native in the repo → results in the Security tab
 
-<!-- The managed option students will meet in industry. Dependabot is the practical supply-chain workhorse: it opens PRs bumping vulnerable deps automatically. Push protection stops secrets at commit time (recall W2). ~3 min. -->
+<!-- The managed option students will meet in industry. Dependabot is the practical supply-chain workhorse: it opens PRs bumping vulnerable deps automatically. Push protection stops secrets at push time — local commits with a secret are allowed, the block fires on push to the remote (recall W2). ~3 min. -->
 
 ---
 

@@ -9,7 +9,7 @@ header: "Software Security · Week 6"
 ## Authentication, Sessions & Access Control
 Software Security · Nutthakorn Chalaemwongwan
 
-<!-- Hook: change /orders/1001 to /1002 and read a stranger's data — promise that demo. The #1 web risk in 2025 is Broken Access Control, and it's mostly missing one check. ~2 min. -->
+<!-- Hook: change /orders/1 to /2 and read a stranger's data — promise that demo. The #1 web risk in 2025 is Broken Access Control, and it's mostly missing one check. ~2 min. -->
 
 ---
 
@@ -83,8 +83,8 @@ header.payload.signature
 ## IDOR & broken access control
 
 ```text
-GET /api/orders/1001   → your order
-GET /api/orders/1002   → someone else's  😱
+GET /api/orders/1   → your order
+GET /api/orders/2   → someone else's  😱
 ```
 
 - Object reference with no ownership check
@@ -175,7 +175,7 @@ GET /uploads/backdoor.php?cmd=ls%20-l                200   ← RCE
 - Set **scope**, intercept, change a value (e.g. `price=1`), forward
 - Test auth, sessions, **IDOR**, privilege escalation
 
-<!-- Practical — they'll use Repeater to tweak object ids and Intruder to enumerate. Demo: intercept, change orders/1001→1002, forward, see another user's data. Set scope first so you don't attack out-of-bounds. ~5 min. -->
+<!-- Practical — they'll use Repeater to tweak object ids and Intruder to enumerate. Demo: intercept, change orders/1→2, forward, see another user's data. Set scope first so you don't attack out-of-bounds. ~5 min. -->
 
 ---
 

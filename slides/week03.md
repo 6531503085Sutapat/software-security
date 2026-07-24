@@ -125,7 +125,7 @@ hashcat -m 0 hashes.txt rockyou.txt
 - **CWE-327** — broken/risky crypto algorithm
 - **CWE-916** — weak password hash (no/weak KDF)
 - **CWE-330** — insufficiently random values
-- **CWE-321** — hardcoded key
+- **CWE-798** — hardcoded key
 
 <!-- Quick reference; they map lab findings to these. ~1 min. -->
 

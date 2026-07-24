@@ -114,7 +114,7 @@ hydra ... http-post-form    # password attack
 
 ## Real-world: feature abused as backdoor
 
-WordPress 404-template RCE → reverse shell:
+WordPress 404-template RCE → bind shell:
 
 ```text
 Appearance → Theme Editor → 404 Template → insert exec(...)

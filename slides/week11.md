@@ -55,7 +55,7 @@ Software Security · Nutthakorn Chalaemwongwan
 - **CWE-416** use-after-free · **CWE-134** format string
 - **CWE-193** off-by-one · integer overflow
 
-<!-- Map the family. Note these aren't only stack overflows — UAF (free then use) and format-string are just as exploitable. CWE-787 (out-of-bounds write) is consistently the top-1 in the CWE Top 25. ~3 min. -->
+<!-- Map the family. Note these aren't only stack overflows — UAF (free then use) and format-string are just as exploitable. CWE-787 (out-of-bounds write) was #1 in the CWE Top 25 for 2021–2023 (CWE-79/XSS retook #1 in 2024). ~3 min. -->
 
 ---
 
