@@ -37,7 +37,7 @@ bash sign.sh week12-supplychain:lab   # CycloneDX SBOM -> sbom.cdx.json, then co
 **What to submit per task:** the exact command(s) + output, a screenshot, and a 2–3 sentence remediation note mapping the finding to A03/A08 or the CWE.
 
 ### Task 0 — Onboarding (15 min)
-Read `requirements.txt` and list the six pinned packages with their versions (Flask 0.12.2, Werkzeug 0.14.1, Jinja2 2.10, requests 2.19.1, urllib3 1.24.1, PyYAML 3.13). Note why they are intentionally outdated.
+Read `requirements.txt` and list the pinned packages with their versions. Note why they are intentionally outdated (each is deliberately an old release so SCA tools flag its known CVEs).
 **Deliverable:** the package/version table + which OWASP/CWE this maps to.
 
 ### Task 1 — SCA scan: build the remediation worklist (35 min)

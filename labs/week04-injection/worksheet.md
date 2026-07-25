@@ -49,7 +49,7 @@ docker run --rm -p 3000:3000 bkimminich/juice-shop       # Juice Shop -> http://
 
 **Task 1 — Auth bypass via SQLi (25 min) 🐉 Hit #1.**
 - *Goal:* log in as `alice` with **no valid password**.
-- *Steps:* hit `/login?user=alice'--&pw=x`, then `/login?user=x' OR '1'='1&pw=x`. Observe the comment in the query at line 42 of `vulnerable_app.py`.
+- *Steps:* hit `/login?user=alice'--&pw=x`, then `/login?user=x' OR '1'='1'--&pw=x` (the trailing `--` is required: without it, SQL binds `AND` tighter than `OR`, so `... OR '1'='1' AND password='x'` matches no row). Observe the comment in the query at lines 61–63 of `vulnerable_app.py`.
 - *Deliverable:* both URLs + screenshot of `Welcome alice` + explain why `--` and `OR '1'='1` work.
 
 **Task 2 — Credential dump via UNION SQLi (30 min) 🐉 Hit #2.**
@@ -71,10 +71,10 @@ docker run --rm -p 3000:3000 bkimminich/juice-shop       # Juice Shop -> http://
 - *Goal:* prove `solution_app.py` blocks Tasks 1–4.
 - *Steps:* stop the vulnerable container (`Ctrl-C`), then run the fixed app on the same compose env:
   ```bash
-  docker compose run --rm --service-ports injection-lab python solution_app.py
+  docker compose run --rm --service-ports injection-lab bash -c "pip install --no-cache-dir flask && python solution_app.py"
   ```
   Re-fire each payload from Tasks 1–4. Expected: `Login failed`, no credential dump, `invalid host` (400) on `127.0.0.1;id`, and `file type not allowed` for `shell.py`.
-- *Deliverable:* screenshots of all four failures + name the fix line for each (parameterized query L42–44/52–54, `shell=False`+regex L63–66, `secure_filename`+allow-list L75–81).
+- *Deliverable:* screenshots of all four failures + name the fix line for each (parameterized query L52–55 login / L62–66 search, `shell=False`+regex L74–77, `secure_filename`+allow-list L86–93).
 
 ## Part 4 — Reflection
 

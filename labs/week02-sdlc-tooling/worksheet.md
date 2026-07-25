@@ -1,7 +1,7 @@
 # Worksheet 2 — Secure SDLC & Tooling (3 hrs)
 
 > **Course:** Software Security (KOSEN69) · **Week 2**
-> **Aligned to:** OWASP 2025 (A03 Injection, A02/A07 secrets & crypto) · CWE-798, CWE-89, CWE-78, CWE-327, CWE-489
+> **Aligned to:** OWASP 2025 (A05 Injection [CWE-89, CWE-78], A04 Cryptographic Failures [CWE-327], A02 Security Misconfiguration [CWE-798, CWE-489]) · CWE-798, CWE-89, CWE-78, CWE-327, CWE-489
 > **Signature game:** "Bug Triage Race" (scan → triage; score = true positives − misclassified)
 
 > **Ethics note:** The scanners run only against the provided `vulnerable-repo/` on your own machine. Do not point SAST/secret scanners at third-party repos or production systems without authorization. Treat any secret you find here as fake lab data.
