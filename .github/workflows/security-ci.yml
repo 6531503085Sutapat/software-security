@@ -65,6 +65,10 @@ jobs:
           scanners: vuln,secret,misconfig
           severity: HIGH,CRITICAL
           exit-code: '1'      # fail the build on HIGH/CRITICAL
+          # Without this, trivy-action builds the SARIF "with all severities" and
+          # ignores `severity:` above — so a LOW finding fails the build even though
+          # this job claims to gate on HIGH/CRITICAL only.
+          limit-severities-for-sarif: true
           # labs/week*/ and project/starter-app/ are deliberately vulnerable teaching
           # material (old pins, root containers, planted secrets, a Dockerfile students
           # are asked to harden). Gating on them keeps the build red forever; students
