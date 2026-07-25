@@ -1,6 +1,6 @@
 # Week 1 — Security Mindset & Threat Modeling
 
-**OWASP 2025:** A06 Insecure Design · **CWE focus:** CWE-1059 (design)
+**OWASP 2025:** A06 Insecure Design · **CWE focus:** CWE-501 (Trust Boundary Violation)
 
 ## ✅ This week — what to do
 1. **Before class** — **Set up your environment** — install **Docker Desktop** + Burp/ZAP (a Linux VM is an optional fallback). This *is* **Lab 0**.

@@ -16,9 +16,9 @@
 
 Answer in 2–4 sentences each.
 
-1. Distinguish **authentication** from **authorization**. In `vulnerable_app.py`, `get_order` calls `current_user()` but ignores its result (L41) — which of the two is missing?
-2. What is **IDOR** (CWE-639)? Why is `/api/orders/<oid>` exploitable, and what single check in `solution_app.py` (L54) closes it?
-3. Explain the **`alg:none`** JWT attack. Why does listing `"none"` in `algorithms=[...]` (L35) let an attacker submit an *unsigned* token?
+1. Distinguish **authentication** from **authorization**. In `vulnerable_app.py`, `get_order` calls `current_user()` but ignores its result (L63) — which of the two is missing?
+2. What is **IDOR** (CWE-639)? Why is `/api/orders/<oid>` exploitable, and what single check in `solution_app.py` (L64) closes it?
+3. Explain the **`alg:none`** JWT attack. Why does listing `"none"` in `algorithms=[...]` (L55) let an attacker submit an *unsigned* token?
 4. Why is the hardcoded HMAC secret `"secret"` (CWE-321) dangerous even if `alg:none` were disabled? How does a strong random secret + pinned algorithm defend the token?
 5. What do the JWT claims **`exp`** and **`aud`** add, and why does the secure version reject tokens that lack them?
 
@@ -98,9 +98,9 @@ Confirm `/api/orders/1` returns alice's Laptop order. *Deliverable: screenshot o
 - *Goal:* prove `solution_app.py` blocks Tasks 1–3.
 - *Steps:* stop the vulnerable container (`Ctrl-C`), then:
   ```bash
-  docker compose run --rm --service-ports authz-lab python solution_app.py
+  docker compose run --rm --service-ports authz-lab bash -c "pip install --no-cache-dir flask pyjwt && python solution_app.py"
   ```
-  Re-run: get a fresh alice token, then re-fire each attack. Expected: `/api/orders/2` with alice's token → **403 forbidden** (ownership check, L54); the `alg:none` token → **401 invalid token** (algorithm pinned to HS256, L40); the `"secret"` token → **401** (strong random secret + required `aud`/`exp`, L10/40).
+  Re-run: get a fresh alice token, then re-fire each attack. Expected: `/api/orders/2` with alice's token → **403 forbidden** (ownership check, L64); the `alg:none` token → **401 invalid token** (algorithm pinned to HS256, L50); the `"secret"` token → **401** (strong random secret + required `aud`/`exp`, L10/40).
 - *Deliverable:* screenshots of the 403 and both 401s + name the fix line for each.
 
 ## Part 4 — Reflection

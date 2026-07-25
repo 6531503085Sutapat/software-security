@@ -1,7 +1,7 @@
 # Worksheet 1 — Security Mindset & Threat Modeling (3 hrs)
 
 > **Course:** Software Security (KOSEN69) · **Week 1**
-> **Aligned to:** OWASP 2025 A06 Insecure Design · CWE-1059 (design)
+> **Aligned to:** OWASP 2025 A06 Insecure Design · CWE-501 (Trust Boundary Violation)
 > **Signature game:** "Elevation of Privilege" (Microsoft STRIDE card deck)
 
 > **Ethics note:** This week is *modeling only* — you analyze design, you do **not** attack the app. Run the sample app only on your own VM/localhost. Never apply these techniques to systems you do not own or lack written permission to test.
