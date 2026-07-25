@@ -1,0 +1,38 @@
+# Files Semgrep should not gate this repository's CI on.
+#
+# labs/week*/ and project/starter-app/ are intentionally vulnerable teaching
+# material: SQL injection, command injection, `gets()`, JWT `alg: none`, planted
+# secrets, an unhardened Dockerfile students are asked to fix. Gating CI on them
+# keeps the build red forever and the signal worthless. Students still see those
+# findings by running the scanners inside the lab (labs/week15-devsecops-pipeline
+# is the pipeline they watch fail on purpose).
+#
+# Everything else IS still gated — notably labs/live-quiz (the real quiz platform)
+# and tools/, so a genuine finding in code we actually run still fails the build.
+labs/week*/
+project/starter-app/
+# interactive attacker/dev shell (gdb + ptrace); root is the point, never exposed
+labs/toolbox/
+
+# Never committed (git-ignored), but keeps local runs equal to CI
+instructor/
+
+# NOTE: supplying this file replaces Semgrep's built-in ignore list, so the usual
+# defaults have to be restated here — otherwise test suites and vendored code get
+# scanned and gate the build (e.g. `app.config["TESTING"] = True` in pytest files).
+:include .gitignore
+tests/
+test/
+*_test.py
+test_*.py
+
+# Vendored third-party assets (self-hosted socket.io client)
+*.min.js
+
+# Standard noise
+.venv/
+venv/
+node_modules/
+__pycache__/
+dist/
+build/

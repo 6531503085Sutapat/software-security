@@ -8,8 +8,8 @@ from flask import Flask, request
 app = Flask(__name__)
 
 # CWE-798: hardcoded credentials / secret  (Gitleaks should flag this)
-AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-DB_PASSWORD = "SuperSecret123!"
+AWS_SECRET_ACCESS_KEY = "hK8pQ2mN5vX9wZ3rT6yU1sA4bC7dE0fG2hJ5kL8"
+DB_PASSWORD = "xQ7mK2pL9wR4tY6u"
 
 @app.route("/user")
 def user():

@@ -2,6 +2,15 @@ name: security-ci
 
 # Demo pipeline for Week 14 (DevSecOps). Runs SAST, SCA, and secret
 # scanning, and fails the build on high-severity findings.
+#
+# Actions are pinned to commit SHAs (not mutable tags like @v4/@master) — the
+# same supply-chain control Week 12 teaches. Bump the SHA and the trailing
+# version comment together.
+#
+# What is gated: the platform code we actually run (labs/live-quiz, tools/).
+# What is not: labs/week*/, labs/toolbox/ and project/starter-app/, which are
+# intentionally vulnerable teaching material — students run these same scanners
+# against them by hand and are graded on the findings.
 
 on:
   push:
@@ -19,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     container: semgrep/semgrep
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
       - name: Run Semgrep
         run: semgrep ci --config p/default
         env:
@@ -29,12 +38,15 @@ jobs:
     name: Secret scanning (Gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
         with:
           fetch-depth: 0
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7  # v2
         env:
+          # .gitleaks.toml allowlists ONLY the credentials planted on purpose for the
+          # Week 2 / Week 15 exercises; a real secret committed anywhere else still fails.
+          GITLEAKS_CONFIG: ${{ github.workspace }}/.gitleaks.toml
           # gitleaks-action v2 calls the GitHub API to scan a pull_request's diff and now refuses
           # to run without a token for that (previously optional, now a hard requirement — see
           # https://github.com/gitleaks/gitleaks-action#-announcement). The default Actions token
@@ -45,18 +57,24 @@ jobs:
     name: SCA + image scan (Trivy)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
       - name: Trivy filesystem scan (deps + misconfig)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # v0.36.0
         with:
           scan-type: fs
           scanners: vuln,secret,misconfig
           severity: HIGH,CRITICAL
           exit-code: '1'      # fail the build on HIGH/CRITICAL
+          # labs/week*/ and project/starter-app/ are deliberately vulnerable teaching
+          # material (old pins, root containers, planted secrets, a Dockerfile students
+          # are asked to harden). Gating on them keeps the build red forever; students
+          # see those findings by running the scanners inside the lab. labs/live-quiz
+          # (the real platform) and everything else stay gated.
+          skip-dirs: 'labs/week*,labs/toolbox,project/starter-app,instructor'
           format: sarif
           output: trivy-results.sarif
       - name: Upload results to Security tab
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@4187e74d05793876e9989daffde9c3e66b4acd07  # v3
         with:
           sarif_file: trivy-results.sarif
