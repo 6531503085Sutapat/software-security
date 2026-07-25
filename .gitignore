@@ -23,6 +23,12 @@ build/
 *.out
 *.bin
 
+# Compiled lab binaries (regenerate with `make`: vuln, vuln-hardened,
+# vuln-canaryonly, vuln-fortifyonly, fuzz, …)
+vuln
+vuln-*
+fuzz
+
 # Security tool output
 *.sarif
 trivy-report.*
