@@ -48,7 +48,7 @@ docker run --rm -p 3000:3000 bkimminich/juice-shop       # -> http://localhost:3
 
 **Task 1 — Reflected XSS + XSS Golf (30 min) ⛳.**
 - *Goal:* execute JS via `/hello`, then minimize the payload.
-- *Steps:* visit `/hello?name=<script>alert(1)</script>`, then the shorter `/hello?name=<img src=x onerror=alert(1)>`. Record each payload's character count for your golf score.
+- *Steps:* visit `/hello?name=<script>alert(1)</script>`, then the alternate `/hello?name=<img src=x onerror=alert(1)>` (useful when `<script>` tags specifically are filtered — note it's actually 3 characters longer, not shorter). Record each payload's character count for your golf score.
 - *Deliverable:* both payloads + char counts + screenshot of `alert(1)` + your lowest score.
 
 **Task 2 — Stored XSS (30 min) ⛳.**
@@ -75,13 +75,13 @@ docker run --rm -p 3000:3000 bkimminich/juice-shop       # -> http://localhost:3
 - *Deliverable:* the HTML + screenshot of the forged comment + why `SameSite=Strict` blocks it.
 
 **Task 5 — Defend / fix it (30 min) 🛡️.**
-- *Goal:* prove `fixed_app.py` blocks Tasks 1–4.
+- *Goal:* prove `fixed_app.py` blocks Tasks 1–3, then show that Task 4's CSRF PoC still gets through and explain why.
 - *Steps:* stop the vulnerable container (`Ctrl-C`), then:
   ```bash
-  docker compose run --rm --service-ports xss-lab python fixed_app.py
+  docker compose run --rm --service-ports xss-lab bash -c "pip install --no-cache-dir flask && python fixed_app.py"
   ```
-  Re-fire each payload. Expected: `/hello` renders the script **as text** (escape, L21), stored comments render literally (Jinja autoescape, L30–33), the injected inline script is **blocked by CSP** (L12, check DevTools console), and the cookie now has `HttpOnly; SameSite=Strict; Secure` (L42) so the CSRF cookie is no longer attached cross-site.
-- *Deliverable:* screenshots of escaped output + the CSP console error + the hardened cookie flags.
+  Re-fire each payload. Expected: `/hello` renders the script **as text** (escape, L21), stored comments render literally (Jinja autoescape, L30–33), a strict CSP header is now present as defense-in-depth (`Content-Security-Policy: script-src 'self'`, L12 — check DevTools → Network → Response Headers; escaping already neutralizes these payloads, so no CSP *violation* fires in the console), and the cookie now has `HttpOnly; SameSite=Strict; Secure` (L42). Then re-run Task 4's `csrf.html` PoC against `fixed_app.py`: it **still posts the forged comment** — `/comments` (L25–28) never checks the `session` cookie or a CSRF token before accepting a POST, so hardening the cookie only stops the browser from *attaching* it cross-site; it doesn't stop the request itself from being processed.
+- *Deliverable:* screenshots of escaped output + the CSP response header + the hardened cookie flags + the still-successful Task 4 forgery against `fixed_app.py`, with 2–3 sentences on why cookie hardening alone doesn't close CSRF here (no server-side check tied to the cookie, and no CSRF token).
 
 ## Part 4 — Reflection
 

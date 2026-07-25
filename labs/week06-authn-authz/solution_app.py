@@ -47,7 +47,7 @@ def current_user():
     auth = request.headers.get("Authorization", "")
     token = auth.replace("Bearer ", "")
     # FIX CWE-347: pin a single algorithm (no 'none'), verify signature, exp, and audience.
-    data = jwt.decode(token, SECRET, algorithms=["HS256"], audience=AUDIENCE)
+    data = jwt.decode(token, SECRET, algorithms=["HS256"], audience=AUDIENCE, options={"require": ["exp", "aud"]})
     return data.get("sub")
 
 
