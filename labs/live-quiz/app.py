@@ -53,7 +53,15 @@ def get_db():
 
 
 def _now():
-    return datetime.datetime.utcnow().isoformat(timespec="seconds")
+    # utcnow() is deprecated (it returns a naive datetime that merely claims to be UTC).
+    # Ask for UTC explicitly, then drop the tzinfo so the stored string keeps the exact
+    # naive-UTC shape the existing created_at/updated_at rows already use — mixing
+    # "...+00:00" into that column would break ordering against older rows.
+    return (
+        datetime.datetime.now(datetime.timezone.utc)
+        .replace(tzinfo=None)
+        .isoformat(timespec="seconds")
+    )
 
 
 def _issue_csrf():
