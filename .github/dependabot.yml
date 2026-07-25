@@ -26,6 +26,11 @@ updates:
     directory: /labs/live-quiz
     schedule:
       interval: weekly
+    # Don't adopt a release the moment it appears: a compromised release is most
+    # dangerous in its first days, before anyone has looked at it. (Week 12's topic.)
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
     open-pull-requests-limit: 5
     commit-message:
       prefix: "live-quiz deps"
@@ -34,6 +39,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Don't adopt a release the moment it appears: a compromised release is most
+    # dangerous in its first days, before anyone has looked at it. (Week 12's topic.)
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
     open-pull-requests-limit: 5
     commit-message:
       prefix: "ci actions"
@@ -43,6 +53,8 @@ updates:
     directory: /labs/week12-supply-chain
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 30
     open-pull-requests-limit: 0
     ignore:
       - dependency-name: "*"
@@ -51,6 +63,8 @@ updates:
     directory: /labs/week02-sdlc-tooling/vulnerable-repo
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 30
     open-pull-requests-limit: 0
     ignore:
       - dependency-name: "*"
@@ -59,6 +73,8 @@ updates:
     directory: /labs/week13-cloud-container
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 30
     open-pull-requests-limit: 0
     ignore:
       - dependency-name: "*"
@@ -67,6 +83,8 @@ updates:
     directory: /labs/week01-threat-modeling/sample-app
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 30
     open-pull-requests-limit: 0
     ignore:
       - dependency-name: "*"
@@ -75,6 +93,8 @@ updates:
     directory: /project/starter-app
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 30
     open-pull-requests-limit: 0
     ignore:
       - dependency-name: "*"
