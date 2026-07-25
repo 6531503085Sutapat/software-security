@@ -1,0 +1,80 @@
+# Dependabot configuration for a teaching repository.
+#
+# READ THIS BEFORE MERGING ANY DEPENDABOT PR IN THIS REPO.
+#
+# Most of the outdated dependencies here are outdated ON PURPOSE — they are the
+# exercise. Bumping them silently destroys the lesson:
+#   labs/week12-supply-chain      the SCA lab; students scan these exact pins and
+#                                 read the CVEs Trivy/pip-audit report
+#   labs/week02-sdlc-tooling      the scanner-onboarding lab (planted findings)
+#   labs/week13-cloud-container   the container-hardening lab
+#   labs/week01-threat-modeling   the sample app students threat-model
+#   project/starter-app           the term project students are asked to harden
+# Those directories are declared below ONLY so their `ignore: dependency-name "*"`
+# rules apply, which also suppresses Dependabot *security* update PRs for them —
+# the ones that kept arriving and could not be merged.
+#
+# Real code, where updates ARE wanted:
+#   labs/live-quiz                the quiz platform we actually deploy
+#   github-actions                the CI workflow (pinned to SHAs; Dependabot
+#                                 updates the SHA and the version comment for us)
+
+version: 2
+updates:
+  # ---- real code: keep these current -------------------------------------
+  - package-ecosystem: pip
+    directory: /labs/live-quiz
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "live-quiz deps"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci actions"
+
+  # ---- intentionally vulnerable teaching material: never auto-bump --------
+  - package-ecosystem: pip
+    directory: /labs/week12-supply-chain
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+
+  - package-ecosystem: pip
+    directory: /labs/week02-sdlc-tooling/vulnerable-repo
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+
+  - package-ecosystem: pip
+    directory: /labs/week13-cloud-container
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+
+  - package-ecosystem: pip
+    directory: /labs/week01-threat-modeling/sample-app
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+
+  - package-ecosystem: pip
+    directory: /project/starter-app
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
