@@ -103,7 +103,15 @@ review weeks (W7 pre-midterm, W17 pre-final).
 | Time | Block |
 |------|-------|
 | 0:00–2:30 | Capstone CTF tournament (whole term) |
-| 2:30–4:00 | Graded final project demos (10-min demo + 5-min Q&A per team) |
+| 2:30–4:00 | Graded final project demos (pre-recorded demo submitted beforehand + **3-min live Q&A per team** — see the note below) |
+> **Demo format — read before timetabling.** 90 min ÷ (10-min demo + 5-min Q&A) is **six team
+> slots**. At N≈80–120 in teams of 2–3 that is 27–60 teams, so the live-demo-for-everyone format
+> cannot run as written. The format actually used: each team **submits a pre-recorded demo video
+> before the session** (graded asynchronously against the project rubric), and the in-class block
+> is **3 minutes of live Q&A per team** — which is what the rubric's understanding checks and the
+> anti-AI controls actually need. 90 min covers ~30 teams; above that, run two parallel rooms with
+> a second assessor, or split Q&A across the Week 16 studio and Week 19.
+
 
 ---
 
