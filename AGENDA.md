@@ -108,4 +108,29 @@ review weeks (W7 pre-midterm, W17 pre-final).
 ---
 
 ## ⚠️ Note (drift to resolve)
-Current `worksheet.md` Part-3 durations vary (145–180 min). This plan standardizes **lab = 180 min** for every teaching week. Weeks 4–6 and 10–12 worksheets are currently lighter (145–150 min of tasks) and would need a few more tasks / extension activities to fill the 180-min block.
+Current `worksheet.md` Part-3 durations vary (145–205 min) against the **lab = 180 min** this plan
+standardizes. Checked week by week against each worksheet's own task budgets:
+
+| Task budget | Weeks | Status |
+|---|---|---|
+| 180 min | 1, 2, 3, 13, 14 | Matches the block exactly |
+| 150 min | 4, 5, 6, 12 | Lighter — would need a few more tasks / extension activities to fill the block |
+| 145 min | 10, 11 | Lighter — same. Week 10's 145 includes a 20-min **optional** bonus (Task 4 crAPI Raid), so its required content is only 125 |
+| 205 min | 15 | **Deliberate exception — see below** |
+
+**Week 15 over-books on purpose.** Its Part 3 is headed *"180 min in class"* while its task budgets
+total 205, because Tasks 2–4 are dominated by GitHub Actions queue and scan wall-clock rather than
+classroom work: students push in class and finish the write-up at home. Do **not** "fix" this by
+re-timing the tasks — Task 4 feeds the Defense score and Task 5 produces the Break-the-Build
+scoreboard, so trimming them silently changes graded work.
+[The lesson plan](docs/lesson-plans/week15-devsecops-pipeline.md) leaves Task 5 unplaced (⬚) and
+lists the three ways to absorb the overrun — run Task 5 as homework, compress Tasks 2–4, or demo
+Task 1b from the front — one of which the instructor picks before the session.
+
+**The 180-min weeks fill the block entirely.** Weeks 1–3 and 13–14 leave no dedicated slot for the
+*AI-resilient* (2:25–2:45) and *micro-demo/submit* (2:45–3:00) rows of the template above. They run
+to the fallback the worksheets already state: the AI-resilient tasks start in class and finish as
+homework, the last minutes of the final task's slot double as the submit-and-wrap window, and the
+rotating micro-demo rolls to the next week or is sampled by viva. Each affected lesson plan carries
+this as a timing/scheduling note under its laboratory table. Resolving that tension in the template
+itself — trim tasks to ~145 to fit, or drop the in-class micro-demo — is still open.

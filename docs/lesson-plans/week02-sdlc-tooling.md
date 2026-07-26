@@ -99,7 +99,7 @@ target is `vulnerable-repo/app.py` plus `requirements.txt`; it contains five pla
 > (5 + 25 + 15 + 30 + 10 + 40 + 25 + 20 + 10) already total 180 min, leaving no room for
 > [AGENDA.md](../../AGENDA.md)'s standard-template blocks — *AI-resilient tasks* (20 min) +
 > *rotating micro-demo* (10 min) + *submit* (5 min), **35 min combined, not 20**. AGENDA.md flags a
-> related drift itself ("Current `worksheet.md` Part-3 durations vary (145–180 min)"). The resolution
+> related drift itself ("Current `worksheet.md` Part-3 durations vary (145–205 min)"). The resolution
 > above takes **Task 8 off the clock** and sets it as homework, which frees only 20 of the 35 min
 > needed — so the schedule above does not restore AGENDA's blocks at their standard length, it
 > further compresses them: *AI-resilient tasks* to **15 min** (2:40–2:55) and *micro-demo + submit*
