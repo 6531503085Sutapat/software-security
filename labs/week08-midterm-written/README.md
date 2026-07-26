@@ -14,6 +14,7 @@ Closed/open-note (instructor's choice). Question types:
 - Threat modeling: build/critique a STRIDE model and identify trust boundaries.
 - **CWE/OWASP mapping:** classify given vulnerabilities.
 - **"Spot the vuln":** find and explain the flaw in a code snippet (injection, XSS, auth, crypto misuse).
+- **Applied SQL injection:** given a vulnerable endpoint, write the payload *and* the parameterised fix — this is a full section of the paper (30 of 100 pts), not a one-liner.
 - Secure-design short answers (least privilege, defense in depth, fail closed).
 
 ## Pairs with

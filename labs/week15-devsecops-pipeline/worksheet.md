@@ -28,7 +28,11 @@ Answer in your own words (2–4 sentences each).
 
 ---
 
-## Part 3 — Hands-on Lab (180 min)
+## Part 3 — Hands-on Lab (180 min in class)
+
+> The task budgets below add up to 205 min. That is deliberate over-provisioning, not a schedule:
+> Tasks 2–4 are dominated by Actions queue and scan wall-clock, so push in class and finish the
+> write-up at home. Your instructor will say which task runs as homework.
 
 **Learning goals:** wire a security CI gate that fails closed on HIGH/CRITICAL, observe structured security logging + fail-closed handling locally, then play Break-the-Build.
 

@@ -49,4 +49,5 @@ docker run --rm -e COSIGN_EXPERIMENTAL=1 \
 
 echo
 echo "==> Negative test: verifying an UNSIGNED image must FAIL (this is good)."
-echo "    Try:  cosign verify python:3.9-slim   # expect: no matching signatures"
+echo "    Try:  cosign verify --certificate-identity-regexp '.*' --certificate-oidc-issuer-regexp '.*' python:3.9-slim"
+echo "          # expect: Error: no signatures found   (both identity flags are required in keyless mode)"
