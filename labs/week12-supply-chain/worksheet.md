@@ -59,7 +59,11 @@ Read `requirements.txt` and list the pinned packages with their versions. Note w
 **Steps:**
 1. After `bash sign.sh week12-supplychain:lab`, open `sbom.cdx.json` and find Flask's entry.
 2. Read the `cosign verify` PASS for the signed image.
-3. Negative test: `cosign verify python:3.9-slim` — confirm "no matching signatures" (unsigned **must** fail).
+3. Negative test on an unsigned image (it **must** fail):
+   `cosign verify --certificate-identity-regexp '.*' --certificate-oidc-issuer-regexp '.*' python:3.9-slim`
+   → `Error: no signatures found`. (Both `--certificate-identity*` flags are required in keyless mode; without
+   them cosign stops at `Error: --certificate-identity or --certificate-identity-regexp is required` — a usage
+   error, which is *not* the same thing as proving the image is unsigned.)
 **Deliverable:** the SBOM Flask component entry + the verify PASS + the negative-test failure.
 
 ### Task 4 — Defend / fix it (35 min)

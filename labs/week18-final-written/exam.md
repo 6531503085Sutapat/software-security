@@ -1,6 +1,6 @@
 # Final — Written Exam (Week 18)
 
-**Course:** Software Security (KOSEN69) · **Cumulative**, emphasis on **Weeks 10–16**
+**Course:** Software Security (KOSEN69) · **Cumulative**, emphasis on **Weeks 10–15** (Week 16 is the capstone studio — no new examinable content)
 **Time:** 150 min · **Total:** 100 pts
 
 **Name:** ____________________  **Student ID:** ____________  **Date:** ________
