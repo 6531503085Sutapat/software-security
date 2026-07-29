@@ -1,0 +1,23 @@
+# The live-quiz image needs labs/ (worksheets) AND slides/ (lecture decks), which
+# are siblings, so the build context is the repo root.
+#
+# That makes THIS FILE the boundary. It is an allowlist — deny everything, then
+# re-admit exactly what the image needs — because a denylist here fails open:
+# forgetting one entry ships it. `instructor/` holds every answer key, exam key
+# and research instrument, is git-ignored, and is present on disk during a build.
+# It must never enter the context.
+*
+!labs/
+!slides/
+
+# …and within those, nothing generated or private.
+labs/**/.venv
+labs/**/__pycache__
+labs/**/.pytest_cache
+labs/**/*.pyc
+labs/**/node_modules
+labs/live-quiz/*.db
+labs/week11-memory-safety-exploitation/vuln
+labs/week11-memory-safety-exploitation/vuln-*
+labs/week11-memory-safety-exploitation/fuzz
+slides/pptx
