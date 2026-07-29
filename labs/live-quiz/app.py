@@ -120,6 +120,29 @@ app.register_blueprint(routes_submit.bp)
 
 @app.route("/")
 def index():
+    """The front door.
+
+    This used to render the live-quiz join screen, because that is all the app
+    was when it was written. It is now the smallest part of it — the same app
+    serves 19 weeks of course documents, the graded weekly quiz, worksheet
+    hand-in and the simulations. A student typing the bare hostname landed on a
+    "Game PIN / Nickname" box with no way to reach any of that, which is the
+    exact confusion that renaming the host to learn.* was meant to remove.
+
+    So `/` is the course front door and the live game moved to `/play`. Both the
+    host screen's projected join URL (static/host.js) and the front door's
+    "Join a live game" link point there, so neither audience loses a step.
+    """
+    return redirect(url_for("learn.index"))
+
+
+@app.route("/play")
+def play():
+    """The live-quiz join screen — Game PIN + nickname.
+
+    Kept as its own path rather than at `/` so the bare hostname can mean
+    "the course". The host screen shows this URL during a game.
+    """
     return render_template("player.html")
 
 
