@@ -6,7 +6,9 @@ Markdown — same source format as the course's other item banks (a `## <topic>`
 by `N. <stem> a) opt · b) opt ✓ · c) opt · d) opt` question lines) — and starts games from them.
 Students still join anonymously by PIN, no account needed on that side. Built to remove
 Kahoot/Quizizz's free-tier player caps as a blocker at N≈120 and to work for remote/hybrid access
-(MFU) — see `docs/superpowers/specs/2026-07-10-live-quiz-platform-design.md` for the full design
+(MFU); **decided 2026-07-29 as the primary quiz mechanism for this course** (Kahoot/Quizizz kept
+as fallback — see "Relationship to the Kahoot/Quizizz export path" below) — see
+`docs/superpowers/specs/2026-07-10-live-quiz-platform-design.md` for the full design
 rationale (the current multi-teacher platform design; the earlier `2026-07-06-live-quiz-design.md`
 is the superseded pre-pivot single-classroom draft).
 
@@ -104,9 +106,11 @@ that the instructor manually joins against the real roster afterward, same as CT
 
 ## Relationship to the Kahoot/Quizizz export path
 
-`instructor/quizzes/kahoot/make_kahoot_import.py` (exports to real Kahoot/Quizizz) still exists
-and still works — this is a parallel option for when Kahoot's free-tier player cap (~40-50) is
-the actual blocker, not a replacement.
+**DECIDED 2026-07-29: this app is the PRIMARY quiz mechanism**, not Kahoot/Quizizz — their
+free tier caps at ~40-50 players/game, which forces an N≈120 cohort to be split and re-run
+per section; this app has no such cap. `instructor/quizzes/kahoot/make_kahoot_import.py`
+(exports to real Kahoot/Quizizz) still exists and still works as a **fallback** for when this
+deployment itself is down.
 
 ## Known limitations (not blocking for classroom use)
 

@@ -7,7 +7,7 @@
 **Instructor:** อ.ดร.ณัฐกรณ์ แฉล้มวงศ์วาน (Nutthakorn Chalaemwongwan)
 **Coordinating instructor:** Dr. Nang Hsu Mon Pyae
 **Semester:** 1/2569 (Aug–Nov 2026)
-**Format:** 7 Saturday sessions, 08:00–12:00 (ภาคทฤษฎี — lecture) + 13:00–17:00 (ภาคปฏิบัติ — lab), same content and pedagogy as the parent [`software-security`](README.md) course, compressed from a 16-week weekly format into 7 all-day sessions.
+**Format:** 7 all-day weekend sessions, 08:00–12:00 (ภาคทฤษฎี — lecture) + 13:00–17:00 (ภาคปฏิบัติ — lab), same content and pedagogy as the parent [`software-security`](README.md) course, compressed from a 16-week weekly format into 7 all-day sessions. Sessions 1 and 2 run **back to back on the opening weekend (Sat 15 + Sun 16 Aug)**; the remaining five are fortnightly Saturdays.
 **Relationship to the KOSEN-KMITL offering:** same course, same content family, same AIR-Sec pedagogy, part of the same preregistered multi-institution study (MFU is the single-section cross-institution replication arm — see `instructor/research/preregistration.md` and `site-logistics.md`). This file is MFU-specific scheduling; [`syllabus.md`](syllabus.md) is the canonical 19-week KOSEN-KMITL version this content is drawn from.
 **Last updated:** ปีการศึกษา 2569
 
@@ -19,7 +19,7 @@ This course teaches students how software fails under attack and how to build so
 
 The course is deliberately hands-on. Every topic pairs a lecture concept with a lab in which students either *break* an intentionally vulnerable target in a safe sandbox or *defend* code they write themselves. Students leave able to threat-model a system, find and exploit common vulnerability classes, remediate them, and integrate security checks into a CI/CD pipeline.
 
-Aligned with the **OWASP Top 10 (2025)**, the **OWASP Top 10 for LLM Applications (2025)**, the **OWASP API Security Top 10**, **MITRE ATT&CK / CWE**, and the **SLSA** supply-chain framework — identical technical scope to the KOSEN-KMITL offering, delivered in 7 all-day Saturday sessions instead of 16 weekly meetings.
+Aligned with the **OWASP Top 10 (2025)**, the **OWASP Top 10 for LLM Applications (2025)**, the **OWASP API Security Top 10**, **MITRE ATT&CK / CWE**, and the **SLSA** supply-chain framework — identical technical scope to the KOSEN-KMITL offering, delivered in 7 all-day weekend sessions instead of 16 weekly meetings.
 
 ---
 
@@ -41,7 +41,9 @@ By the end of the course, students will be able to:
 
 ## 3. Format Note — Why 7 Sessions Instead of 16 Weeks
 
-MFU delivers this course as 7 full-day Saturday sessions rather than 16 weekly meetings. Each session keeps the same **lecture → lab** structure as the KOSEN offering, just compressed: the 08:00–12:00 block covers that session's lecture content for all topics assigned to it, and the 13:00–17:00 block runs the corresponding hands-on labs/games back to back. Total contact hours and technical content are unchanged from the 16-week version — only the calendar grouping differs.
+MFU delivers this course as 7 full-day weekend sessions rather than 16 weekly meetings. Each session keeps the same **lecture → lab** structure as the KOSEN offering, just compressed: the 08:00–12:00 block covers that session's lecture content for all topics assigned to it, and the 13:00–17:00 block runs the corresponding hands-on labs/games back to back. Total contact hours and technical content are unchanged from the 16-week version — only the calendar grouping differs.
+
+**The opening weekend is a double session, and that has consequences worth naming.** Sessions 1 and 2 fall on consecutive days (Sat 15 + Sun 16 Aug), so the four topics of Weeks 1–4 — threat modeling, secure SDLC/tooling, cryptography and injection — land inside about 36 hours. Two things follow. First, there is no week between them to fix a broken environment, so the "Lab 0" setup below is not a suggestion; a laptop that cannot run Docker on Saturday morning will also not run it on Sunday morning. Second, the gap from Session 2 to Session 3 is three weeks (16 Aug → 5 Sep), the longest in the term — that gap, not the opening weekend, is where the Week 3–4 material should be consolidated through the take-home labs.
 
 **A pacing note, stated plainly rather than smoothed over:** because the 16-week content splits 6 topics before the midterm and 7 after, but the calendar gives 3 sessions before the midterm and only 2 after, per-topic time is not perfectly even — Sessions 1–3 give each topic roughly 2 lecture hours + 2 lab hours, while Sessions 5–6 compress to roughly 1.3–2 hours each per topic. Session 6's original 4-topic load has been rebalanced below (see §5) by moving the Week 15 capstone-studio content to self-study/pre-final prep rather than new taught content that session — this is a deliberate adaptation, not an oversight, and matches how the source Week 16 was already designed (no vulnerable-target lab, practice-only — `labs/week16-capstone/` holds the scrimmage/worksheet materials but no Docker lab environment).
 
@@ -61,7 +63,7 @@ Identical to the KOSEN offering — all offensive work is performed **only** aga
 
 **Pre-built vulnerable targets used during the term:** OWASP Juice Shop, OWASP WebGoat, DVWA, crAPI/Damn Vulnerable Web Services, pwn.college/picoCTF/OverTheWire, Gandalf (prompt-injection practice).
 
-Bring a laptop able to run Docker Desktop to every session — the compressed format means there is no following week to catch up environment setup, so a working "Lab 0" (`labs/week01-threat-modeling/README.md`) is required **before** Session 1.
+Bring a laptop able to run Docker Desktop to every session — the compressed format means there is no following week to catch up environment setup, so a working "Lab 0" (`labs/week01-threat-modeling/README.md`) is required **before** Session 1. This matters most on the opening weekend: Sessions 1 and 2 are consecutive days, so an unresolved setup problem on Sat 15 Aug costs you Sun 16 Aug as well.
 
 ---
 
@@ -69,8 +71,8 @@ Bring a laptop able to run Docker Desktop to every session — the compressed fo
 
 | Session | Date | 16-wk equiv. | AM lecture (08:00–12:00) | PM lab (13:00–17:00) |
 |---|---|---|---|---|
-| 1 | Sat 9 Aug 69 | Wk 1–2 | Threat modeling + Secure SDLC/tooling | STRIDE game + Bug Triage/Fuzzing Race |
-| 2 | Sat 22 Aug 69 | Wk 3–4 | Cryptography + Injection | Capture the Hash + SQLi Boss Fight |
+| 1 | Sat 15 Aug 69 | Wk 1–2 | Threat modeling + Secure SDLC/tooling | STRIDE game + Bug Triage/Fuzzing Race |
+| **2** | **Sun 16 Aug 69** | Wk 3–4 | Cryptography + Injection | Capture the Hash + SQLi Boss Fight |
 | 3 | Sat 5 Sep 69 | Wk 5–6 | XSS/client-side + Authn/access control | XSS Golf + IDOR Treasure Hunt/JWT Forgery |
 | **4** | **Sat 19 Sep 69** | **Wk 7–8** | **Midterm written exam** (covers Sessions 1–3) | **Midterm CTF practical** |
 | 5 | Sat 10 Oct 69 | Wk 9–11 | API security + Memory-safety + Supply chain | crAPI Raid + Pwn the Binary + Dependency Confusion Heist |
@@ -79,7 +81,7 @@ Bring a laptop able to run Docker Desktop to every session — the compressed fo
 
 *Week 15 (capstone-studio content) is assigned as self-study/team-project work between Sessions 6 and 7 rather than new taught content in Session 6 — see §3.*
 
-### Session 1 (Sat 9 Aug 69) — Wk 1–2: Foundations I
+### Session 1 (Sat 15 Aug 69) — Wk 1–2: Foundations I
 
 **AM — Security Mindset & Threat Modeling / Secure SDLC & Tooling**
 - CIA triad; attacker vs. defender mindset; trust boundaries; attack surface; STRIDE; the OWASP/MITRE landscape (Top 10, CWE, ATT&CK); "Secure by Design" (CISA) framing. Maps to **A06:2025 Insecure Design**.
@@ -89,7 +91,7 @@ Bring a laptop able to run Docker Desktop to every session — the compressed fo
 - 🎲 **"Elevation of Privilege"** — play Microsoft's STRIDE card deck against a provided app's DFD; build a STRIDE threat model + attack-surface map. Lab 0 environment setup confirmed.
 - 🏁 **"Bug Triage Race" + "Fuzzing Race"** — run Semgrep + Gitleaks on a flawed repo and triage by CWE (scored); intro coverage-guided fuzzing (first crash wins).
 
-### Session 2 (Sat 22 Aug 69) — Wk 3–4: Foundations II / Web App Security I
+### Session 2 (Sun 16 Aug 69) — Wk 3–4: Foundations II / Web App Security I
 
 **AM — Cryptography Used Correctly (and Misused) / Injection & Input Handling**
 - Hashing vs. encryption vs. encoding; symmetric/asymmetric basics; password storage (bcrypt/argon2); TLS overview; common failures (ECB, hardcoded keys, weak randomness, MD5/SHA-1). Maps to **A04:2025 Cryptographic Failures**.
