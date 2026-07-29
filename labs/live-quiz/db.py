@@ -2,7 +2,12 @@
 import os
 import sqlite3
 
-_SCHEMA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "schema.sql")
+_HERE = os.path.dirname(os.path.abspath(__file__))
+# Both are CREATE TABLE IF NOT EXISTS, applied in order on every startup, so an
+# existing deployment picks up the assessment tables without a migration step.
+_SCHEMAS = [os.path.join(_HERE, "schema.sql"),
+            os.path.join(_HERE, "schema_assess.sql"),
+            os.path.join(_HERE, "schema_submit.sql")]
 
 
 def connect(path):
@@ -13,8 +18,9 @@ def connect(path):
 
 
 def init_db(conn):
-    with open(_SCHEMA, encoding="utf-8") as f:
-        conn.executescript(f.read())
+    for schema in _SCHEMAS:
+        with open(schema, encoding="utf-8") as f:
+            conn.executescript(f.read())
     conn.commit()
 
 

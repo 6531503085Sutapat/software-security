@@ -1,0 +1,30 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New assignment — KOSEN·KMITL</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><div class="pwrap"><section class="pjoin">
+  <div class="mark"><div class="sub">New assignment</div></div>
+  <form class="join-card" method="post" action="/work/new"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {% if error %}<div class="join-err">{{ error }}</div>{% endif %}
+    <h1>Set a worksheet</h1>
+    <div class="field"><label for="title">Title</label>
+      <input id="title" name="title" placeholder="Week 4 worksheet" required></div>
+    <div class="field"><label for="week_slug">Link to course material (optional)</label>
+      <select id="week_slug" name="week_slug">
+        <option value="">— none —</option>
+        {% for w in weeks %}<option value="{{ w.slug }}">Week {{ w.number }} — {{ w.title }}</option>{% endfor %}
+      </select></div>
+    <div class="field"><label for="due_at">Due (UTC, e.g. 2026-08-20T23:59:00)</label>
+      <input id="due_at" name="due_at" placeholder="blank = no deadline"></div>
+    <div class="field"><label for="instructions">Instructions</label>
+      <textarea id="instructions" name="instructions" rows="4"></textarea></div>
+    <h2>Rubric</h2>
+    <p class="lead">Defaults match the worksheets' own 100-point table.</p>
+    {% for r in rubric %}
+      <div class="field">
+        <input name="criterion" value="{{ r.criterion }}">
+        <input name="max" type="number" step="1" min="1" value="{{ r.max }}" style="max-width:6rem">
+      </div>
+    {% endfor %}
+    <button class="btn blue" type="submit">Create ▸</button>
+  </form></section></div></body></html>

@@ -1,0 +1,19 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weekly quiz — KOSEN·KMITL</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><div class="pwrap"><section class="pjoin">
+  <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
+    <div class="sub">Weekly quiz</div></div>
+  <!-- CSRF is this project's own hidden-field mechanism, verified by auth.csrf_ok();
+       the Django rule below does not apply to a Flask/Jinja2 app. -->
+  <form class="join-card" method="post" action="/quiz"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+    <h1>Enter your code</h1>
+    <p class="lead">Use the code on your slip. It works once, for you only.</p>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {% if error %}<div class="join-err">{{ error }}</div>{% endif %}
+    <div class="field"><label for="code">Access code</label>
+      <input id="code" name="code" autocomplete="off" autocapitalize="characters"
+             spellcheck="false" maxlength="16" required></div>
+    <button class="btn blue" type="submit">Start ▸</button>
+    <p class="pdpa">Once you start, you cannot go back to a previous question.</p>
+  </form></section></div></body></html>

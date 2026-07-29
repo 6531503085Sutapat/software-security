@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Worksheets — KOSEN·KMITL</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><div class="pwrap"><section class="pjoin">
+  <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
+    <div class="sub">Worksheet submissions</div></div>
+  <div class="join-card">
+    <h1>Assignments</h1>
+    <p class="lead"><a href="/console">← question sets</a> · <a href="/assess">quizzes</a>
+      · <a href="/work/new">new assignment</a></p>
+    {% if not assignments %}<p class="lead">Nothing set yet.</p>{% endif %}
+    <ul>
+      {% for a in assignments %}
+        <li><a href="/work/{{ a.id }}">{{ a.title }}</a>
+          <span class="sub">{{ a.handed_in }}/{{ a.issued }} handed in
+            {%- if a.due_at %} · due {{ a.due_at }}{% endif %}
+            {%- if a.released %} · released{% endif %}</span></li>
+      {% endfor %}
+    </ul>
+  </div></section></div></body></html>

@@ -1,0 +1,57 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ a.title }} — KOSEN·KMITL</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><div class="pwrap"><section class="pjoin">
+  <div class="mark"><div class="sub">{{ a.title }}</div></div>
+
+  <div class="join-card">
+    <h1>Assignment</h1>
+    <p class="lead"><a href="/work">← all assignments</a> ·
+      {{ total }} points{% if a.due_at %} · due {{ a.due_at }}{% else %} · no deadline{% endif %}
+      {%- if a.week_slug %} · <a href="/learn/{{ a.week_slug }}">worksheet</a>{% endif %}</p>
+    <form method="post" action="/work/{{ a.id }}/release"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn" type="submit">{% if a.released %}Un-release marks{% else %}Release marks + feedback{% endif %}</button>
+    </form>
+  </div>
+
+  <div class="join-card">
+    <h1>Submission codes</h1>
+    <p class="lead">One per student, reusable until the deadline so they can replace a
+      bad upload. <b>A code is that student's identity</b> — hand them out individually.</p>
+    <form method="post" action="/work/{{ a.id }}/codes"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="field"><label for="student_ids">Student IDs (one per line)</label>
+        <textarea id="student_ids" name="student_ids" rows="5"
+                  placeholder="65310001&#10;65310002"></textarea></div>
+      <button class="btn blue" type="submit">Issue codes ▸</button>
+    </form>
+    <p class="pdpa"><a href="/work/{{ a.id }}/codes.csv">Download codes.csv</a></p>
+  </div>
+
+  <div class="join-card">
+    <h1>Hand-ins</h1>
+    <p class="lead"><a href="/work/{{ a.id }}/results.csv">results.csv</a> — feeds the gradebook</p>
+    <table>
+      <thead><tr><th>Student</th><th>Status</th><th>Files</th><th>Score</th><th></th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td>{{ r.student_id }}</td>
+          <td>{% if not r.submitted %}not handed in
+              {%- elif r.late %}<span class="integ">late</span>
+              {%- elif not r.fully_graded %}to mark
+              {%- else %}marked{% endif %}</td>
+          <td>{{ r.files }}</td>
+          <td>{% if r.earned is not none %}{{ '%.0f'|format(r.earned) }} / {{ '%.0f'|format(r.possible) }}
+              {%- if not r.fully_graded %} <span class="sub">partial</span>{% endif %}
+              {%- else %}—{% endif %}</td>
+          <td>{% if r.submitted %}<a href="/work/{{ a.id }}/mark/{{ r.submission_id }}">mark ▸</a>{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="pdpa">A student who never handed in shows “—”, not 0. Late is shown, not
+      deducted — the −10%/day in SUBMISSION.md is yours to apply once, deliberately.</p>
+  </div>
+</section></div></body></html>
