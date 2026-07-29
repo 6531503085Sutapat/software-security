@@ -1,0 +1,17 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Course material — KOSEN·KMITL</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><div class="pwrap"><section class="pjoin">
+  <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
+    <div class="sub">Software Security · course material</div></div>
+  <div class="join-card">
+    <h1>Weeks</h1>
+    <p class="lead">Worksheets and lab guides. Everything here is readable without
+      signing in.</p>
+    <ul class="weeks">
+      {% for w in weeks %}
+        <li><a href="/learn/{{ w.slug }}"><b>Week {{ w.number }}</b> — {{ w.title }}</a>
+          <span class="sub">{% for k in w.available %}<a href="/learn/{{ w.slug }}/{{ k }}">{{ k }}</a>{% if not loop.last %} · {% endif %}{% endfor %}</span></li>
+      {% endfor %}
+    </ul>
+  </div></section></div></body></html>

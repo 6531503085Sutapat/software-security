@@ -1,6 +1,24 @@
-# Connecting to the Arena — WireGuard setup
+# Connecting to the Arena — account + WireGuard setup
 
-Some challenges in the ZCR Security Arena (`ctf.zcr.ai`) run on a private network — you
+## 0. Your arena account
+
+Your instructor gives you your account for the ZCR Security Arena (`ctf.zcr.ai`) —
+you don't sign up yourself. You'll receive a slip with a **username and a
+temporary password**. Log in at `ctf.zcr.ai`, then change the password
+(top-right menu → Settings).
+
+**Your username is your student ID, and it has to stay that way.** The arena
+issues every challenge flag *individually to your username* — your flag for a
+challenge is different from the person's next to you. That is also how your work
+gets matched to your marks, so a changed username silently breaks the link
+between the two. Everything else on your profile is yours to edit.
+
+If you ever do create an account yourself (a replacement, a second cohort),
+**use your student ID as the username** for the same reason.
+
+---
+
+Some challenges in the arena run on a private network — you
 reach them through a VPN (WireGuard), not a public URL. This is the same reason your
 bank's app doesn't put your account balance on a public web page: the challenge boxes are
 deliberately vulnerable, so they stay off the open internet and only your own VPN tunnel

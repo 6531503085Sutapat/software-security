@@ -1,0 +1,90 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ a.title }} — KOSEN·KMITL</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><div class="pwrap"><section class="pjoin">
+  <div class="mark"><div class="sub">{{ a.title }} · form {{ a.variant }}</div></div>
+
+  <div class="join-card">
+    <h1>Quiz</h1>
+    <p class="lead"><a href="/assess">← all quizzes</a> ·
+      {{ questions|length }} questions ·
+      {% if a.time_limit_sec %}{{ a.time_limit_sec // 60 }} min{% else %}untimed{% endif %} ·
+      shuffle {{ 'on' if a.shuffle_questions else 'off' }}/{{ 'on' if a.shuffle_options else 'off' }}</p>
+
+    <!-- CSRF: this project's hidden-field mechanism, verified by auth.csrf_ok(). -->
+    <form method="post" action="/assess/{{ a.id }}/release"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn" type="submit">
+        {% if a.released %}Un-release scores{% else %}Release scores to students{% endif %}</button>
+    </form>
+  </div>
+
+  <div class="join-card">
+    <h1>Access codes</h1>
+    <p class="lead">One single-use code per student. Print, cut, hand out with the paper —
+      <b>a student's code is their identity</b>, so never post the list.
+      Re-running keeps existing codes, so a late enrolment doesn't invalidate
+      sheets you already printed.</p>
+    <form method="post" action="/assess/{{ a.id }}/codes"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="field"><label for="student_ids">Student IDs (one per line)</label>
+        <textarea id="student_ids" name="student_ids" rows="6"
+                  placeholder="65310001&#10;65310002"></textarea></div>
+      <button class="btn blue" type="submit">Issue codes ▸</button>
+    </form>
+    <p class="pdpa"><a href="/assess/{{ a.id }}/codes.csv">Download codes.csv</a></p>
+  </div>
+
+  <div class="join-card">
+    <h1>Results</h1>
+    <p class="lead"><a href="/assess/{{ a.id }}/results.csv">results.csv</a> (feeds the gradebook) ·
+      <a href="/assess/{{ a.id }}/q6.csv">q6.csv</a> (feeds <code>verify_q6.py</code>)</p>
+    <table>
+      <thead><tr><th>Student</th><th>Status</th><th>Score</th><th>%</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td>{{ r.student_id }}</td>
+          <td>{% if not r.attempted %}not started
+              {%- elif not r.submitted %}in progress
+              {%- elif not r.fully_graded %}awaiting marking
+              {%- else %}done{% endif %}</td>
+          <td>{% if r.earned is not none %}{{ '%.1f'|format(r.earned) }} /
+                {{ '%.1f'|format(r.possible) }}{% else %}—{% endif %}</td>
+          <td>{% if r.percent is not none and r.fully_graded %}{{ '%.0f'|format(r.percent) }}
+              {%- elif r.percent is not none %}({{ '%.0f'|format(r.percent) }})
+              {%- else %}—{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="pdpa">A bracketed % is partial — the short answer isn't marked yet.
+      A student who never started shows “—”, not 0: “didn't sit it” and “sat it and
+      scored nothing” are different facts and only you can decide which applies.</p>
+  </div>
+
+  <div class="join-card" id="grading">
+    <h1>Short answers to mark</h1>
+    <p class="lead">Grade each against <b>that student's own lab result</b> — an answer that
+      doesn't match their own capture scores 0, which is what makes this item
+      AI-resistant.</p>
+    {% if not shorts %}<p class="lead">Nothing submitted yet.</p>{% endif %}
+    {% for s in shorts %}
+      <form method="post" action="/assess/{{ a.id }}/grade"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="attempt_id" value="{{ s.attempt_id }}">
+        <input type="hidden" name="question_id" value="{{ s.question_id }}">
+        <div class="field">
+          <label>{{ s.student_id }}</label>
+          <p class="lead"><code>{{ s.text or '(blank)' }}</code></p>
+          <input name="points" type="number" step="0.5" min="0" max="{{ s.points }}"
+                 value="{{ s.manual_points if s.manual_points is not none else '' }}"
+                 placeholder="0–{{ s.points }}">
+        </div>
+        <button class="btn" type="submit">
+          {% if s.manual_points is none %}Mark{% else %}Update{% endif %} ▸</button>
+      </form>
+    {% endfor %}
+  </div>
+
+</section></div></body></html>

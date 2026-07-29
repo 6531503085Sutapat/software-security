@@ -40,9 +40,10 @@ if app.config["SECRET_KEY"] == "dev-not-secret-override-in-prod":
 
 # Harden the session cookie: never readable from JS, and not sent on cross-site requests.
 app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
-# Bound request bodies at ingestion (Werkzeug 413s anything larger before a handler buffers it).
-# 256 KB comfortably fits the 100 KB markdown cap + multipart/form overhead; anything past it is abuse.
-app.config["MAX_CONTENT_LENGTH"] = 256 * 1024
+# Request-body ceiling is set once, further down, next to the upload config that
+# determines it — a second value here would silently lose to whichever assignment
+# ran last. (It used to be 256 KB, sized for the markdown editor; worksheet
+# uploads raised it.)
 # SESSION_COOKIE_SECURE is opt-in via env so local http dev still works while TLS prod is hardened.
 if os.environ.get("COOKIE_SECURE", "").lower() in ("1", "true", "yes"):
     app.config["SESSION_COOKIE_SECURE"] = True
@@ -80,6 +81,41 @@ GAME_OWNER = {}  # pin -> teacher_id, so only the creating teacher can export a 
 HOST_SIDS = {}  # pin -> the socket id currently authorized to drive that game's host controls
 SID_TO_PLAYER = {}  # socket id -> (pin, nickname), so a dropped socket can mark its player away
 CURRENT_SID = {}    # (pin, nickname) -> latest socket id, to ignore a stale reconnect's disconnect
+
+
+# The graded weekly quiz (routes_assess) is a separate mode from the live game:
+# asynchronous, identified, persisted, and its scores become grades. It lives in
+# its own blueprint so the two identity models can't get tangled — the game has
+# no accounts at all, the quiz has one-time codes tied to real student IDs.
+#
+# The helpers are passed through config rather than imported, so routes_assess
+# doesn't import app.py back (a cycle) and the test suite can swap them.
+app.config.update(GET_DB=get_db, NOW=_now, ISSUE_CSRF=_issue_csrf,
+                  CHECK_CSRF=_check_csrf)
+import routes_assess  # noqa: E402  (after the helpers it binds to exist)
+app.register_blueprint(routes_assess.bp)
+
+# The course content plane (/learn) — read-only, no auth, no student data. It is
+# the only surface students reach before they hold any credential, and it renders
+# worksheets that contain live XSS payloads as course text, so it carries its own
+# script-free CSP on top of content.py's escape-then-parse renderer.
+import routes_content  # noqa: E402
+app.register_blueprint(routes_content.bp)
+
+# Worksheet submission + rubric grading (/work, /submit) — the last piece off
+# Google. Uploads live on disk beside the DB, NOT inside it: worksheet PDFs with
+# embedded screenshots would otherwise make the nightly SQLite dump enormous.
+# That means backup-ctfd-db.sh must tar this directory — files on a volume are
+# not in the database backup, and nothing would tell you until a restore.
+app.config["UPLOAD_DIR"] = os.environ.get(
+    "UPLOAD_DIR", os.path.join(os.path.dirname(DB_PATH) or ".", "uploads"))
+# Bound request bodies at ingestion — Werkzeug 413s anything larger before a
+# handler buffers it. 24 MB = submission.py's 20 MB per-file limit plus multipart
+# overhead, so a legitimate worksheet PDF lands and submission.py is what refuses
+# an oversize one, with a message a student can act on rather than a bare 413.
+app.config["MAX_CONTENT_LENGTH"] = 24 * 1024 * 1024
+import routes_submit  # noqa: E402
+app.register_blueprint(routes_submit.bp)
 
 
 @app.route("/")

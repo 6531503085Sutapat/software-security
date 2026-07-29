@@ -1,0 +1,24 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Question {{ q.index }} of {{ q.total }}</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><div class="pwrap"><section class="pjoin">
+  <div class="mark"><div class="sub">Question {{ q.index }} of {{ q.total }}
+    {%- if time_left is not none %} · {{ (time_left // 60) | int }}m {{ (time_left % 60) | int }}s left{% endif %}</div></div>
+  <form class="join-card" method="post" action="/quiz/take"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="question_id" value="{{ q.question_id }}">
+    <h1>{{ q.stem }}</h1>
+    {% if q.kind == 'mcq' %}
+      {% for o in q.options %}
+        <label class="field opt">
+          <input type="radio" name="choice" value="{{ o.canonical }}" required>
+          <span>{{ o.text }}</span></label>
+      {% endfor %}
+    {% else %}
+      <p class="lead">Answer from your own work — a generic answer scores 0.</p>
+      <div class="field"><textarea name="text" rows="5" maxlength="2000" required></textarea></div>
+    {% endif %}
+    <button class="btn blue" type="submit">
+      {% if q.index == q.total %}Submit ▸{% else %}Next ▸{% endif %}</button>
+    <p class="pdpa">You cannot return to this question after continuing.</p>
+  </form></section></div></body></html>

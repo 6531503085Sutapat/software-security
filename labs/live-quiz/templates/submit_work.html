@@ -1,0 +1,69 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ a.title }} — KOSEN·KMITL</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><div class="pwrap"><section class="pjoin">
+  <div class="mark"><div class="sub">{{ a.title }}</div></div>
+
+  <div class="join-card">
+    <h1>Your submission</h1>
+    <p class="lead">{{ sub.student_id }}
+      {%- if a.due_at %} · due {{ a.due_at }}{% endif %}
+      {%- if late %} · <b>late</b>{% endif %}
+      {%- if a.week_slug %} · <a href="/learn/{{ a.week_slug }}">read the worksheet</a>{% endif %}</p>
+    {% if a.instructions %}<p class="lead">{{ a.instructions }}</p>{% endif %}
+    {% if error %}<div class="join-err">{{ error }}</div>{% endif %}
+    {% if not can_upload %}<p class="lead"><b>The deadline has passed.</b> You can still
+      read your feedback here.</p>{% endif %}
+  </div>
+
+  <div class="join-card">
+    <h1>Files</h1>
+    {% if not files %}<p class="lead">Nothing attached yet.</p>{% endif %}
+    <ul>{% for f in files %}
+      <li><a href="/work/file/{{ f.id }}">{{ f.display_name }}</a>
+        <span class="sub">{{ (f.size_bytes / 1024) | round | int }} KB</span>
+        {% if can_upload %}
+        <form method="post" action="/submit/work" style="display:inline"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="action" value="delete">
+          <input type="hidden" name="file_id" value="{{ f.id }}">
+          <button class="btn" type="submit">remove</button>
+        </form>{% endif %}</li>
+    {% endfor %}</ul>
+
+    {% if can_upload %}
+    <form method="post" action="/submit/work" enctype="multipart/form-data"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="field"><label for="file">Add a file (max {{ max_mb }} MB, up to {{ max_files }})</label>
+        <input id="file" name="file" type="file" required></div>
+      <button class="btn blue" type="submit">Upload ▸</button>
+    </form>
+    {% endif %}
+  </div>
+
+  {% if can_upload %}
+  <form class="join-card" method="post" action="/submit/work"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="action" value="note">
+    <h1>Your note</h1>
+    <p class="lead">Required: how you used any AI tool (search, code, translate).
+      See SUBMISSION.md.</p>
+    <div class="field"><textarea name="note" rows="4" maxlength="4000">{{ sub.note }}</textarea></div>
+    <button class="btn" type="submit">Save note ▸</button>
+  </form>
+  {% endif %}
+
+  {% if released %}
+  <div class="join-card">
+    <h1>Your marks</h1>
+    <p class="lead">{{ '%.1f'|format(score[0]) }} / {{ '%.1f'|format(score[1]) }}
+      {%- if not score[2] %} (still being marked){% endif %}</p>
+    <ul>{% for r in rubric %}{% set m = marks.get(r.criterion) %}
+      <li><b>{{ r.criterion }}</b> —
+        {% if m and m.points is not none %}{{ '%.1f'|format(m.points) }} / {{ r.max }}
+        {%- else %}not marked yet{% endif %}
+        {% if m and m.comment %}<span class="sub">{{ m.comment }}</span>{% endif %}</li>
+    {% endfor %}</ul>
+  </div>
+  {% endif %}
+</section></div></body></html>
