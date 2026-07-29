@@ -132,8 +132,23 @@ def index():
     So `/` is the course front door and the live game moved to `/play`. Both the
     host screen's projected join URL (static/host.js) and the front door's
     "Join a live game" link point there, so neither audience loses a step.
+
+    This is its OWN page rather than a redirect to /learn. /learn is a list of 19
+    weeks — a fine second click, a poor first one: it answers "which week?" when
+    the student's actual question is "where do I go?", and it says nothing about
+    the quiz, the hand-in or the arena until you scroll past every week. The home
+    page answers the real question and, for each destination, says up front what
+    it costs to walk in: nothing, a PIN, a code, or the class VPN.
     """
-    return redirect(url_for("learn.index"))
+    import content as C
+    courses = C.list_courses()
+    # The arena is configured per course. Show the link here only when every
+    # course that has one agrees — otherwise a student in course B would be sent
+    # to course A's arena, which is worse than no link at all. When they differ,
+    # the link lives on each course's own page instead.
+    arenas = {c.get("arena_url") for c in courses if c.get("arena_url")}
+    return render_template("home.html", courses=courses, one=len(courses) == 1,
+                           arena_url=arenas.pop() if len(arenas) == 1 else None)
 
 
 @app.route("/play")

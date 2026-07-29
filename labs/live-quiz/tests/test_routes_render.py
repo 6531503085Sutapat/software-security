@@ -26,15 +26,18 @@ def test_root_is_the_course_front_door_not_the_game():
     """
     client = app.test_client()
     resp = client.get("/")
-    assert resp.status_code in (301, 302)
-    assert resp.headers["Location"].endswith("/learn")
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert "Game PIN" not in body, "the front door must not be the game join box"
+    for dest in ("/learn/", "/play", "/quiz", "/submit", "/sim"):
+        assert dest in body, f"front door must name {dest}"
 
 
 def test_front_door_links_to_the_live_game():
     """Moving the join screen must not strand the in-class game: the front door
     has to name it, or a student who types the bare host has no way back."""
     client = app.test_client()
-    resp = client.get("/learn")
+    resp = client.get("/")
     assert b'href="/play"' in resp.data
 
 
