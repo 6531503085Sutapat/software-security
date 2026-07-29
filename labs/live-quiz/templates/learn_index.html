@@ -1,17 +1,36 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Course material — KOSEN·KMITL</title><link rel="stylesheet" href="/static/style.css"></head>
+<title>{{ course.title }} — course material</title><link rel="stylesheet" href="/static/style.css"></head>
 <body><div class="pwrap"><section class="pjoin">
   <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
-    <div class="sub">Software Security · course material</div></div>
+    <div class="sub">{{ course.title }} · course material</div></div>
   <div class="join-card">
+    {% if not only_course %}<p class="sub"><a href="/learn">← All courses</a></p>{% endif %}
     <h1>Weeks</h1>
     <p class="lead">Worksheets and lab guides. Everything here is readable without
       signing in.</p>
     <ul class="weeks">
       {% for w in weeks %}
-        <li><a href="/learn/{{ w.slug }}"><b>Week {{ w.number }}</b> — {{ w.title }}</a>
-          <span class="sub">{% for k in w.available %}<a href="/learn/{{ w.slug }}/{{ k }}">{{ k }}</a>{% if not loop.last %} · {% endif %}{% endfor %}</span></li>
+        <li><a href="/learn/{{ course.slug }}/{{ w.slug }}"><b>Week {{ w.number }}</b> — {{ w.title }}</a>
+          <span class="sub">{% for k in w.available %}<a href="/learn/{{ course.slug }}/{{ w.slug }}/{{ k }}">{{ k }}</a>{% if not loop.last %} · {% endif %}{% endfor %}</span></li>
       {% endfor %}
+    </ul>
+
+    {# The rest of the platform, from the page students actually land on. This is
+       what landing/index.html was built to do; keeping it here means one page to
+       maintain instead of a second one that goes stale (its quizUrl was already
+       a placeholder a day after it was written). #}
+    <h1>Everything else</h1>
+    <ul class="weeks">
+      <li><a href="/quiz"><b>Weekly quiz</b></a>
+        <span class="sub">graded — you need the code on your slip</span></li>
+      <li><a href="/submit"><b>Hand in your worksheet</b></a>
+        <span class="sub">graded — you need the code on your slip</span></li>
+      <li><a href="/sim"><b>Interactive simulations</b></a>
+        <span class="sub">not graded — click around</span></li>
+      {% if course.arena_url %}
+        <li><a href="{{ course.arena_url }}"><b>Security Arena</b></a>
+          <span class="sub">hands-on challenges · needs the class VPN before a box will open</span></li>
+      {% endif %}
     </ul>
   </div></section></div></body></html>

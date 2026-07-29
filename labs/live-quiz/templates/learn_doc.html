@@ -6,9 +6,9 @@
     {%- if week %}Week {{ week.number }} · {% endif %}{{ doc.kind }}</div></div>
   <article class="join-card prose">
     <h1>{{ doc.title }}</h1>
-    <p class="lead"><a href="/learn">← all weeks</a>
+    <p class="lead"><a href="/learn/{{ course.slug }}/">← all weeks</a>
       {%- if week %}{% for k in week.available %}{% if k != doc.kind %}
-        · <a href="/learn/{{ week.slug }}/{{ k }}">{{ k }}</a>{% endif %}{% endfor %}{% endif %}</p>
+        · <a href="/learn/{{ course.slug }}/{{ week.slug }}/{{ k }}">{{ k }}</a>{% endif %}{% endfor %}{% endif %}</p>
     {# content.py escapes every byte before recognising any markdown, so this is
        inert by construction — see its module docstring and test_content.py.
        The route also sets a script-free CSP. #}
