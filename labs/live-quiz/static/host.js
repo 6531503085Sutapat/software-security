@@ -29,7 +29,10 @@ function initHost(pin) {
 
   socket.on("connect", () => socket.emit("host_join", { pin })); // also re-joins the room after a reconnect
 
-  $("join-url").textContent = window.location.host;
+  // The join screen moved off `/` when the bare hostname became the course
+  // front door, so the URL projected to the room has to carry the path or
+  // every student lands on the week list instead of the PIN box.
+  $("join-url").textContent = window.location.host + "/play";
 
   // ---- view switching ----
   function show(view) {
