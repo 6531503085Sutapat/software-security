@@ -1,0 +1,22 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>Trust boundaries &amp; threat chaining</h1>
+<p class="lead">Click a component to make it <b>attacker-controlled</b>. The right
+panel lists the per-component STRIDE threats a normal table already finds. The
+panel below it shows what that component <b>reaches</b> — the part a
+per-component pass misses.</p>
+<div class="wrap">
+  <div class="card">
+    <svg id="dfd" viewBox="0 0 700 340" role="img"
+         aria-label="Data flow diagram with three trust zones"></svg>
+    <button id="reset" type="button">Reset</button>
+  </div>
+  <div>
+    <div class="card"><h3>Per-component threats</h3><div id="panel"></div></div>
+    <div class="card" style="margin-top:1rem"><div id="chains"></div></div>
+  </div>
+</div>
+<script src="/static/sim/trust-boundary.js"></script>
+</body></html>

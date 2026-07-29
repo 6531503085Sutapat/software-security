@@ -1,0 +1,55 @@
+/* sim.css — shared chrome for the interactive simulations.
+   Loaded as an external stylesheet because the sim CSP has no 'unsafe-inline'. */
+:root{--bg:#f7f6f2;--fg:#16191d;--mut:#6b7280;--line:#d9d6cf;--card:#fffdf9;
+      --orange:#E35205;--blue:#017BC4;--hot:#E35205}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0e1116;--fg:#e6e8ea;--mut:#9aa3ad;--line:#2a3038;--card:#151a20}}
+*{box-sizing:border-box}
+body{margin:0;padding:1rem;background:var(--bg);color:var(--fg);
+     font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+h1{font-size:1.1rem;margin:0 0 .25rem}
+h3{font-size:.85rem;margin:1rem 0 .3rem;text-transform:uppercase;
+   letter-spacing:.05em;color:var(--mut)}
+.lead{color:var(--mut);margin:0 0 .9rem;max-width:70ch}
+.wrap{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(240px,1fr);gap:1rem}
+@media (max-width:760px){.wrap{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:.9rem}
+svg{width:100%;height:auto;display:block}
+.zone{fill:none;stroke:var(--line);stroke-dasharray:6 4}
+.zonelabel{font-size:10px;fill:var(--mut);text-transform:uppercase;letter-spacing:.06em}
+.edge{stroke:var(--line);stroke-width:1.5}
+.edge-hot{stroke:var(--hot);stroke-width:3}
+.edgelabel{font-size:9px;fill:var(--mut);text-anchor:middle}
+.edgelabel.hot{fill:var(--hot);font-weight:700}
+.node{cursor:pointer}
+.node:focus{outline:2px solid var(--blue);outline-offset:2px}
+.box{fill:var(--card);stroke:var(--blue);stroke-width:1.5}
+.box-store{stroke-dasharray:4 3}
+.box-actor{stroke:var(--mut)}
+.node.owned .box{fill:var(--orange);stroke:var(--orange)}
+.node.owned .boxlabel{fill:#fff}
+.boxlabel{font-size:11px;text-anchor:middle;fill:var(--fg);pointer-events:none}
+ul{margin:.2rem 0;padding-left:1.1rem}
+li{margin:.15rem 0}
+.hint{color:var(--mut);font-style:italic}
+.chain{border-left:3px solid var(--orange);padding-left:.6rem;margin:.5rem 0}
+.chain strong{display:block;color:var(--orange)}
+button{font:inherit;padding:.35rem .8rem;border:1px solid var(--line);
+       border-radius:6px;background:var(--card);color:var(--fg);cursor:pointer}
+button:hover{border-color:var(--blue)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em}
+.q{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.8rem;
+   white-space:pre-wrap;word-break:break-word;background:var(--bg);
+   border:1px solid var(--line);border-radius:6px;padding:.6rem;margin:.4rem 0}
+.tok{padding:1px 2px;border-radius:3px}
+.tok-str{background:rgba(1,123,196,.18)}
+.tok-inj{background:rgba(227,82,5,.28);font-weight:700}
+.tok-cmt{background:rgba(227,82,5,.15);text-decoration:line-through;opacity:.7}
+.verdict{margin:.5rem 0 0;font-weight:700}
+.verdict.bad{color:var(--orange)}
+.verdict.ok{color:var(--blue)}
+label{display:block;margin:.5rem 0 .2rem;font-size:.8rem;color:var(--mut)}
+input[type=text]{width:100%;font:inherit;padding:.4rem .5rem;border:1px solid var(--line);
+                 border-radius:6px;background:var(--bg);color:var(--fg)}
+.preset{display:flex;flex-wrap:wrap;gap:.35rem;margin:.4rem 0}
+.preset button{font-size:.78rem}

@@ -192,10 +192,114 @@ def test_emphasis_is_not_applied_inside_code_spans():
 
 
 def test_every_real_worksheet_renders_without_error():
+    """Every real worksheet renders, and none of them produces live markup.
+
+    An <iframe> IS allowed now, but only the one the ```sim``` fence emits from
+    the SIMS allowlist — sandboxed, pointing at /sim/. An iframe arriving any
+    other way (i.e. from the markdown itself) is the thing this guards against,
+    so the check is on the frame's shape, not on the tag's absence.
+    """
+    import re as _re
     for w in C.list_weeks():
         for kind in w["available"]:
             doc = C.render_document(w["slug"], kind)
             assert doc and doc["html"], f"{w['slug']}/{kind} rendered empty"
             low = doc["html"].lower()
-            for bad in ("<script", "<iframe", "javascript:"):
+            for bad in ("<script", "javascript:"):
                 assert bad not in low, f"{bad!r} in {w['slug']}/{kind}"
+            for frame in _re.findall(r"<iframe[^>]*>", low):
+                assert 'sandbox="allow-scripts"' in frame, \
+                    f"unsandboxed frame in {w['slug']}/{kind}: {frame}"
+                assert "allow-same-origin" not in frame, \
+                    f"sandbox defeated in {w['slug']}/{kind}: {frame}"
+                src = _re.search(r'src="([^"]*)"', frame)
+                assert src and src.group(1).startswith("/sim/"), \
+                    f"frame points outside /sim/ in {w['slug']}/{kind}: {frame}"
+                assert src.group(1)[len("/sim/"):] in C.SIMS, \
+                    f"frame slug not in the allowlist: {src.group(1)}"
+
+
+# --- interactive simulations ----------------------------------------------
+#
+# These embed an <iframe> — the only construct in the renderer that produces
+# one. The isolation argument is: the worksheet page stays script-free, the
+# simulation runs in its own document under its own policy, and the frame is
+# sandboxed WITHOUT allow-same-origin (granting both is equivalent to no
+# sandbox, because the framed page could then reach out and remove its own
+# sandbox attribute).
+
+def test_a_known_sim_becomes_a_sandboxed_iframe():
+    out = C.render("```sim\ntrust-boundary\n```")
+    assert '<iframe src="/sim/trust-boundary"' in out
+    assert 'sandbox="allow-scripts"' in out
+    assert "allow-same-origin" not in out, \
+        "allow-scripts + allow-same-origin together defeat the sandbox entirely"
+
+
+@pytest.mark.parametrize("body", [
+    "not-a-real-sim", "../../etc/passwd", "trust-boundary evil",
+    "<script>alert(1)</script>", "", "TRUST-BOUNDARY",
+    'x" onload="alert(1)', "trust-boundary\nsqli-parse",
+])
+def test_an_unknown_sim_slug_never_becomes_an_iframe(body):
+    out = C.render(f"```sim\n{body}\n```")
+    assert "<iframe" not in out, f"{body!r} produced a frame"
+    assert "<pre><code" in out, "should fall through to a plain code block"
+    assert "<script" not in out.lower()
+
+
+def test_every_declared_sim_has_a_template_and_a_script():
+    """A slug in SIMS with no template 500s the route. Catch it here, not live."""
+    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for slug in C.SIMS:
+        tpl = os.path.join(here, "templates", f"sim_{slug.replace('-', '_')}.html")
+        assert os.path.isfile(tpl), f"missing template for sim {slug!r}"
+        body = open(tpl, encoding="utf-8").read()
+        assert "<script src=" in body, f"{slug} template loads no script"
+        # the sim CSP has no 'unsafe-inline' — an inline block would silently
+        # not execute, which is worse than failing loudly
+        assert "<script>" not in body, f"{slug} has an inline script; CSP forbids it"
+        js = os.path.join(here, "static", "sim", f"{slug}.js")
+        assert os.path.isfile(js), f"missing {slug}.js"
+
+
+def test_sim_scripts_use_no_inline_handlers_or_eval():
+    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for slug in C.SIMS:
+        src = open(os.path.join(here, "static", "sim", f"{slug}.js"),
+                   encoding="utf-8").read()
+        for banned in ("eval(", "new Function(", "innerHTML =", "document.write"):
+            if banned == "innerHTML =":
+                # clearing a container is fine; assigning markup is not
+                for line in src.splitlines():
+                    if "innerHTML" in line:
+                        assert '= ""' in line, f"{slug}.js assigns markup: {line.strip()}"
+                continue
+            assert banned not in src, f"{slug}.js uses {banned}"
+
+
+def test_the_worksheet_page_still_forbids_script_after_adding_frames():
+    """frame-src was widened for simulations; nothing else may have been."""
+    import routes_content as R
+    assert "default-src 'none'" in R.CSP
+    assert "frame-src 'self'" in R.CSP
+    assert "script-src" not in R.CSP, "the worksheet page must never allow script"
+    assert "unsafe-inline" not in R.CSP and "unsafe-eval" not in R.CSP
+    # the sim page gets script, and only from itself
+    assert "script-src 'self'" in R.SIM_CSP
+    assert "unsafe-inline" not in R.SIM_CSP and "unsafe-eval" not in R.SIM_CSP
+
+
+def test_the_sqli_sim_does_not_regress_to_quote_parity():
+    """`' OR '1'='1` has FOUR quotes. An earlier version asked whether the count
+    was odd and therefore called the classic bypass safe — the simulation taught
+    the opposite of the truth. Any quote breaks out, because the first one closes
+    the enclosing literal. Verified in a real browser across all five presets.
+    """
+    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    src = open(os.path.join(here, "static", "sim", "sqli-parse.js"),
+               encoding="utf-8").read()
+    fn = src[src.index("function breaksOut"):]
+    fn = fn[:fn.index("\n  }")]
+    assert "% 2" not in fn, "quote-parity logic is back; it inverts the verdict"
+    assert 'indexOf("\'")' in fn

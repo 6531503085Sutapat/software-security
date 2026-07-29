@@ -19,22 +19,32 @@ is script on its own.
 
 from __future__ import annotations
 
-from flask import Blueprint, abort, render_template
+from flask import Blueprint, abort, make_response, render_template
 
 import content as C
 
 bp = Blueprint("learn", __name__)
 
-# No script at all. The content plane has zero JS by design, so this is a real
-# ceiling rather than an aspiration — if someone later adds a script tag here,
-# it fails visibly in development instead of quietly widening the policy.
+# No script at all on the worksheet pages. This is where markdown containing
+# live XSS payloads gets rendered, so `script-src` is never widened here —
+# `frame-src 'self'` is the only addition, and it exists so a worksheet can
+# embed a simulation that runs in its OWN document under its own policy.
 CSP = ("default-src 'none'; style-src 'self'; img-src 'self' data:; "
-       "font-src 'self'; base-uri 'none'; form-action 'none'; "
-       "frame-ancestors 'none'")
+       "font-src 'self'; frame-src 'self'; base-uri 'none'; "
+       "form-action 'none'; frame-ancestors 'none'")
+
+# Simulations are OUR code, shipped in static/, and are the only pages on this
+# blueprint allowed to execute anything. `'self'` only: no inline (so a template
+# cannot grow a <script> block), no eval, no remote origin. They are additionally
+# framed with `sandbox="allow-scripts"` and WITHOUT `allow-same-origin` — see
+# content.py's fence handler for why that omission is load-bearing.
+SIM_CSP = ("default-src 'none'; script-src 'self'; style-src 'self'; "
+           "img-src 'self' data:; font-src 'self'; base-uri 'none'; "
+           "form-action 'none'")
 
 
-def _harden(resp):
-    resp.headers["Content-Security-Policy"] = CSP
+def _harden(resp, csp=None):
+    resp.headers["Content-Security-Policy"] = csp or CSP
     resp.headers["X-Content-Type-Options"] = "nosniff"
     resp.headers["Referrer-Policy"] = "no-referrer"
     return resp
@@ -42,7 +52,32 @@ def _harden(resp):
 
 @bp.after_request
 def _headers(resp):
+    # A simulation response sets its own policy in the view; don't overwrite it.
+    if resp.headers.get("Content-Security-Policy"):
+        resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+        resp.headers.setdefault("Referrer-Policy", "no-referrer")
+        return resp
     return _harden(resp)
+
+
+@bp.route("/sim/<slug>")
+def simulation(slug):
+    """One interactive simulation, in its own document under its own CSP.
+
+    Kept off the worksheet page deliberately: `/learn` renders course markdown
+    that contains real XSS payloads, so it must stay script-free. A simulation
+    is code we wrote, so it gets exactly the privilege it needs and no more.
+    """
+    if slug not in C.SIMS:
+        abort(404)
+    resp = make_response(render_template(f"sim_{slug.replace('-', '_')}.html",
+                                         slug=slug, title=C.SIMS[slug]))
+    return _harden(resp, SIM_CSP)
+
+
+@bp.route("/sim")
+def simulations():
+    return render_template("sim_index.html", sims=sorted(C.SIMS.items()))
 
 
 @bp.route("/learn")
