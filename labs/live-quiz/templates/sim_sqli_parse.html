@@ -1,0 +1,25 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>Why concatenation is the flaw — not the payload</h1>
+<p class="lead">Type anything into the input. The same value goes through both
+builders. Orange = characters the database will parse as <b>SQL</b> rather than
+as a name.</p>
+<label for="inp">User input (the <code>name</code> field)</label>
+<input id="inp" type="text" autocomplete="off" spellcheck="false">
+<div class="preset" id="presets"></div>
+<div class="wrap">
+  <div class="card">
+    <h3>String concatenation</h3>
+    <div class="q" id="concat"></div>
+    <p class="verdict" id="verdict"></p>
+  </div>
+  <div class="card">
+    <h3>Parameterised query</h3>
+    <div class="q" id="param"></div>
+  </div>
+</div>
+<div class="card" style="margin-top:1rem"><div id="explain"></div></div>
+<script src="/static/sim/sqli-parse.js"></script>
+</body></html>

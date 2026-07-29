@@ -1,0 +1,11 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulations — KOSEN·KMITL</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>Interactive simulations</h1>
+<p class="lead">Each one is embedded in the worksheet it belongs to; these are the
+full-size versions.</p>
+<div class="card"><ul>
+{% for slug, title in sims %}<li><a href="/sim/{{ slug }}">{{ title }}</a></li>{% endfor %}
+</ul></div>
+</body></html>

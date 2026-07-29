@@ -66,6 +66,24 @@ WEEK_RE = re.compile(r"^week\d{2}-[a-z0-9-]+$")
 # solution is emphatically not student-facing.
 PUBLIC_FILES = {"worksheet": "worksheet.md", "readme": "README.md"}
 
+# Interactive simulations a worksheet may embed, by slug. An ALLOWLIST, because
+# this is the one construct in the whole renderer that produces an <iframe> —
+# a slug that isn't here renders as an ordinary code block, so a typo or a
+# hostile string degrades to visible text rather than to markup.
+#
+# A worksheet embeds one with a fenced block:
+#
+#     ```sim
+#     trust-boundary
+#     ```
+#
+# A fence is used rather than a link because it cannot occur by accident in
+# prose, and because the body is matched whole against this dict.
+SIMS = {
+    "trust-boundary": "Trust boundaries & threat chaining (Week 1)",
+    "sqli-parse": "How concatenation changes the SQL parse tree (Week 4)",
+}
+
 
 def list_weeks() -> list[dict]:
     """Every week directory that has something public to show, in order."""
@@ -201,6 +219,30 @@ def render(md: str) -> str:
                 body.append(lines[i])
                 i += 1
             i += 1
+
+            # ```sim … ``` embeds an interactive simulation. The body must match
+            # a slug in the SIMS allowlist EXACTLY; anything else falls through
+            # to a normal code block, so an unknown or hostile slug becomes
+            # visible text and never an iframe.
+            #
+            # The frame is sandboxed with `allow-scripts` and deliberately
+            # WITHOUT `allow-same-origin`: granting both together is equivalent
+            # to no sandbox at all, because the framed page could then reach
+            # into this origin and remove its own sandbox attribute. A
+            # simulation needs no access to the parent document.
+            if lang == "sim":
+                slug = "\n".join(body).strip()
+                if slug in SIMS:
+                    out.append(
+                        f'<figure class="sim">'
+                        f'<iframe src="/sim/{slug}" title="{html.escape(SIMS[slug])}"'
+                        f' sandbox="allow-scripts" loading="lazy"'
+                        f' referrerpolicy="no-referrer"></iframe>'
+                        f'<figcaption>{html.escape(SIMS[slug])} — '
+                        f'<a href="/sim/{slug}">open full size</a></figcaption>'
+                        f"</figure>")
+                    continue
+
             cls = f' class="lang-{lang}"' if lang else ""
             out.append(f"<pre><code{cls}>" + "\n".join(body) + "</code></pre>")
             continue

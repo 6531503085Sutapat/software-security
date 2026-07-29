@@ -44,6 +44,20 @@ Source to model lives in `sample-app/app.py`. Template to fill: `THREAT-MODEL-TE
 
 **Task 3 — Elevation of Privilege game (20 min)** · *Goal:* find threats you missed. *Steps:* play the EoP deck against your DFD; each card you can tie to a real element/flow scores a point; record every valid threat. *Deliverable:* list of carded threats + score.
 
+**Task 3b — Systems-level pass (25 min) 🔭** · *Goal:* find what the per-element grid cannot see. Tasks 2 and 3 enumerate threats **one element at a time**, and that is exactly where threat models are known to stop short — students taught STRIDE alone reliably identify component threats and *discount system-level ones* ([Joshi et al., ASEE 2024](https://arxiv.org/abs/2404.16632)). So do a second pass over the **whole** diagram:
+- **Trust boundaries end-to-end.** Follow one request from the client to `notes.db` and back. List every boundary it crosses. Which crossing has no check on it?
+- **Assume one element is fully owned.** Pick the Flask process, then the `uploads/` store. For each: what does the attacker now *reach* — not what is it, but where does it get them?
+- **Chain two "low" findings.** Find two threats you or the EoP deck rated minor that combine into something you would not accept. Write the chain as `A → B → consequence`.
+- **One-line system claim.** Finish: "Even if every element-level mitigation in Task 4 is implemented, this system still fails if ___."
+
+Use the simulation below before you start — toggle a component to attacker-controlled and watch what it reaches:
+
+```sim
+trust-boundary
+```
+
+*Deliverable:* the boundary list, two owned-element reachability notes, one written chain, and the system claim.
+
 **Task 5 — Abuse cases & attacker personas (20 min)** · *Goal:* think like specific adversaries. *Steps:* define 2 personas (e.g. a curious logged-in user; an anonymous internet attacker) and write 2 abuse cases each against the sample app, tied to DFD elements. *Deliverable:* 4 abuse cases.
 
 **Task 6 — Path-traversal deep-dive (25 min)** · *Goal:* analyze the riskiest flow. *Steps:* trace `/upload` → `/files/<name>`; explain how `../` in a filename escapes `uploads/`; sketch the secure design (`secure_filename`, store outside web root, allow-list extensions). *Deliverable:* the data flow + secure-design note.
@@ -52,7 +66,14 @@ Source to model lives in `sample-app/app.py`. Template to fill: `THREAT-MODEL-TE
 
 **Task 8 — Security requirements (15 min)** · *Goal:* turn threats into testable requirements. *Steps:* write 3 security requirements as acceptance criteria ("the system must … so that …"), each mapped to a threat from Task 2 or 7. *Deliverable:* 3 testable security requirements.
 
-**Task 4 — Defend / fix it: rank & mitigate (10 min)** · *Goal:* turn threats into action. *Steps:* rank the top 5 threats by likelihood × impact; propose one concrete mitigation each (e.g., auth on `/notes`, `secure_filename()` + allowlist for `/upload`, request logging for Repudiation, size/rate limits for DoS). *Deliverable:* the top-5 table with mitigations in your template copy.
+**Task 4 — Defend / fix it: rank & mitigate (25 min) 🛡️** · *Goal:* turn threats into action you can prove. *Steps:* rank the top 5 threats by likelihood × impact; propose one concrete mitigation each (e.g., auth on `/notes`, `secure_filename()` + allowlist for `/upload`, request logging for Repudiation, size/rate limits for DoS). Then **pick one and actually implement it** in your fork.
+
+*Deliverable — the top-5 table, plus for the one you implemented:*
+1. the **diff** (commit hash on your `wk01` branch),
+2. **evidence it works**: the request that succeeded before your change and is refused after — both outputs,
+3. **why it closes the class, not the instance** (2–3 sentences). `secure_filename()` on one endpoint is an instance fix; *"no user-supplied string ever becomes a path component"* is a class fix. Say which yours is, and if it's an instance fix, say what the class fix would be.
+
+> **Why this is weighted.** Fewer than half of working developers can spot a security hole in code, and being shown vulnerabilities does not by itself teach you to find or close them. Exploiting is the half that feels like progress; defending is the half that transfers to your job.
 
 ## Part 4 — Reflection
 1. Map your top finding to a CWE and to OWASP A06 (Insecure Design); explain the mapping in one sentence.
@@ -66,6 +87,11 @@ Source to model lives in `sample-app/app.py`. Template to fill: `THREAT-MODEL-TE
 | Exploitation + evidence (DFD + STRIDE table + EoP findings + screenshots) | 40 |
 | Defense (top-5 ranking + mitigations) | 25 |
 | Reflection (CWE/OWASP mapping + breach + best mitigation) | 15 |
+
+**Assessed within the rows above** (they are not extra points — they are what those points are for):
+- **Systems-level reasoning** (inside *Exploitation + evidence*, Task 3b): does the model reach past single elements to boundaries, reachability and chains? Scored with the STRIDE + systems-thinking rubrics of [Joshi et al. 2024](https://arxiv.org/abs/2404.16632).
+- **Defensive proof** (inside *Defense*, Task 4): a claimed mitigation with no before/after evidence scores at most half. A mitigation you can show closing a *class* scores full.
+- **Adversarial thinking** (across the whole sheet): do the abuse cases, personas and chains show you reasoning as an attacker with goals and constraints — or just listing categories? This is the course's central disposition and it is assessed, not assumed.
 
 ---
 

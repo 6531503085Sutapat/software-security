@@ -36,6 +36,7 @@ By the end of the course, students will be able to:
 7. **Assess and defend AI/LLM-powered applications** against prompt injection, insecure output handling, and excessive agency.
 8. **Integrate security into the development lifecycle** (SAST, DAST, SCA, secret scanning) within a CI/CD pipeline (DevSecOps).
 9. **Disclose vulnerabilities responsibly** and communicate risk to technical and non-technical stakeholders.
+10. **Reason adversarially** — given a system, generate plausible attacker goals, work out what an attacker with limited knowledge and budget would actually try first, and explain *why* a control does or does not stop them. This is the disposition the other nine outcomes are in service of, and it is assessed directly: in the Week 1 systems-level pass, in every worksheet's abuse cases, and as a scored dimension of the midterm and final CTF.
 
 ---
 
