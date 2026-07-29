@@ -151,7 +151,13 @@ def course_index(a):
 def doc(course_slug, slug):
     """Either /learn/<course>/<week>, or legacy /learn/<week>/<kind>."""
     if C.course(course_slug) is not None:
-        return _render_doc(course_slug, slug, "worksheet")
+        # Not hardcoded to "worksheet": six weeks have none — the exam weeks are
+        # the paper, the review weeks a mock CTF, the practical weeks a CTF brief.
+        # See content.PRIMARY_ORDER.
+        kind = C.primary_kind(slug, course_slug)
+        if kind is None:
+            abort(404)
+        return _render_doc(course_slug, slug, kind)
     if C.WEEK_RE.match(course_slug or ""):
         return _legacy(course_slug, slug)   # first segment is the week, second the kind
     abort(404)

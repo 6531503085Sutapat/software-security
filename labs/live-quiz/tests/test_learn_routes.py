@@ -219,3 +219,36 @@ def test_missing_root_rejected_loudly(monkeypatch):
         importlib.reload(C)
     monkeypatch.delenv("COURSES", raising=False)
     importlib.reload(C)
+
+
+# ── every week's MAIN link must open something ─────────────────────────────
+
+def test_every_week_bare_url_opens_its_primary_document():
+    """The bare week URL is the main link on the index; it must never 404.
+
+    It used to hardcode `kind="worksheet"`, and six of nineteen weeks have no
+    worksheet at all — both written exams, both midterm/final CTFs and both mock
+    CTFs 404'd on their own link. Pinning EVERY week, not a sample, because the
+    six that broke were exactly the ones a spot check of week 1 would miss.
+    """
+    from app import app as fa
+    fa.config["TESTING"] = True
+    client = fa.test_client()
+    course = _default_course()
+    broken = []
+    for w in C.list_weeks():
+        r = client.get(f"/learn/{course}/{w['slug']}")
+        if r.status_code != 200:
+            broken.append((w["slug"], r.status_code, w["available"]))
+    assert not broken, f"weeks whose main link does not open: {broken}"
+
+
+def test_primary_kind_prefers_the_real_document_over_the_readme():
+    """A README exists for every week, so falling back to it would hide the
+    breakage rather than fix it — the exam weeks must open the exam."""
+    for slug, expected in (("week08-midterm-written", "exam"),
+                           ("week07-review-midterm-prep", "mock-ctf"),
+                           ("week19-final-ctf-capstone", "ctf"),
+                           ("week01-threat-modeling", "worksheet")):
+        if any(w["slug"] == slug for w in C.list_weeks()):
+            assert C.primary_kind(slug) == expected, slug

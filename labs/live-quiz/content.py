@@ -222,6 +222,31 @@ def list_weeks(course_slug: str | None = None) -> list[dict]:
     return out
 
 
+# Which document IS the week, when the URL doesn't say. Order matters and is not
+# alphabetical: it is "the thing a student opens when they open the week".
+#
+# Six of the nineteen weeks have NO worksheet.md — the review weeks are a
+# mock CTF, the exam weeks are the paper, the practical weeks are the CTF brief.
+# `/learn/<course>/<week>` used to hardcode `kind="worksheet"` for all of them,
+# so **week07, 08, 09, 17, 18 and 19 returned 404 on their main link** — both
+# written exams, both midterm/final CTFs and both mock CTFs, i.e. the six
+# highest-stakes documents in the course. Present since the content plane was
+# first built; found 2026-07-30 by requesting every week's bare URL rather than
+# by reading the route.
+PRIMARY_ORDER = ("worksheet", "mock-ctf", "exam", "ctf", "scrimmage", "readme")
+
+
+def primary_kind(slug: str, course_slug: str | None = None) -> str | None:
+    """The document a bare week URL should open, or None if the week has none."""
+    week = next((w for w in list_weeks(course_slug) if w["slug"] == slug), None)
+    if week is None:
+        return None
+    for kind in PRIMARY_ORDER:
+        if kind in week["available"]:
+            return kind
+    return week["available"][0] if week["available"] else None
+
+
 def _title_of(path: str) -> str | None:
     """First `# heading` — the document's own title, not one we invent."""
     if not os.path.isfile(path):
