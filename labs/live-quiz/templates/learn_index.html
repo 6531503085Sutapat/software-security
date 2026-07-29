@@ -5,7 +5,6 @@
   <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
     <div class="sub">{{ course.title }} · course material</div></div>
   <div class="join-card">
-    {% if not only_course %}<p class="sub"><a href="/learn">← All courses</a></p>{% endif %}
     <h1>Weeks</h1>
     <p class="lead">Worksheets and lab guides. Everything here is readable without
       signing in.</p>
@@ -16,23 +15,5 @@
       {% endfor %}
     </ul>
 
-    {# The rest of the platform, from the page students actually land on. This is
-       what landing/index.html was built to do; keeping it here means one page to
-       maintain instead of a second one that goes stale (its quizUrl was already
-       a placeholder a day after it was written). #}
-    <h1>Everything else</h1>
-    <ul class="weeks">
-      <li><a href="/play"><b>Join a live game</b></a>
-        <span class="sub">the in-class quiz game — you need the PIN on screen</span></li>
-      <li><a href="/quiz"><b>Weekly quiz</b></a>
-        <span class="sub">graded — you need the code on your slip</span></li>
-      <li><a href="/submit"><b>Hand in your worksheet</b></a>
-        <span class="sub">graded — you need the code on your slip</span></li>
-      <li><a href="/sim"><b>Interactive simulations</b></a>
-        <span class="sub">not graded — click around</span></li>
-      {% if course.arena_url %}
-        <li><a href="{{ course.arena_url }}"><b>Security Arena</b></a>
-          <span class="sub">hands-on challenges · needs the class VPN before a box will open</span></li>
-      {% endif %}
-    </ul>
+    <p class="lead"><a href="/">← Home</a> · quiz, hand-in, simulations and the arena</p>
   </div></section></div></body></html>
