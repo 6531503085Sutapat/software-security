@@ -41,6 +41,7 @@ PATH SAFETY
 from __future__ import annotations
 
 import html
+import json
 import os
 import re
 
@@ -61,6 +62,81 @@ CONTENT_ROOT = os.environ.get(
 
 # weekNN-slug only. Anchored, no dots, so `..` and absolute paths never match.
 WEEK_RE = re.compile(r"^week\d{2}-[a-z0-9-]+$")
+
+# ── Courses ────────────────────────────────────────────────────────────────
+# The instructor teaches several courses (software-security,
+# security-cryptography, cloud-infrastructure-security) rendered from one
+# curriculum monorepo. This plane used to serve exactly one of them: CONTENT_ROOT
+# pointed at a single repo's `labs/` and the index was titled in the template.
+#
+# A course is (slug, title, root). Nothing more — a course is an ordering over
+# week directories, which is also all a manifest is in the monorepo.
+#
+# Course slugs must NOT look like a week directory. `/learn/<x>` is ambiguous
+# between "course x" and the legacy "week x of the default course", and we
+# disambiguate on WEEK_RE. _load_courses() rejects a slug that would collide, so
+# the ambiguity can never arise from configuration.
+COURSE_SLUG_RE = re.compile(r"^[a-z][a-z0-9-]{1,63}$")
+
+
+def _load_courses() -> list[dict]:
+    """Course registry, from $COURSES (JSON) or a single course from CONTENT_ROOT.
+
+    The single-course default is what keeps this change invisible to the current
+    deployment: with no $COURSES set the platform behaves exactly as before,
+    serving CONTENT_ROOT under one course.
+
+    $COURSES is a JSON list of {slug, title, root, arena_url?}. `root` is the
+    directory holding the weekNN-* dirs (i.e. a course repo's `labs/`).
+    """
+    raw = os.environ.get("COURSES", "").strip()
+    if not raw:
+        return [{
+            "slug": os.environ.get("COURSE_SLUG", "software-security"),
+            "title": os.environ.get("COURSE_TITLE", "Software Security"),
+            "root": CONTENT_ROOT,
+            "arena_url": os.environ.get("ARENA_URL", "").strip() or None,
+        }]
+    out, seen = [], set()
+    for c in json.loads(raw):
+        slug = str(c.get("slug", "")).strip()
+        if not COURSE_SLUG_RE.match(slug):
+            raise ValueError(f"COURSES: bad course slug {slug!r}")
+        if WEEK_RE.match(slug):
+            # Would make /learn/<slug> ambiguous with a legacy week URL.
+            raise ValueError(f"COURSES: slug {slug!r} collides with a week directory name")
+        if slug in seen:
+            raise ValueError(f"COURSES: duplicate slug {slug!r}")
+        seen.add(slug)
+        root = os.path.realpath(str(c["root"]))
+        if not os.path.isdir(root):
+            raise ValueError(f"COURSES: {slug!r} root does not exist: {root}")
+        out.append({"slug": slug, "title": str(c.get("title") or slug),
+                    "root": root, "arena_url": (c.get("arena_url") or None)})
+    if not out:
+        raise ValueError("COURSES was set but produced no courses")
+    return out
+
+
+COURSES = _load_courses()
+
+
+def list_courses() -> list[dict]:
+    """Every configured course, with how many weeks each currently publishes."""
+    return [{**c, "week_count": len(list_weeks(c["slug"]))} for c in COURSES]
+
+
+def course(slug: str | None) -> dict | None:
+    """Resolve a course slug. `None` means the default (first) course, which is
+    what every pre-existing single-course caller and URL relies on."""
+    if slug is None:
+        return COURSES[0]
+    return next((c for c in COURSES if c["slug"] == slug), None)
+
+
+def _root_of(course_slug: str | None) -> str | None:
+    c = course(course_slug)
+    return c["root"] if c else None
 # Every student-facing document a week can carry, keyed by the URL segment.
 #
 # Still an ALLOWLIST of exact filenames, not a pattern or a denylist: a lab
@@ -114,18 +190,24 @@ SIMS = {
 }
 
 
-def list_weeks() -> list[dict]:
-    """Every week directory that has something public to show, in order."""
+def list_weeks(course_slug: str | None = None) -> list[dict]:
+    """Every week directory that has something public to show, in order.
+
+    `course_slug=None` keeps the original single-course behaviour.
+    """
+    root = _root_of(course_slug)
+    if root is None:
+        return []
     out = []
-    for name in sorted(os.listdir(CONTENT_ROOT)):
+    for name in sorted(os.listdir(root)):
         if not WEEK_RE.match(name):
             continue
-        d = os.path.join(CONTENT_ROOT, name)
+        d = os.path.join(root, name)
         if not os.path.isdir(d):
             continue
         available = [k for k, f in PUBLIC_FILES.items()
                      if os.path.isfile(os.path.join(d, f))]
-        if _slides_path(int(name[4:6])):
+        if _slides_path(int(name[4:6]), course_slug):
             available.append("slides")
         if not available:
             continue
@@ -152,10 +234,13 @@ def _title_of(path: str) -> str | None:
     return None
 
 
-def _slides_path(week_number: int) -> str | None:
+def _slides_path(week_number: int, course_slug: str | None = None) -> str | None:
     """slides/weekNN.md, if it exists. Outside the week directory, so it gets its
     own containment check rather than reusing the lab-dir one."""
-    root = os.path.realpath(CONTENT_ROOT)
+    base_root = _root_of(course_slug)
+    if base_root is None:
+        return None
+    root = os.path.realpath(base_root)
     # CONTENT_ROOT is `labs/` (or /content in the image); slides/ is its sibling
     # in a checkout and a sibling under /content in the image.
     for base in (os.path.dirname(root), root):
@@ -165,24 +250,29 @@ def _slides_path(week_number: int) -> str | None:
     return None
 
 
-def read(slug: str, kind: str) -> str | None:
+def read(slug: str, kind: str, course_slug: str | None = None) -> str | None:
     """Raw markdown for one week's public document, or None.
 
     Resolves and then re-checks containment: even though WEEK_RE already makes
     traversal impossible, the check costs nothing and survives someone later
-    relaxing the pattern.
+    relaxing the pattern. With several courses configured the containment check
+    matters more, not less — it is now per-course, so a week slug can never
+    reach out of its own course's root.
     """
     if not WEEK_RE.match(slug or ""):
         return None
+    base_root = _root_of(course_slug)
+    if base_root is None:
+        return None
     if kind == "slides":
-        p = _slides_path(int(slug[4:6]))
+        p = _slides_path(int(slug[4:6]), course_slug)
         if p is None:
             return None
         with open(p, encoding="utf-8", errors="replace") as fh:
             return fh.read()
     if kind not in PUBLIC_FILES:
         return None
-    root = os.path.realpath(CONTENT_ROOT)
+    root = os.path.realpath(base_root)
     path = os.path.realpath(os.path.join(root, slug, PUBLIC_FILES[kind]))
     if not (path == root or path.startswith(root + os.sep)):
         return None
@@ -370,12 +460,14 @@ def render(md: str) -> str:
     return "\n".join(out)
 
 
-def render_document(slug: str, kind: str) -> dict | None:
-    md = read(slug, kind)
+def render_document(slug: str, kind: str, course_slug: str | None = None) -> dict | None:
+    md = read(slug, kind, course_slug)
     if md is None:
         return None
+    c = course(course_slug)
     if kind == "slides":
-        title = _title_of(_slides_path(int(slug[4:6]))) or f"Slides — {slug}"
+        title = _title_of(_slides_path(int(slug[4:6]), course_slug)) or f"Slides — {slug}"
     else:
-        title = _title_of(os.path.join(CONTENT_ROOT, slug, PUBLIC_FILES[kind])) or slug
-    return {"slug": slug, "kind": kind, "title": title, "html": render(md)}
+        title = _title_of(os.path.join(c["root"], slug, PUBLIC_FILES[kind])) or slug
+    return {"slug": slug, "kind": kind, "title": title, "html": render(md),
+            "course": c["slug"], "course_title": c["title"]}

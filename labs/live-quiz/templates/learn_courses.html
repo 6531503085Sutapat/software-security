@@ -1,0 +1,25 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Courses — KOSEN·KMITL</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><div class="pwrap"><section class="pjoin">
+  <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
+    <div class="sub">course material</div></div>
+  <div class="join-card">
+    <h1>Courses</h1>
+    <p class="lead">Pick your course. Everything here is readable without signing in.</p>
+    <ul class="weeks">
+      {% for c in courses %}
+        <li><a href="/learn/{{ c.slug }}/"><b>{{ c.title }}</b></a>
+          <span class="sub">{{ c.week_count }} week{{ '' if c.week_count == 1 else 's' }}</span></li>
+      {% endfor %}
+    </ul>
+    <h1>Everything else</h1>
+    <ul class="weeks">
+      <li><a href="/quiz"><b>Weekly quiz</b></a>
+        <span class="sub">graded — you need the code on your slip</span></li>
+      <li><a href="/submit"><b>Hand in your worksheet</b></a>
+        <span class="sub">graded — you need the code on your slip</span></li>
+      <li><a href="/sim"><b>Interactive simulations</b></a>
+        <span class="sub">not graded — click around</span></li>
+    </ul>
+  </div></section></div></body></html>

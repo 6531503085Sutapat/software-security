@@ -19,7 +19,8 @@ is script on its own.
 
 from __future__ import annotations
 
-from flask import Blueprint, abort, make_response, render_template
+from flask import (Blueprint, abort, make_response, redirect, render_template,
+                   url_for)
 
 import content as C
 
@@ -82,17 +83,82 @@ def simulations():
 
 @bp.route("/learn")
 def index():
-    return render_template("learn_index.html", weeks=C.list_weeks())
+    """The front door.
+
+    With one course this shows that course's weeks directly — a list of one
+    course would be a pointless extra click for the only cohort that exists
+    today. With several, it becomes the course list, which is the thing that
+    answers "which course am I in" before "which week".
+    """
+    courses = C.list_courses()
+    if len(courses) == 1:
+        c = courses[0]
+        return render_template("learn_index.html", course=c,
+                               weeks=C.list_weeks(c["slug"]), only_course=True)
+    return render_template("learn_courses.html", courses=courses)
 
 
-@bp.route("/learn/<slug>")
-@bp.route("/learn/<slug>/<kind>")
-def document(slug, kind="worksheet"):
-    doc = C.render_document(slug, kind)
+# ── URL shapes under /learn ────────────────────────────────────────────────
+# Canonical:  /learn/<course>/<week>[/<kind>]
+# Legacy:     /learn/<week>[/<kind>]          — pre-dates courses
+#
+# `/learn/<a>/<b>` is the SAME SHAPE in both: it is either course+week or
+# week+kind. Registering two Flask rules of the same shape and hoping the right
+# one matches is how this first broke — Werkzeug matched the course rule for a
+# legacy URL and it 404'd. So the segment count picks the handler and the
+# handler decides, explicitly, by asking whether the first segment names a
+# course. COURSES rejects any slug matching WEEK_RE, so "course" and "week" are
+# disjoint sets and the decision is never ambiguous.
+
+def _render_doc(course_slug, slug, kind):
+    doc = C.render_document(slug, kind, course_slug)
     if doc is None:
         # 404 for a bad slug, a bad kind, and a non-public file alike — the
         # response must not tell the difference between "no such week" and
         # "that file exists but isn't yours to read" (solution_app.py).
         abort(404)
-    week = next((w for w in C.list_weeks() if w["slug"] == slug), None)
-    return render_template("learn_doc.html", doc=doc, week=week)
+    week = next((w for w in C.list_weeks(course_slug) if w["slug"] == slug), None)
+    return render_template("learn_doc.html", doc=doc, week=week,
+                           course=C.course(course_slug))
+
+
+def _legacy(slug, kind=None):
+    """301 to the canonical course-scoped URL, so links converge instead of two
+    shapes living side by side forever. Anything already printed or already
+    linked from a worksheet keeps working."""
+    default = C.COURSES[0]["slug"]
+    target = (url_for("learn.doc_kind", course_slug=default, slug=slug, kind=kind)
+              if kind else
+              url_for("learn.doc", course_slug=default, slug=slug))
+    return redirect(target, code=301)
+
+
+@bp.route("/learn/<a>")
+@bp.route("/learn/<a>/")
+def course_index(a):
+    """Either a course's week list, or a legacy bare week URL."""
+    c = C.course(a)
+    if c is not None:
+        return render_template("learn_index.html", course=c,
+                               weeks=C.list_weeks(a),
+                               only_course=len(C.COURSES) == 1)
+    if C.WEEK_RE.match(a or ""):
+        return _legacy(a)
+    abort(404)
+
+
+@bp.route("/learn/<course_slug>/<slug>")
+def doc(course_slug, slug):
+    """Either /learn/<course>/<week>, or legacy /learn/<week>/<kind>."""
+    if C.course(course_slug) is not None:
+        return _render_doc(course_slug, slug, "worksheet")
+    if C.WEEK_RE.match(course_slug or ""):
+        return _legacy(course_slug, slug)   # first segment is the week, second the kind
+    abort(404)
+
+
+@bp.route("/learn/<course_slug>/<slug>/<kind>")
+def doc_kind(course_slug, slug, kind):
+    if C.course(course_slug) is None:
+        abort(404)
+    return _render_doc(course_slug, slug, kind)
