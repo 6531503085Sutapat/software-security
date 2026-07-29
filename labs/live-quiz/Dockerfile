@@ -1,20 +1,21 @@
 FROM python:3.12-slim
-# BUILD CONTEXT IS `labs/`, not `labs/live-quiz/` — the image needs the course
+# BUILD CONTEXT IS THE REPO ROOT — the image needs the course
 # worksheets as well as the app, and a context rooted at the app cannot reach
 # its siblings. The first production deploy shipped without this and every
 # /learn page 404'd: the app sits at /app, so content.py's default root resolved
 # to `/`, where no weekNN-* directory exists.
-#   docker buildx build --platform linux/amd64 -f live-quiz/Dockerfile labs/
+#   docker buildx build --platform linux/amd64 -f labs/live-quiz/Dockerfile .
 WORKDIR /app
-COPY live-quiz/requirements.txt .
+COPY labs/live-quiz/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY live-quiz/ .
+COPY labs/live-quiz/ .
 # The course content plane serves these read-only. content.py's PUBLIC_FILES
 # allowlist means only worksheet.md and README.md are ever reachable; the lab
 # solutions copied alongside them are already public in the repo, and the real
 # answer keys live in git-ignored instructor/, outside this context entirely.
-COPY . /content/
-ENV CONTENT_ROOT=/content
+COPY labs/ /content/labs/
+COPY slides/ /content/slides/
+ENV CONTENT_ROOT=/content/labs
 # Run as a non-root user. Week 13 grades students on exactly this defect, so the
 # course's own platform should practise it. /data is the sqlite volume mount point;
 # create it and hand it over before dropping privileges (a fresh named volume

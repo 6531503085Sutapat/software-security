@@ -61,10 +61,39 @@ CONTENT_ROOT = os.environ.get(
 
 # weekNN-slug only. Anchored, no dots, so `..` and absolute paths never match.
 WEEK_RE = re.compile(r"^week\d{2}-[a-z0-9-]+$")
-# The files a week may expose. An allowlist, not a pattern — a lab directory also
-# holds vulnerable_app.py, solution_app.py and docker-compose.yml, and the
-# solution is emphatically not student-facing.
-PUBLIC_FILES = {"worksheet": "worksheet.md", "readme": "README.md"}
+# Every student-facing document a week can carry, keyed by the URL segment.
+#
+# Still an ALLOWLIST of exact filenames, not a pattern or a denylist: a lab
+# directory also holds `solution_app.py`, `vulnerable_app.py` and compose files,
+# and the answer keys live in the git-ignored instructor/ tree. Nothing here may
+# ever be widened to "any .md" — the point is that adding a file to a lab does
+# not silently publish it.
+#
+# The six non-lab weeks (review, written exam, practical CTF) carry no
+# worksheet.md at all: their material IS mock-ctf.md / exam.md / ctf.md. Before
+# these were listed, /learn showed those weeks as a README and nothing else —
+# the main document for six of nineteen weeks was simply absent from the
+# platform while appearing complete on disk.
+PUBLIC_FILES = {
+    "worksheet": "worksheet.md",
+    "readme": "README.md",
+    # non-lab weeks — this is their primary material
+    "mock-ctf": "mock-ctf.md",          # W7, W17 review
+    "exam": "exam.md",                  # W8, W18 written
+    "ctf": "ctf.md",                    # W9, W19 practical
+    "scrimmage": "scrimmage.md",        # W16 capstone
+    # per-week supplements a worksheet references
+    "attack": "attack.md",              # W6, W10, W14
+    "harden": "harden.md",              # W13
+    "dependency-confusion": "dependency-confusion.md",  # W12
+    "template": "THREAT-MODEL-TEMPLATE.md",             # W1 — students fill this in
+    "pipeline": "README-pipeline.md",   # W15
+}
+
+# Lecture decks live outside the week directory, at slides/weekNN.md. Served
+# read-only like everything else here; the generated .pptx is NOT served (it is
+# a binary the renderer can't make inert, and the markdown is the source anyway).
+SLIDES_DIR = "slides"
 
 # Interactive simulations a worksheet may embed, by slug. An ALLOWLIST, because
 # this is the one construct in the whole renderer that produces an <iframe> —
@@ -96,6 +125,8 @@ def list_weeks() -> list[dict]:
             continue
         available = [k for k, f in PUBLIC_FILES.items()
                      if os.path.isfile(os.path.join(d, f))]
+        if _slides_path(int(name[4:6])):
+            available.append("slides")
         if not available:
             continue
         out.append({
@@ -121,6 +152,19 @@ def _title_of(path: str) -> str | None:
     return None
 
 
+def _slides_path(week_number: int) -> str | None:
+    """slides/weekNN.md, if it exists. Outside the week directory, so it gets its
+    own containment check rather than reusing the lab-dir one."""
+    root = os.path.realpath(CONTENT_ROOT)
+    # CONTENT_ROOT is `labs/` (or /content in the image); slides/ is its sibling
+    # in a checkout and a sibling under /content in the image.
+    for base in (os.path.dirname(root), root):
+        p = os.path.realpath(os.path.join(base, SLIDES_DIR, f"week{week_number:02d}.md"))
+        if (p == base or p.startswith(base + os.sep)) and os.path.isfile(p):
+            return p
+    return None
+
+
 def read(slug: str, kind: str) -> str | None:
     """Raw markdown for one week's public document, or None.
 
@@ -128,7 +172,15 @@ def read(slug: str, kind: str) -> str | None:
     traversal impossible, the check costs nothing and survives someone later
     relaxing the pattern.
     """
-    if not WEEK_RE.match(slug or "") or kind not in PUBLIC_FILES:
+    if not WEEK_RE.match(slug or ""):
+        return None
+    if kind == "slides":
+        p = _slides_path(int(slug[4:6]))
+        if p is None:
+            return None
+        with open(p, encoding="utf-8", errors="replace") as fh:
+            return fh.read()
+    if kind not in PUBLIC_FILES:
         return None
     root = os.path.realpath(CONTENT_ROOT)
     path = os.path.realpath(os.path.join(root, slug, PUBLIC_FILES[kind]))
@@ -322,7 +374,8 @@ def render_document(slug: str, kind: str) -> dict | None:
     md = read(slug, kind)
     if md is None:
         return None
-    return {"slug": slug, "kind": kind,
-            "title": _title_of(os.path.join(CONTENT_ROOT, slug, PUBLIC_FILES[kind]))
-                     or slug,
-            "html": render(md)}
+    if kind == "slides":
+        title = _title_of(_slides_path(int(slug[4:6]))) or f"Slides — {slug}"
+    else:
+        title = _title_of(os.path.join(CONTENT_ROOT, slug, PUBLIC_FILES[kind])) or slug
+    return {"slug": slug, "kind": kind, "title": title, "html": render(md)}

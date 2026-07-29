@@ -303,3 +303,60 @@ def test_the_sqli_sim_does_not_regress_to_quote_parity():
     fn = fn[:fn.index("\n  }")]
     assert "% 2" not in fn, "quote-parity logic is back; it inverts the verdict"
     assert 'indexOf("\'")' in fn
+
+
+# --- the allowlist covers every student-facing document ---------------------
+#
+# Until 2026-07-29 PUBLIC_FILES held only worksheet.md and README.md. Six of the
+# nineteen weeks carry no worksheet at all — their material IS mock-ctf.md /
+# exam.md / ctf.md — so /learn showed those weeks as a bare README while the
+# course looked complete on disk. These tests keep that from recurring.
+
+def test_every_week_exposes_its_primary_document():
+    """A week whose only public document is its README is a week whose actual
+    material is missing from the platform."""
+    thin = [w["slug"] for w in C.list_weeks()
+            if set(w["available"]) <= {"readme", "slides"}]
+    assert not thin, f"only a README (+slides) reaches students for: {thin}"
+
+
+def test_the_non_lab_weeks_serve_their_own_artifact():
+    got = {w["number"]: set(w["available"]) for w in C.list_weeks()}
+    for n, kind in ((7, "mock-ctf"), (8, "exam"), (9, "ctf"),
+                    (16, "scrimmage"), (17, "mock-ctf"), (18, "exam"), (19, "ctf")):
+        assert kind in got.get(n, set()), f"week {n} does not serve {kind}"
+
+
+def test_every_student_facing_markdown_in_a_lab_is_reachable():
+    """If a .md is added to a lab directory and not allowlisted, students never
+    see it. Catch that here rather than in a session."""
+    import glob
+    unreachable = []
+    for w in C.list_weeks():
+        d = os.path.join(C.CONTENT_ROOT, w["slug"])
+        for f in glob.glob(os.path.join(d, "*.md")):
+            if os.path.basename(f) not in C.PUBLIC_FILES.values():
+                unreachable.append(os.path.relpath(f, C.CONTENT_ROOT))
+    assert not unreachable, (
+        "student-facing markdown not in PUBLIC_FILES (add it, or confirm it is "
+        f"instructor-only): {unreachable}")
+
+
+def test_slides_are_served_and_pptx_is_not():
+    weeks = C.list_weeks()
+    assert sum("slides" in w["available"] for w in weeks) >= 19
+    assert C.read("week01-threat-modeling", "slides")
+    # the binary deck is deliberately not a kind at all
+    assert "pptx" not in C.PUBLIC_FILES and C.read("week01-threat-modeling", "pptx") is None
+
+
+@pytest.mark.parametrize("slug", ["../slides", "week99-nope", "..", "week01"])
+def test_slides_path_cannot_be_walked_out_of(slug):
+    assert C.read(slug, "slides") is None
+
+
+def test_the_allowlist_never_admits_code_or_answers():
+    for f in C.PUBLIC_FILES.values():
+        assert f.endswith(".md"), f"{f} is not markdown"
+        low = f.lower()
+        assert "solution" not in low and "answer" not in low, f"{f} looks instructor-only"
