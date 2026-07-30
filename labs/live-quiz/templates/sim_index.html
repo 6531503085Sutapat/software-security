@@ -1,11 +1,46 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Simulations — KOSEN·KMITL</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
-<body>
-<h1>Interactive simulations</h1>
-<p class="lead">Each one is embedded in the worksheet it belongs to; these are the
-full-size versions.</p>
-<div class="card"><ul>
-{% for slug, title in sims %}<li><a href="/sim/{{ slug }}">{{ title }}</a></li>{% endfor %}
-</ul></div>
-</body></html>
+{% extends "base.html" %}
+{#- The simulations index. This is a SITE page (a list of links), not a
+    simulation, so it belongs in the site's shell — unlike sim_trust_boundary
+    and sim_sqli_parse, which are self-contained interactive apps on sim.css and
+    stay there deliberately.
+
+    It used to be a bare list with no header, no footer and no link back into
+    the course: reachable from the global nav on every page, and a dead end once
+    you arrived. Its own copy said each sim "is embedded in the worksheet it
+    belongs to" while linking to no worksheet at all. -#}
+{% set section = 'sim' %}
+{% set page_description = 'Interactive security simulations from the KOSEN·KMITL course material: click through how an attack actually works, one step at a time. Free to use, no account.' %}
+{% block title %}Interactive simulations — KOSEN·KMITL{% endblock %}
+{% block main %}
+<section class="lx-hero">
+  <div class="lx-wrap">
+    <p class="lx-eyebrow">KOSEN·KMITL — course material</p>
+    <h1 class="lx-h1">Interactive simulations</h1>
+    <p class="lx-lead lx-measure">Click through how an attack actually works, one
+      step at a time. Each one is also embedded in the worksheet it belongs to;
+      these are the full-size versions. Open to anyone, like the rest of the
+      course material.</p>
+  </div>
+</section>
+
+<section class="lx-sec lx-sec--tight">
+  <div class="lx-wrap">
+    <ul class="lx-simlist">
+      {% for s in sims %}
+      <li>
+        <article class="lx-simcard">
+          <h2 class="lx-simcard-t"><a class="lx-card-a" href="/sim/{{ s.slug }}">{{ s.title }}</a></h2>
+          <p class="lx-simcard-meta">
+            <span class="lx-need lx-need--free">open to anyone</span>
+            {%- if s.week_href %}
+            <a class="lx-link" href="{{ s.week_href }}">Read the worksheet it belongs to</a>
+            {%- endif %}
+          </p>
+        </article>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="lx-docnav-up"><a class="lx-link" href="/learn">All course material</a></p>
+  </div>
+</section>
+{% endblock %}

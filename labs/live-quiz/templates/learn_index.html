@@ -25,7 +25,9 @@
     list at render time — nothing invented, nothing configured.
 -#}
 
-{% block title %}{{ course.title }} — course material{% endblock %}
+{% set section = 'learn' %}
+{% set page_description = course.title ~ ' at KOSEN·KMITL: every worksheet, lab guide, exam paper and CTF brief, free to read with no account.' %}
+{% block title %}{{ course.title }} — KOSEN·KMITL{% endblock %}
 
 {% block main %}
 
@@ -33,9 +35,13 @@
     Used identically by the grouped path and the flat path. That is deliberate:
     if the two paths had their own markup, the flat path (the one the
     cryptography and cloud courses take today) would be the one that rots.
-    `course` and `KINDS` are passed explicitly rather than closed over, so the
-    macro does not depend on Jinja's scoping rules for template-level sets. -#}
-{%- macro unit_row(w, course, KINDS) -%}
+    `course` is passed explicitly rather than closed over, so the macro does not
+    depend on Jinja's scoping rules for template-level sets. `kind_label` is a
+    Jinja global (app.py's context processor) over content.KIND_LABELS — the
+    same table the reading page prints, so a document is named identically on
+    both. It used to be a dict literal here, which the reading page could not
+    reach, so that page printed raw slugs. -#}
+{%- macro unit_row(w, course) -%}
 <li>
   <a class="lx-unit" href="/learn/{{ course.slug }}/{{ w.slug }}">
     {#- THE LEADING SLOT CARRIES THE NUMBER, not the type.
@@ -64,7 +70,7 @@
           information — "what you get" — and it is true. The fallback
           de-hyphenates and capitalises, so a new kind added to
           content.PUBLIC_FILES can never render a raw slug or a blank. -#}
-      <span class="lx-unit-meta">{% for k in w.available %}{{ KINDS.get(k, k|replace('-', ' ')|capitalize) }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
+      <span class="lx-unit-meta">{% for k in w.available %}{{ kind_label(k) }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
     </span>
     <span class="lx-unit-tags">
       {#- `badge` CAN be the empty string: a directory whose only public file is
@@ -77,21 +83,6 @@
   </a>
 </li>
 {%- endmacro -%}
-
-{%- set KINDS = {
-  'worksheet': 'Worksheet',
-  'readme': 'Overview',
-  'slides': 'Lecture slides',
-  'mock-ctf': 'Mock CTF',
-  'exam': 'Exam paper',
-  'ctf': 'CTF brief',
-  'scrimmage': 'Scrimmage',
-  'attack': 'Attack notes',
-  'harden': 'Hardening notes',
-  'dependency-confusion': 'Supply-chain notes',
-  'template': 'Template to fill in',
-  'pipeline': 'Pipeline guide'
-} -%}
 
 {#- Counted, not configured. #}
 {%- set ns = namespace(graded=0, slides=0, mi=0) -%}
@@ -182,12 +173,12 @@
           <details class="lx-mod" id="lx-m{{ loop.index }}" open>
             <summary class="lx-mod-sum">
               <span class="lx-mod-eyebrow">Module {{ ns.mi }}</span>
-              <span class="lx-mod-t">{{ g.label }}</span>
+              <h3 class="lx-mod-t">{{ g.label }}</h3>
               <span class="lx-mod-meta">{{ g.weeks|length }} {{ course.unit_label|lower }}{{ '' if g.weeks|length == 1 else 's' }} · {{ course.unit_label }} {{ g.weeks[0].number_label }}{% if g.weeks|length > 1 %}–{{ g.weeks[-1].number_label }}{% endif %}</span>
               <span class="lx-mod-tog" aria-hidden="true"></span>
             </summary>
             <ul class="lx-units">
-              {% for w in g.weeks %}{{ unit_row(w, course, KINDS) }}{% endfor %}
+              {% for w in g.weeks %}{{ unit_row(w, course) }}{% endfor %}
             </ul>
           </details>
         {% else %}
@@ -195,7 +186,7 @@
               declared range, degrade to a plain list IN PLACE — never to an
               empty module, and never by vanishing. -#}
           <ul class="lx-units lx-units--flat">
-            {% for w in g.weeks %}{{ unit_row(w, course, KINDS) }}{% endfor %}
+            {% for w in g.weeks %}{{ unit_row(w, course) }}{% endfor %}
           </ul>
         {% endif %}
       {% endfor %}
@@ -203,7 +194,7 @@
       {#- FLAT. This is the path the cryptography and cloud courses take today,
           and the path every course takes until `modules` exists. Same macro. -#}
       <ul class="lx-units lx-units--flat">
-        {% for w in weeks %}{{ unit_row(w, course, KINDS) }}{% endfor %}
+        {% for w in weeks %}{{ unit_row(w, course) }}{% endfor %}
       </ul>
     {% endif %}
 

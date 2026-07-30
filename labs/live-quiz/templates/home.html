@@ -38,7 +38,7 @@
       Graded work       C   tint band, bordered rows, the literal word GRADED
 -#}
 
-{% block title %}{% if one %}{{ courses[0].title }}{% else %}Courses{% endif %} — KOSEN·KMITL{% endblock %}
+{% block title %}{% if one %}{{ courses[0].title }} — KOSEN·KMITL{% else %}KOSEN·KMITL — security courses, taught in the open{% endif %}{% endblock %}
 
 {% block main %}
 
@@ -54,11 +54,15 @@
        enrolled, which is precisely wrong for the audience the free-content
        policy just created. #}
     <h1 class="lx-h1">{% if one %}{{ courses[0].title }}{% else %}Security engineering, taught in the open{% endif %}</h1>
+    {# The arena is NOT code-unlocked — its accounts are pre-provisioned and it
+       needs the class VPN, which is what this page's own arena card and every
+       course page say. Saying "code" here made the front door contradict itself
+       two sections apart. #}
     <p class="lx-lead lx-measure">The course material on this site is public: anyone
       on the internet can read every worksheet, lab guide, exam paper and CTF
-      brief without an account. The graded parts — the weekly quiz, the
-      worksheet hand-in and the arena — are for enrolled students, and open with
-      the one-time code your teacher hands you on paper, in class.</p>
+      brief without an account. The graded parts are for enrolled students: the
+      weekly quiz and the worksheet hand-in open with the one-time code your
+      teacher hands you on paper in class, and the arena needs the class VPN.</p>
 
     {# Coursera's "Details to know" strip. Every value is either counted from
        the data on this page or a statement of policy. No duration, no rating,
