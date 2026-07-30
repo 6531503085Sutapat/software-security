@@ -15,18 +15,38 @@
 -- everywhere else — the CTFd username, the WireGuard peer name, the gradebook
 -- row key (see instructor/roster/). Not a new identity; a reference to the
 -- existing one.
+-- A PERSON. `student_id` is the registrar's own identifier, so it is the natural
+-- key; minting a surrogate id and then mapping back to the real one forever buys
+-- nothing. See roster.py for why this replaced a table keyed (teacher_id,
+-- student_id) — that shape made the same human three unrelated rows across three
+-- of this instructor's courses, and had nowhere to put a co-taught course.
 CREATE TABLE IF NOT EXISTS students (
-  id          INTEGER PRIMARY KEY,
-  teacher_id  INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
-  student_id  TEXT NOT NULL,
+  student_id  TEXT PRIMARY KEY,
   name        TEXT NOT NULL DEFAULT '',
   email       TEXT NOT NULL DEFAULT '',
+  created_at  TEXT NOT NULL
+);
+
+-- A person being IN a course. This IS the roster — the thing that used to live
+-- outside the platform in students.txt. Written when a teacher issues code slips,
+-- because pasting the class list is the enrolment event.
+CREATE TABLE IF NOT EXISTS enrollments (
+  course_slug TEXT NOT NULL,
+  student_id  TEXT NOT NULL REFERENCES students(student_id) ON DELETE CASCADE,
+  -- Which teacher owns this pairing. On the enrolment, not on the person: a
+  -- co-taught course has more than one, and a person is nobody's property.
+  teacher_id  INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
   created_at  TEXT NOT NULL,
-  UNIQUE (teacher_id, student_id)
+  PRIMARY KEY (course_slug, student_id)
 );
 
 CREATE TABLE IF NOT EXISTS assessments (
   id                INTEGER PRIMARY KEY,
+  -- Which course this belongs to. A STRING, not a foreign key: courses are
+  -- configured in the content registry ($COURSES / the curriculum monorepo),
+  -- not stored here, so a `courses` table would be a second source of truth.
+  -- Validated at the write boundary by course_scope.check().
+  course_slug  TEXT,
   teacher_id        INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
   title             TEXT NOT NULL,
   variant           TEXT NOT NULL DEFAULT 'A',   -- parallel A/B forms

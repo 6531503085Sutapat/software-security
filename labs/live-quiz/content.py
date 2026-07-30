@@ -41,6 +41,7 @@ PATH SAFETY
 from __future__ import annotations
 
 import html
+import json
 import os
 import re
 
@@ -59,8 +60,270 @@ CONTENT_ROOT = os.environ.get(
     "CONTENT_ROOT",
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# weekNN-slug only. Anchored, no dots, so `..` and absolute paths never match.
-WEEK_RE = re.compile(r"^week\d{2}-[a-z0-9-]+$")
+# A course's content directories. Anchored, no dots, so `..` and absolute paths
+# never match — that property is load-bearing and survives every change below.
+#
+# The unit prefix is PER COURSE because the real courses disagree:
+#   software-security       week01-threat-modeling … week19-…
+#   security-cryptography   week01-intro … week14-…
+#   cloud-infrastructure    lesson01-03-aws-…, lesson07b-cloudtrail-…, lesson13-…
+# and cloud-infra's numbering is not even regular: a lesson can span two numbers
+# (`01-03`) or carry a letter suffix (`07b`). So the number is captured as an
+# opaque STRING for display and never parsed into an int — the previous
+# `int(name[4:6])` was a positional slice that assumed "week" + exactly 2 digits
+# and would raise on `lesson07b`.
+#
+# Ordering stays lexical on the directory name, which is correct precisely
+# because the numbers are zero-padded: lesson04 < lesson07 < lesson07b < lesson10.
+UNIT_RE_CACHE: dict[str, re.Pattern] = {}
+UNIT_NAME_RE = re.compile(r"^[a-z]{2,16}$")
+
+
+def unit_re(unit: str = "week") -> re.Pattern:
+    if unit not in UNIT_RE_CACHE:
+        if not UNIT_NAME_RE.match(unit):
+            raise ValueError(f"bad unit name {unit!r}")
+        UNIT_RE_CACHE[unit] = re.compile(
+            rf"^{unit}(\d{{2}}[a-z]?(?:-\d{{2}})?)-([a-z0-9-]+)$")
+    return UNIT_RE_CACHE[unit]
+
+
+# Kept for the many callers and tests that predate multi-course: the default unit.
+WEEK_RE = re.compile(r"^week\d{2}[a-z]?(?:-\d{2})?-[a-z0-9-]+$")
+
+# ── Courses ────────────────────────────────────────────────────────────────
+# The instructor teaches several courses (software-security,
+# security-cryptography, cloud-infrastructure-security) rendered from one
+# curriculum monorepo. This plane used to serve exactly one of them: CONTENT_ROOT
+# pointed at a single repo's `labs/` and the index was titled in the template.
+#
+# A course is (slug, title, root). Nothing more — a course is an ordering over
+# week directories, which is also all a manifest is in the monorepo.
+#
+# Course slugs must NOT look like a week directory. `/learn/<x>` is ambiguous
+# between "course x" and the legacy "week x of the default course", and we
+# disambiguate on WEEK_RE. _load_courses() rejects a slug that would collide, so
+# the ambiguity can never arise from configuration.
+COURSE_SLUG_RE = re.compile(r"^[a-z][a-z0-9-]{1,63}$")
+
+
+def _clean_modules(slug: str, raw) -> list[dict]:
+    """Validate a course's optional `modules` declaration.
+
+    Shape: [{"label": "Unit A — Foundations", "from": 1, "to": 3}, ...] — an
+    ordered list of INCLUSIVE ranges over a unit's `number`. A course that
+    declares none gets `[]` and renders exactly as it does today.
+
+    Ranges are matched against `number`, which is NOT unique: the cloud course
+    has both `lesson07` and `lesson07b`, and both carry number 7. That is the
+    behaviour we want — 7 and 7b belong to the same module — but it means a
+    range must never be treated as a count of units.
+
+    Validated here, at load, rather than at render: a typo in the deployment's
+    $COURSES should stop the container from starting, not silently drop a week
+    out of the outline where nobody would notice it.
+    """
+    if not raw:
+        return []
+    if not isinstance(raw, list):
+        raise ValueError(f"COURSES: {slug!r} modules must be a list")
+    out, hi_prev = [], None
+    for m in raw:
+        if not isinstance(m, dict):
+            raise ValueError(f"COURSES: {slug!r} module entries must be objects")
+        try:
+            lo = int(m["from"])
+            hi = int(m.get("to", lo))
+        except (KeyError, TypeError, ValueError):
+            raise ValueError(f"COURSES: {slug!r} module {m!r} needs an integer 'from'")
+        if hi < lo:
+            raise ValueError(f"COURSES: {slug!r} module {m!r} ends before it starts")
+        # Overlap would put one unit in two modules, and the grouper resolves
+        # that by first-match — i.e. silently. Refuse it instead.
+        if hi_prev is not None and lo <= hi_prev:
+            raise ValueError(
+                f"COURSES: {slug!r} module {m!r} overlaps the previous one "
+                f"(which ended at {hi_prev}); ranges must be ordered and disjoint")
+        hi_prev = hi
+        label = m.get("label")
+        out.append({"label": str(label) if label else None, "from": lo, "to": hi})
+    return out
+
+
+def list_modules(course_slug: str | None = None) -> list[dict]:
+    """Group a course's units into modules: [{label, weeks}, ...].
+
+    THE CONTRACT the template relies on: concatenating every group's `weeks`
+    reproduces `list_weeks(course_slug)` exactly — same units, same order. It
+    holds by construction, because this walks `weeks` and never reorders or
+    filters; a unit that matches no declared range lands in an UNLABELLED group
+    in its own position. So a half-written `modules` declaration degrades to a
+    partly-flat page, never to a page that has quietly lost week 14.
+
+    Returns [] when the course declares no modules, which is the signal
+    learn_index.html reads to render the flat list it renders today. Two of the
+    three live courses take that path, so it is the majority, not a fallback.
+    """
+    c = course(course_slug)
+    weeks = list_weeks(course_slug)
+    spec = (c or {}).get("modules") or []
+    if not spec or not weeks:
+        return []
+
+    def which(n: int):
+        for i, m in enumerate(spec):
+            if m["from"] <= n <= m["to"]:
+                return i
+        return None
+
+    groups: list[dict] = []
+    for w in weeks:
+        i = which(w["number"])
+        # Merge only into a RUN of the same module. Two separate unlabelled
+        # stretches either side of a named module must stay separate, or the
+        # page would claim week 7 sits next to week 17.
+        if groups and groups[-1]["_i"] == i:
+            groups[-1]["weeks"].append(w)
+        else:
+            groups.append({"_i": i,
+                           "label": spec[i]["label"] if i is not None else None,
+                           "weeks": [w]})
+    return [{"label": g["label"], "weeks": g["weeks"]} for g in groups]
+
+
+def _load_courses() -> list[dict]:
+    """Course registry, from $COURSES (JSON) or a single course from CONTENT_ROOT.
+
+    The single-course default is what keeps this change invisible to the current
+    deployment: with no $COURSES set the platform behaves exactly as before,
+    serving CONTENT_ROOT under one course.
+
+    $COURSES is a JSON list of {slug, title, root, arena_url?}. `root` is the
+    directory holding the weekNN-* dirs (i.e. a course repo's `labs/`).
+    """
+    raw = os.environ.get("COURSES", "").strip()
+    if not raw:
+        return [{
+            "slug": os.environ.get("COURSE_SLUG", "software-security"),
+            "title": os.environ.get("COURSE_TITLE", "Software Security"),
+            "root": CONTENT_ROOT,
+            "arena_url": os.environ.get("ARENA_URL", "").strip() or None,
+            "unit": "week",
+            "modules": [],
+            "unit_label": "Week",
+        }]
+    out, seen = [], set()
+    for c in json.loads(raw):
+        slug = str(c.get("slug", "")).strip()
+        if not COURSE_SLUG_RE.match(slug):
+            raise ValueError(f"COURSES: bad course slug {slug!r}")
+        if WEEK_RE.match(slug):
+            # Would make /learn/<slug> ambiguous with a legacy week URL.
+            raise ValueError(f"COURSES: slug {slug!r} collides with a week directory name")
+        if slug in seen:
+            raise ValueError(f"COURSES: duplicate slug {slug!r}")
+        seen.add(slug)
+        root = os.path.realpath(str(c["root"]))
+        if not os.path.isdir(root):
+            raise ValueError(f"COURSES: {slug!r} root does not exist: {root}")
+        unit = str(c.get("unit") or "week")
+        if not UNIT_NAME_RE.match(unit):
+            raise ValueError(f"COURSES: {slug!r} has bad unit {unit!r}")
+        out.append({"slug": slug, "title": str(c.get("title") or slug),
+                    "root": root, "arena_url": (c.get("arena_url") or None),
+                    "unit": unit,
+                    "modules": _clean_modules(slug, c.get("modules")),
+                    "unit_label": str(c.get("unit_label") or unit.capitalize())})
+    if not out:
+        raise ValueError("COURSES was set but produced no courses")
+    return out
+
+
+COURSES = _load_courses()
+
+
+# Plural nouns for the card's composition line, in the order they are shown.
+# "13 labs · 2 exams · 2 CTFs · 2 reviews" is the one sentence on a course card
+# that differs between courses, which is the whole reason the card exists —
+# three cards carrying the same sentence is the "eight identical boxes" the
+# front door was rebuilt to fix.
+_MIX_NOUNS = [("LAB", "lab", "labs"), ("EXAM", "exam", "exams"),
+              ("CTF", "CTF", "CTFs"), ("REVIEW", "review", "reviews"),
+              ("CAPSTONE", "capstone", "capstones"), ("GUIDE", "guide", "guides")]
+
+
+def course_mix(course_slug: str | None = None) -> list[str]:
+    """What a course is made of, counted from what is actually on disk.
+
+    Never configured and never estimated: if a directory stops publishing a
+    worksheet its badge changes and this line changes with it. That is the
+    difference between a card that describes the course and a card that
+    describes what somebody once typed into an env var.
+
+    A unit whose directory carries no recognised primary (badge == "", which is
+    reachable — a slides-only directory does it) is counted under "other"
+    rather than dropped, so the parts always sum to week_count.
+    """
+    counts: dict[str, int] = {}
+    for w in list_weeks(course_slug):
+        counts[w.get("badge") or ""] = counts.get(w.get("badge") or "", 0) + 1
+    out = []
+    for key, one, many in _MIX_NOUNS:
+        n = counts.get(key, 0)
+        if n:
+            out.append(f"{n} {one if n == 1 else many}")
+    n = counts.get("", 0)
+    if n:
+        out.append(f"{n} other")
+    return out
+
+
+def nav_courses() -> list[dict]:
+    """Just {slug, title} for the shared nav's course switcher.
+
+    A PROJECTION, deliberately — never the course dicts themselves. Those carry
+    `root`, an absolute path on the server's filesystem, and the nav is rendered
+    into every page by base.html: one stray `{{ c }}` in a future edit would
+    print the deployment's directory layout onto a public page. Handing the
+    template only the two fields it needs makes that impossible rather than
+    merely unlikely.
+
+    Cheap on purpose: no list_weeks() call, so adding the switcher to a page
+    costs no directory scan. That is also why this is not a context_processor —
+    Flask would run it for /host and /play too, which is the one surface that
+    must not gain new work or new ways to fail.
+    """
+    return [{"slug": c["slug"], "title": c["title"]} for c in COURSES]
+
+
+def list_courses() -> list[dict]:
+    """Every configured course, with the derived fields the course card shows.
+
+    `week_count`, `graded_count` and `mix` are all counted from list_weeks() at
+    call time. They are additive — every existing caller that only reads slug /
+    title / week_count is unaffected.
+    """
+    out = []
+    for c in COURSES:
+        weeks = list_weeks(c["slug"])
+        out.append({**c,
+                    "week_count": len(weeks),
+                    "graded_count": sum(1 for w in weeks if w.get("graded")),
+                    "mix": course_mix(c["slug"])})
+    return out
+
+
+def course(slug: str | None) -> dict | None:
+    """Resolve a course slug. `None` means the default (first) course, which is
+    what every pre-existing single-course caller and URL relies on."""
+    if slug is None:
+        return COURSES[0]
+    return next((c for c in COURSES if c["slug"] == slug), None)
+
+
+def _root_of(course_slug: str | None) -> str | None:
+    c = course(course_slug)
+    return c["root"] if c else None
 # Every student-facing document a week can carry, keyed by the URL segment.
 #
 # Still an ALLOWLIST of exact filenames, not a pattern or a denylist: a lab
@@ -114,30 +377,153 @@ SIMS = {
 }
 
 
-def list_weeks() -> list[dict]:
-    """Every week directory that has something public to show, in order."""
+def list_weeks(course_slug: str | None = None) -> list[dict]:
+    """Every week directory that has something public to show, in order.
+
+    `course_slug=None` keeps the original single-course behaviour.
+    """
+    c = course(course_slug)
+    if c is None:
+        return []
+    root = c["root"]
+    pat = unit_re(c.get("unit", "week"))
     out = []
-    for name in sorted(os.listdir(CONTENT_ROOT)):
-        if not WEEK_RE.match(name):
+    for name in sorted(os.listdir(root)):
+        m = pat.match(name)
+        if not m:
             continue
-        d = os.path.join(CONTENT_ROOT, name)
+        d = os.path.join(root, name)
         if not os.path.isdir(d):
             continue
         available = [k for k, f in PUBLIC_FILES.items()
                      if os.path.isfile(os.path.join(d, f))]
-        if _slides_path(int(name[4:6])):
+        if _slides_path(m.group(1), course_slug):
             available.append("slides")
         if not available:
             continue
+        # The title must be the one on the document the row OPENS, not the
+        # README's. Verified 2026-07-30: week 7's README says "Reflection &
+        # Review (pre-Midterm)" while the row links mock-ctf.md, titled "Mock CTF
+        # (Midterm dry-run)". The list promised revision and delivered a timed
+        # CTF. Same divergence on weeks 8, 9, 18, 19 — the exam blocks.
+        primary = None
+        for k in PRIMARY_ORDER:
+            if k in available:
+                primary = k
+                break
+        primary = primary or (available[0] if available else None)
+        primary_file = (PUBLIC_FILES.get(primary) if primary != "slides"
+                        else None)
+        title = None
+        if primary_file:
+            title = _title_of(os.path.join(d, primary_file))
+        title = title or _title_of(os.path.join(d, "worksheet.md")) \
+            or _title_of(os.path.join(d, "README.md")) \
+            or name[7:].replace("-", " ").title()
+        num = m.group(1)
         out.append({
             "slug": name,
-            "number": int(name[4:6]),
-            "title": _title_of(os.path.join(d, "worksheet.md")) or
-                     _title_of(os.path.join(d, "README.md")) or
-                     name[7:].replace("-", " ").title(),
+            # TWO fields, because one cannot be both sortable and truthful.
+            # `number` is an int taken from the leading two digits, which the
+            # pattern guarantees exist — so ordering stays numeric (an earlier
+            # attempt made this a string and "10" sorted before "2"; the existing
+            # tests caught it, correctly).
+            # `number_label` is what a student reads, and it keeps the
+            # irregularity the cloud course actually has: "7b", "1-3".
+            "number": int(num[:2]),
+            "number_label": _num_label(num),
+            "unit_label": c.get("unit_label", "Week"),
+            "badge": PRIMARY_BADGE.get(primary, ""),
+            "graded": PRIMARY_BADGE.get(primary, "") in GRADED_BADGES,
+            "title": title,
+            "short_title": short_title(title),
+            "primary": primary,
             "available": available,
         })
     return out
+
+
+# Which document IS the week, when the URL doesn't say. Order matters and is not
+# alphabetical: it is "the thing a student opens when they open the week".
+#
+# Six of the nineteen weeks have NO worksheet.md — the review weeks are a
+# mock CTF, the exam weeks are the paper, the practical weeks are the CTF brief.
+# `/learn/<course>/<week>` used to hardcode `kind="worksheet"` for all of them,
+# so **week07, 08, 09, 17, 18 and 19 returned 404 on their main link** — both
+# written exams, both midterm/final CTFs and both mock CTFs, i.e. the six
+# highest-stakes documents in the course. Present since the content plane was
+# first built; found 2026-07-30 by requesting every week's bare URL rather than
+# by reading the route.
+# Titles as a student should read them in a LIST, which is not how they read at
+# the top of a document. The headings carry context the row already gives —
+# "Worksheet 4 — ", "Week 8 — " — and an hours figure that is wrong twice over:
+# worksheets 13-16 say "(4 hrs)", but a KOSEN class is 3 hours and an MFU session
+# is a whole Saturday. Verified against all 19 real headings.
+_TRIM_LEAD = re.compile(
+    r"^(?:Worksheet|Week|Lab|Lesson)s?(?:\s+[\d\u2013-]+)?\s*[:—–-]\s*", re.I)
+_TRIM_TAIL = re.compile(r"\s*\((?:\d+(?:\.\d+)?\s*(?:hrs?|hours?)|Week\s+\d+)\)\s*$", re.I)
+
+
+def _num_label(num: str) -> str:
+    """"07" -> "7" · "07b" -> "7b" · "01-03" -> "1-3" (a range of lessons)."""
+    parts = num.split("-")
+    out = []
+    for part in parts:
+        digits = part[:2].lstrip("0") or "0"
+        out.append(digits + part[2:])
+    return "\u2013".join(out) if len(out) > 1 else out[0]
+
+
+def short_title(title: str) -> str:
+    """A list-row title. Never returns empty — an unmatched heading renders raw,
+    which is redundant rather than blank."""
+    if not title:
+        return title
+    out = title.strip()
+    # Repeat: the cloud course stacks two prefixes — "Worksheet — Lessons 1-3: ".
+    # Bounded so a pathological title cannot spin.
+    for _ in range(4):
+        nxt = _TRIM_LEAD.sub("", out, count=1).strip()
+        if nxt == out:
+            break
+        out = nxt
+    out = _TRIM_TAIL.sub("", out).strip()
+    return out or title.strip()
+
+
+# What KIND of thing a unit is, from the document that IS it. A student scanning
+# 19 rows needs to see at a glance which ones are assessments — the exam weeks and
+# the midterm/final CTFs look exactly like an ordinary lab in a bare list, and
+# that is how someone walks into a graded block expecting a worksheet.
+PRIMARY_BADGE = {
+    "worksheet": "LAB",
+    "mock-ctf": "REVIEW",
+    "exam": "EXAM",
+    "ctf": "CTF",
+    "scrimmage": "CAPSTONE",
+    "readme": "GUIDE",
+}
+# Which of those carry a mark.
+#
+# LAB IS IN THIS SET, and leaving it out was the worst defect in the badge system
+# it was added to fix. syllabus.md:163 — "Weekly lab worksheets — 13 graded | 30%"
+# — makes the worksheets the SINGLE LARGEST component of the final grade, and all
+# 13 of them render from `primary == "worksheet"` → badge LAB. With LAB excluded,
+# the 30% component was drawn in the same greyed style as "read anything, any
+# time", i.e. the feature whose entire purpose is to stop a student walking into
+# graded work unawares was telling them the largest graded component was optional
+# reading. That is worse than having no badges: it is a confident wrong answer.
+#
+# REVIEW (weeks 7, 17) genuinely is not graded — those are mock CTFs for practice.
+GRADED_BADGES = {"LAB", "EXAM", "CTF"}
+
+PRIMARY_ORDER = ("worksheet", "mock-ctf", "exam", "ctf", "scrimmage", "readme")
+
+
+def primary_kind(slug: str, course_slug: str | None = None) -> str | None:
+    """The document a bare week URL should open, or None if the week has none."""
+    week = next((w for w in list_weeks(course_slug) if w["slug"] == slug), None)
+    return week["primary"] if week else None
 
 
 def _title_of(path: str) -> str | None:
@@ -152,37 +538,50 @@ def _title_of(path: str) -> str | None:
     return None
 
 
-def _slides_path(week_number: int) -> str | None:
+def _slides_path(unit_token: str, course_slug: str | None = None) -> str | None:
     """slides/weekNN.md, if it exists. Outside the week directory, so it gets its
     own containment check rather than reusing the lab-dir one."""
-    root = os.path.realpath(CONTENT_ROOT)
+    c = course(course_slug)
+    if c is None:
+        return None
+    if not re.fullmatch(r"\d{2}[a-z]?(?:-\d{2})?", unit_token or ""):
+        return None      # never let a caller-supplied string reach a path join
+    root = os.path.realpath(c["root"])
     # CONTENT_ROOT is `labs/` (or /content in the image); slides/ is its sibling
     # in a checkout and a sibling under /content in the image.
     for base in (os.path.dirname(root), root):
-        p = os.path.realpath(os.path.join(base, SLIDES_DIR, f"week{week_number:02d}.md"))
+        p = os.path.realpath(os.path.join(
+            base, SLIDES_DIR, f"{c.get('unit', 'week')}{unit_token}.md"))
         if (p == base or p.startswith(base + os.sep)) and os.path.isfile(p):
             return p
     return None
 
 
-def read(slug: str, kind: str) -> str | None:
+def read(slug: str, kind: str, course_slug: str | None = None) -> str | None:
     """Raw markdown for one week's public document, or None.
 
     Resolves and then re-checks containment: even though WEEK_RE already makes
     traversal impossible, the check costs nothing and survives someone later
-    relaxing the pattern.
+    relaxing the pattern. With several courses configured the containment check
+    matters more, not less — it is now per-course, so a week slug can never
+    reach out of its own course's root.
     """
-    if not WEEK_RE.match(slug or ""):
+    c = course(course_slug)
+    if c is None:
         return None
+    if not unit_re(c.get("unit", "week")).match(slug or ""):
+        return None
+    base_root = c["root"]
     if kind == "slides":
-        p = _slides_path(int(slug[4:6]))
+        m = unit_re(course(course_slug).get("unit", "week")).match(slug)
+        p = _slides_path(m.group(1), course_slug) if m else None
         if p is None:
             return None
         with open(p, encoding="utf-8", errors="replace") as fh:
             return fh.read()
     if kind not in PUBLIC_FILES:
         return None
-    root = os.path.realpath(CONTENT_ROOT)
+    root = os.path.realpath(base_root)
     path = os.path.realpath(os.path.join(root, slug, PUBLIC_FILES[kind]))
     if not (path == root or path.startswith(root + os.sep)):
         return None
@@ -370,12 +769,16 @@ def render(md: str) -> str:
     return "\n".join(out)
 
 
-def render_document(slug: str, kind: str) -> dict | None:
-    md = read(slug, kind)
+def render_document(slug: str, kind: str, course_slug: str | None = None) -> dict | None:
+    md = read(slug, kind, course_slug)
     if md is None:
         return None
+    c = course(course_slug)
     if kind == "slides":
-        title = _title_of(_slides_path(int(slug[4:6]))) or f"Slides — {slug}"
+        _m = unit_re(c.get("unit", "week")).match(slug)
+        title = (_title_of(_slides_path(_m.group(1), course_slug)) if _m else None) \
+            or f"Slides — {slug}"
     else:
-        title = _title_of(os.path.join(CONTENT_ROOT, slug, PUBLIC_FILES[kind])) or slug
-    return {"slug": slug, "kind": kind, "title": title, "html": render(md)}
+        title = _title_of(os.path.join(c["root"], slug, PUBLIC_FILES[kind])) or slug
+    return {"slug": slug, "kind": kind, "title": title, "html": render(md),
+            "course": c["slug"], "course_title": c["title"]}

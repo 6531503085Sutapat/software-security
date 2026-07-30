@@ -53,7 +53,8 @@ KIND_SHORT = "short"
 
 def publish(conn, *, teacher_id, title, questions, now, variant="A",
             shuffle_questions=True, shuffle_options=True,
-            time_limit_sec=None, opens_at=None, closes_at=None):
+            time_limit_sec=None, opens_at=None, closes_at=None,
+            course_slug=None):
     """Freeze `questions` into a new assessment and return its id.
 
     `questions` is the shape `quiz_loader.parse_topics_from_text` produces —
@@ -67,11 +68,13 @@ def publish(conn, *, teacher_id, title, questions, now, variant="A",
     if not questions:
         raise ValueError("an assessment needs at least one question")
 
+    import course_scope
+    course = course_scope.check(course_slug)
     cur = conn.execute(
-        "INSERT INTO assessments (teacher_id, title, variant, shuffle_questions,"
-        " shuffle_options, time_limit_sec, opens_at, closes_at, released, created_at)"
-        " VALUES (?,?,?,?,?,?,?,?,0,?)",
-        (teacher_id, title, variant, int(bool(shuffle_questions)),
+        "INSERT INTO assessments (teacher_id, course_slug, title, variant,"
+        " shuffle_questions, shuffle_options, time_limit_sec, opens_at, closes_at,"
+        " released, created_at) VALUES (?,?,?,?,?,?,?,?,?,0,?)",
+        (teacher_id, course, title, variant, int(bool(shuffle_questions)),
          int(bool(shuffle_options)), time_limit_sec, opens_at, closes_at, now),
     )
     aid = cur.lastrowid
@@ -101,6 +104,18 @@ def issue_codes(conn, assessment_id, student_ids, now):
     """One single-use code per student. Idempotent — re-running keeps existing
     codes, so a late enrolment can be added without invalidating the sheets
     already printed for everyone else."""
+    # Issuing slips IS the enrolment event — this is the one moment a real class
+    # list passes through the platform. Registering it here means the roster
+    # cannot drift from who actually holds a code, and it needs no second step a
+    # teacher could forget. The course is read off the assessment rather than
+    # taken as an argument, so a slip can never enrol someone into a course other
+    # than the one they are being assessed in.
+    import roster
+    _row = conn.execute(
+        "SELECT teacher_id, course_slug FROM assessments WHERE id = ?", (assessment_id,)).fetchone()
+    if _row is not None:
+        roster.enroll(conn, course_slug=_row["course_slug"],
+                      teacher_id=_row["teacher_id"], student_ids=student_ids, now=now)
     out = {}
     for sid in student_ids:
         row = conn.execute(

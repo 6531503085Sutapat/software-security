@@ -9,6 +9,16 @@
     <h1>Set a worksheet</h1>
     <div class="field"><label for="title">Title</label>
       <input id="title" name="title" placeholder="Week 4 worksheet" required></div>
+    {# Which course this is FOR. Shown only when there is more than one, so the
+       single-course case keeps a form with no redundant choice on it. There is no
+       "all courses" option on purpose: a graded artifact belongs to exactly one
+       cohort, and an ambiguous default is how a quiz reaches the wrong class. #}
+    {% if courses|length > 1 %}
+      <div class="field"><label for="course_slug">Course</label>
+        <select id="course_slug" name="course_slug" required>
+          {% for c in courses %}<option value="{{ c.slug }}">{{ c.title }}</option>{% endfor %}
+        </select></div>
+    {% endif %}
     <div class="field"><label for="week_slug">Link to course material (optional)</label>
       <select id="week_slug" name="week_slug">
         <option value="">— none —</option>

@@ -26,6 +26,11 @@ import assessment as A
 import auth
 import quiz_loader
 
+def _courses():
+    import content as C
+    return C.list_courses()
+
+
 bp = Blueprint("assess", __name__)
 
 
@@ -64,7 +69,7 @@ def index():
         " (SELECT COUNT(*) FROM attempt_codes c WHERE c.assessment_id = a.id) AS issued,"
         " (SELECT COUNT(*) FROM attempts t WHERE t.assessment_id = a.id"
         "    AND t.submitted_at IS NOT NULL) AS submitted"
-        " FROM assessments a WHERE a.teacher_id = ? ORDER BY a.id DESC",
+        " FROM assessments a WHERE a.teacher_id = ? ORDER BY a.course_slug, a.id DESC",
         (auth.current_teacher_id(),)).fetchall()
     return render_template("assess_index.html", assessments=rows, csrf_token=_csrf())
 
@@ -76,7 +81,8 @@ def new():
         sets = _db().execute(
             "SELECT id, title FROM question_sets WHERE teacher_id = ? ORDER BY updated_at DESC",
             (auth.current_teacher_id(),)).fetchall()
-        return render_template("assess_new.html", sets=sets, csrf_token=_csrf(), error=None)
+        return render_template("assess_new.html", sets=sets, csrf_token=_csrf(),
+                               courses=_courses(), error=None)
 
     _check_csrf()
     f = request.form
@@ -89,6 +95,7 @@ def new():
     questions = [q for qs in topics.values() for q in qs]
     if not questions:
         return render_template("assess_new.html", sets=[], csrf_token=_csrf(),
+                               courses=_courses(),
                                error="That question set has no parsable questions."), 200
 
     # The course's weekly quiz is 5 MCQ + one personal short answer worth 3
@@ -113,6 +120,9 @@ def new():
         f.get("time_limit_min", type=int) * 60,
         opens_at=(f.get("opens_at") or "").strip() or None,
         closes_at=(f.get("closes_at") or "").strip() or None,
+        # None when the form omitted the field (single course) — course_scope
+        # resolves that to the default rather than guessing here.
+        course_slug=(f.get("course_slug") or "").strip() or None,
     )
     return redirect(url_for("assess.detail", assessment_id=aid))
 

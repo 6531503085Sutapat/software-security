@@ -7,6 +7,7 @@ import os
 
 from flask import (
     Flask,
+    make_response,
     render_template,
     request,
     send_file,
@@ -32,7 +33,11 @@ socketio = SocketIO(app, async_mode="eventlet")
 DB_PATH = os.environ.get("DB_PATH", "/data/live-quiz.db")
 INVITE_CODE = os.environ.get("INVITE_CODE", "")
 _conn = dbmod.connect(DB_PATH)
-dbmod.init_db(_conn)
+# The default course backfills rows written before assessments/assignments knew
+# what a course was — see dbmod.migrate. content is imported here (not at the top)
+# because it reads $COURSES at import time and the tests reload it.
+import content as _content  # noqa: E402
+dbmod.init_db(_conn, default_course=_content.COURSES[0]["slug"])
 if not INVITE_CODE:
     print("WARNING: INVITE_CODE is unset — teacher registration is CLOSED until you set it.", flush=True)
 if app.config["SECRET_KEY"] == "dev-not-secret-override-in-prod":
@@ -120,6 +125,91 @@ app.register_blueprint(routes_submit.bp)
 
 @app.route("/")
 def index():
+    """The front door.
+
+    This used to render the live-quiz join screen, because that is all the app
+    was when it was written. It is now the smallest part of it — the same app
+    serves 19 weeks of course documents, the graded weekly quiz, worksheet
+    hand-in and the simulations. A student typing the bare hostname landed on a
+    "Game PIN / Nickname" box with no way to reach any of that, which is the
+    exact confusion that renaming the host to learn.* was meant to remove.
+
+    So `/` is the course front door and the live game moved to `/play`. Both the
+    host screen's projected join URL (static/host.js) and the front door's
+    "Join a live game" link point there, so neither audience loses a step.
+
+    This is its OWN page rather than a redirect to /learn. /learn is a list of 19
+    weeks — a fine second click, a poor first one: it answers "which week?" when
+    the student's actual question is "where do I go?", and it says nothing about
+    the quiz, the hand-in or the arena until you scroll past every week. The home
+    page answers the real question and, for each destination, says up front what
+    it costs to walk in: nothing, a PIN, a code, or the class VPN.
+    """
+    import content as C
+    courses = C.list_courses()
+    # The arena is configured per course. Show the link here only when every
+    # course that has one agrees — otherwise a student in course B would be sent
+    # to course A's arena, which is worse than no link at all. When they differ,
+    # the link lives on each course's own page instead.
+    arenas = {c.get("arena_url") for c in courses if c.get("arena_url")}
+    # The named modules a course declares, so its card can show the shape of the
+    # course rather than a sentence identical to every other card's. Courses that
+    # declare none map to [] and the card falls back to its composition line.
+    outline = {c["slug"]: C.list_modules(c["slug"]) for c in courses}
+    return render_template("home.html", courses=courses, one=len(courses) == 1,
+                           outline=outline, nav_courses=C.nav_courses(),
+                           arena_url=arenas.pop() if len(arenas) == 1 else None)
+
+
+# ── Error pages a student can actually get out of ──────────────────────────
+# Werkzeug's default 404 is 207 bytes of unstyled English with no link anywhere.
+# Students DO hit it: a mistyped week slug, a stale bookmark, a URL read off a
+# projector. Six weeks of them hit it for months because /learn/<week> 404'd for
+# the exam blocks, and the page gave them nothing to do about it.
+#
+# The headers are set explicitly rather than left to the content blueprint's
+# after_request: an error can be raised from any blueprint or from routing itself,
+# before any blueprint owns the request, so relying on that hook would leave some
+# error responses without a CSP.
+_ERRORS = {
+    404: ("Page not found",
+          "That address does not exist on this site. It is usually a mistyped "
+          "week name, or a link that has moved."),
+    403: ("Not allowed",
+          "You do not have access to that. If you were following a link from "
+          "class, ask your teacher to check it."),
+    500: ("Something broke on our side",
+          "This is our fault, not yours. Tell your teacher what you were doing "
+          "and try again in a minute."),
+}
+
+
+@app.errorhandler(404)
+@app.errorhandler(403)
+@app.errorhandler(500)
+def _error_page(exc):
+    code = getattr(exc, "code", 500) or 500
+    heading, message = _ERRORS.get(code, _ERRORS[500])
+    resp = make_response(render_template("error.html", code=code,
+                                         heading=heading, message=message), code)
+    # Same script-free policy as the content plane — an error page is rendered on
+    # the same origin as the teacher's authenticated session and has no reason to
+    # execute anything.
+    resp.headers["Content-Security-Policy"] = (
+        "default-src 'none'; style-src 'self'; img-src 'self' data:; "
+        "font-src 'self'; base-uri 'none'; form-action 'none'")
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["Referrer-Policy"] = "no-referrer"
+    return resp
+
+
+@app.route("/play")
+def play():
+    """The live-quiz join screen — Game PIN + nickname.
+
+    Kept as its own path rather than at `/` so the bare hostname can mean
+    "the course". The host screen shows this URL during a game.
+    """
     return render_template("player.html")
 
 

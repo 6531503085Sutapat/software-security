@@ -5,6 +5,19 @@
   <header class="masthead">
     <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
       <div class="sub">Live Quiz · Teacher console</div></div>
+    {#- The four teacher tools are four separate route groups (/console, /assess,
+        /work, /host) and until now NOTHING linked them: this page, the one you
+        land on after signing in, offered only its own set editor and Sign out.
+        Reaching the graded quizzes or the worksheet marking meant typing the URL
+        from memory, in class, with students waiting. Plain links, every page,
+        same order. -#}
+    <nav class="tnav" aria-label="Teacher tools">
+      <a href="/console" aria-current="page">Question sets</a>
+      <a href="/assess">Graded quizzes</a>
+      <a href="/work">Worksheets</a>
+      <a href="/host">Run a game</a>
+      <a href="/">Student view</a>
+    </nav>
     <a class="btn-ghost" href="/logout">Sign out</a>
   </header>
   <div class="drule"></div>
