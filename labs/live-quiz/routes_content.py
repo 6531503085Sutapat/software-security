@@ -125,7 +125,19 @@ def _render_doc(course_slug, slug, kind):
 def _legacy(slug, kind=None):
     """301 to the canonical course-scoped URL, so links converge instead of two
     shapes living side by side forever. Anything already printed or already
-    linked from a worksheet keeps working."""
+    linked from a worksheet keeps working.
+
+    The kind is validated BEFORE redirecting. Without that, this handler 301s any
+    second segment at all — `/learn/week04-injection/solution`,
+    `/answers`, `/pptx` all returned a redirect instead of a 404. No content
+    leaked (the canonical route then refuses the kind), but a 301 confirms the
+    path shape to anyone probing for answer keys, and the two routes disagreeing
+    about what exists is exactly the drift this indirection was meant to avoid.
+    Caught by readiness_check.py's "instructor material is NOT reachable" probe,
+    which is there for precisely this.
+    """
+    if kind is not None and kind not in C.PUBLIC_FILES and kind != "slides":
+        abort(404)
     default = C.COURSES[0]["slug"]
     target = (url_for("learn.doc_kind", course_slug=default, slug=slug, kind=kind)
               if kind else

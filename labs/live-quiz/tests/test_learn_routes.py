@@ -296,3 +296,25 @@ def test_irregular_lesson_numbers_do_not_crash_and_read_correctly(monkeypatch, t
     assert got == [(1, "1–3"), (7, "7b"), (10, "10")], got
     monkeypatch.delenv("COURSES", raising=False)
     importlib.reload(C)
+
+
+def test_legacy_url_does_not_redirect_for_a_non_public_kind(client):
+    """The legacy handler must refuse the same things the canonical one refuses.
+
+    It used to 301 any second segment, so /learn/week04-injection/solution
+    answered with a redirect rather than a 404 — no content leaked, but it
+    confirms the path shape to anyone probing for answer keys, and it made the
+    two routes disagree about what exists.
+    """
+    w = _a_week()
+    for kind in ("solution", "answers", "pptx", "solution_app.py"):
+        r = client.get(f"/learn/{w['slug']}/{kind}")
+        assert r.status_code == 404, (
+            f"legacy /learn/<week>/{kind} returned {r.status_code}, must be 404")
+
+
+def test_legacy_url_still_redirects_for_a_real_kind(client):
+    """...without breaking the redirect that keeps printed links alive."""
+    w = _a_week()
+    kind = w["available"][0]
+    assert client.get(f"/learn/{w['slug']}/{kind}").status_code == 301
