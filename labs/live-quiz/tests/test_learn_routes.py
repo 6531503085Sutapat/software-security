@@ -252,3 +252,47 @@ def test_primary_kind_prefers_the_real_document_over_the_readme():
                            ("week01-threat-modeling", "worksheet")):
         if any(w["slug"] == slug for w in C.list_weeks()):
             assert C.primary_kind(slug) == expected, slug
+
+
+def test_home_uses_each_course_own_unit_word(monkeypatch, tmp_path):
+    """A course organised in LESSONS must not be described in weeks.
+
+    The cloud course numbers its material Lesson 1-3, Lesson 7b — telling that
+    student "10 weeks" makes them doubt they are in the right place.
+    """
+    wk = tmp_path / "wk"; ls = tmp_path / "ls"
+    (wk / "week01-alpha").mkdir(parents=True)
+    (ls / "lesson04-beta").mkdir(parents=True)
+    (wk / "week01-alpha" / "worksheet.md").write_text("# Alpha\n")
+    (ls / "lesson04-beta" / "worksheet.md").write_text("# Beta\n")
+    monkeypatch.setenv("COURSES", json.dumps([
+        {"slug": "wk", "title": "Weeky", "root": str(wk)},
+        {"slug": "ls", "title": "Lessony", "root": str(ls),
+         "unit": "lesson", "unit_label": "Lesson"},
+    ]))
+    importlib.reload(C)
+    import app as appmod
+    importlib.reload(appmod)
+    body = appmod.app.test_client().get("/").get_data(as_text=True)
+    assert "1 week" in body and "1 lesson" in body, body[:400]
+    # and the lesson course's own unit token survives, irregularities included
+    assert C.list_weeks("ls")[0]["number_label"] == "4"
+    monkeypatch.delenv("COURSES", raising=False)
+    importlib.reload(C); importlib.reload(appmod)
+
+
+def test_irregular_lesson_numbers_do_not_crash_and_read_correctly(monkeypatch, tmp_path):
+    """`lesson01-03-` spans two numbers and `lesson07b-` carries a letter. The
+    old code did `int(name[4:6])` — a positional slice that assumed "week" plus
+    exactly two digits, and raised on both."""
+    r = tmp_path / "c"
+    for d in ("lesson01-03-fundamentals", "lesson07b-monitoring", "lesson10-vpc"):
+        (r / d).mkdir(parents=True)
+        (r / d / "worksheet.md").write_text(f"# {d}\n")
+    monkeypatch.setenv("COURSES", json.dumps(
+        [{"slug": "cloud", "title": "Cloud", "root": str(r), "unit": "lesson"}]))
+    importlib.reload(C)
+    got = [(w["number"], w["number_label"]) for w in C.list_weeks("cloud")]
+    assert got == [(1, "1–3"), (7, "7b"), (10, "10")], got
+    monkeypatch.delenv("COURSES", raising=False)
+    importlib.reload(C)

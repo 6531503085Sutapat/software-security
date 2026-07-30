@@ -3,10 +3,10 @@
 <title>{{ doc.title }} — KOSEN·KMITL</title><link rel="stylesheet" href="/static/style.css"></head>
 <body><div class="pwrap"><section class="pjoin doc">
   <div class="mark"><div class="sub">
-    {%- if week %}Week {{ week.number }} · {% endif %}{{ doc.kind }}</div></div>
+    {%- if week %}{{ week.unit_label }} {{ week.number_label }} · {% endif %}{{ doc.kind }}</div></div>
   <article class="join-card prose">
     <h1>{{ doc.title }}</h1>
-    <p class="lead"><a href="/learn/{{ course.slug }}/">← all weeks</a>
+    <p class="lead"><a href="/learn/{{ course.slug }}/">← all {{ course.unit_label|lower }}s</a>
       {%- if week %}{% for k in week.available %}{% if k != doc.kind %}
         · <a href="/learn/{{ course.slug }}/{{ week.slug }}/{{ k }}">{{ k }}</a>{% endif %}{% endfor %}{% endif %}</p>
     {# content.py escapes every byte before recognising any markdown, so this is

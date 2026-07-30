@@ -60,8 +60,36 @@ CONTENT_ROOT = os.environ.get(
     "CONTENT_ROOT",
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# weekNN-slug only. Anchored, no dots, so `..` and absolute paths never match.
-WEEK_RE = re.compile(r"^week\d{2}-[a-z0-9-]+$")
+# A course's content directories. Anchored, no dots, so `..` and absolute paths
+# never match — that property is load-bearing and survives every change below.
+#
+# The unit prefix is PER COURSE because the real courses disagree:
+#   software-security       week01-threat-modeling … week19-…
+#   security-cryptography   week01-intro … week14-…
+#   cloud-infrastructure    lesson01-03-aws-…, lesson07b-cloudtrail-…, lesson13-…
+# and cloud-infra's numbering is not even regular: a lesson can span two numbers
+# (`01-03`) or carry a letter suffix (`07b`). So the number is captured as an
+# opaque STRING for display and never parsed into an int — the previous
+# `int(name[4:6])` was a positional slice that assumed "week" + exactly 2 digits
+# and would raise on `lesson07b`.
+#
+# Ordering stays lexical on the directory name, which is correct precisely
+# because the numbers are zero-padded: lesson04 < lesson07 < lesson07b < lesson10.
+UNIT_RE_CACHE: dict[str, re.Pattern] = {}
+UNIT_NAME_RE = re.compile(r"^[a-z]{2,16}$")
+
+
+def unit_re(unit: str = "week") -> re.Pattern:
+    if unit not in UNIT_RE_CACHE:
+        if not UNIT_NAME_RE.match(unit):
+            raise ValueError(f"bad unit name {unit!r}")
+        UNIT_RE_CACHE[unit] = re.compile(
+            rf"^{unit}(\d{{2}}[a-z]?(?:-\d{{2}})?)-([a-z0-9-]+)$")
+    return UNIT_RE_CACHE[unit]
+
+
+# Kept for the many callers and tests that predate multi-course: the default unit.
+WEEK_RE = re.compile(r"^week\d{2}[a-z]?(?:-\d{2})?-[a-z0-9-]+$")
 
 # ── Courses ────────────────────────────────────────────────────────────────
 # The instructor teaches several courses (software-security,
@@ -96,6 +124,8 @@ def _load_courses() -> list[dict]:
             "title": os.environ.get("COURSE_TITLE", "Software Security"),
             "root": CONTENT_ROOT,
             "arena_url": os.environ.get("ARENA_URL", "").strip() or None,
+            "unit": "week",
+            "unit_label": "Week",
         }]
     out, seen = [], set()
     for c in json.loads(raw):
@@ -111,8 +141,13 @@ def _load_courses() -> list[dict]:
         root = os.path.realpath(str(c["root"]))
         if not os.path.isdir(root):
             raise ValueError(f"COURSES: {slug!r} root does not exist: {root}")
+        unit = str(c.get("unit") or "week")
+        if not UNIT_NAME_RE.match(unit):
+            raise ValueError(f"COURSES: {slug!r} has bad unit {unit!r}")
         out.append({"slug": slug, "title": str(c.get("title") or slug),
-                    "root": root, "arena_url": (c.get("arena_url") or None)})
+                    "root": root, "arena_url": (c.get("arena_url") or None),
+                    "unit": unit,
+                    "unit_label": str(c.get("unit_label") or unit.capitalize())})
     if not out:
         raise ValueError("COURSES was set but produced no courses")
     return out
@@ -195,28 +230,60 @@ def list_weeks(course_slug: str | None = None) -> list[dict]:
 
     `course_slug=None` keeps the original single-course behaviour.
     """
-    root = _root_of(course_slug)
-    if root is None:
+    c = course(course_slug)
+    if c is None:
         return []
+    root = c["root"]
+    pat = unit_re(c.get("unit", "week"))
     out = []
     for name in sorted(os.listdir(root)):
-        if not WEEK_RE.match(name):
+        m = pat.match(name)
+        if not m:
             continue
         d = os.path.join(root, name)
         if not os.path.isdir(d):
             continue
         available = [k for k, f in PUBLIC_FILES.items()
                      if os.path.isfile(os.path.join(d, f))]
-        if _slides_path(int(name[4:6]), course_slug):
+        if _slides_path(m.group(1), course_slug):
             available.append("slides")
         if not available:
             continue
+        # The title must be the one on the document the row OPENS, not the
+        # README's. Verified 2026-07-30: week 7's README says "Reflection &
+        # Review (pre-Midterm)" while the row links mock-ctf.md, titled "Mock CTF
+        # (Midterm dry-run)". The list promised revision and delivered a timed
+        # CTF. Same divergence on weeks 8, 9, 18, 19 — the exam blocks.
+        primary = None
+        for k in PRIMARY_ORDER:
+            if k in available:
+                primary = k
+                break
+        primary = primary or (available[0] if available else None)
+        primary_file = (PUBLIC_FILES.get(primary) if primary != "slides"
+                        else None)
+        title = None
+        if primary_file:
+            title = _title_of(os.path.join(d, primary_file))
+        title = title or _title_of(os.path.join(d, "worksheet.md")) \
+            or _title_of(os.path.join(d, "README.md")) \
+            or name[7:].replace("-", " ").title()
+        num = m.group(1)
         out.append({
             "slug": name,
-            "number": int(name[4:6]),
-            "title": _title_of(os.path.join(d, "worksheet.md")) or
-                     _title_of(os.path.join(d, "README.md")) or
-                     name[7:].replace("-", " ").title(),
+            # TWO fields, because one cannot be both sortable and truthful.
+            # `number` is an int taken from the leading two digits, which the
+            # pattern guarantees exist — so ordering stays numeric (an earlier
+            # attempt made this a string and "10" sorted before "2"; the existing
+            # tests caught it, correctly).
+            # `number_label` is what a student reads, and it keeps the
+            # irregularity the cloud course actually has: "7b", "1-3".
+            "number": int(num[:2]),
+            "number_label": _num_label(num),
+            "unit_label": c.get("unit_label", "Week"),
+            "title": title,
+            "short_title": short_title(title),
+            "primary": primary,
             "available": available,
         })
     return out
@@ -233,18 +300,50 @@ def list_weeks(course_slug: str | None = None) -> list[dict]:
 # highest-stakes documents in the course. Present since the content plane was
 # first built; found 2026-07-30 by requesting every week's bare URL rather than
 # by reading the route.
+# Titles as a student should read them in a LIST, which is not how they read at
+# the top of a document. The headings carry context the row already gives —
+# "Worksheet 4 — ", "Week 8 — " — and an hours figure that is wrong twice over:
+# worksheets 13-16 say "(4 hrs)", but a KOSEN class is 3 hours and an MFU session
+# is a whole Saturday. Verified against all 19 real headings.
+_TRIM_LEAD = re.compile(
+    r"^(?:Worksheet|Week|Lab|Lesson)s?(?:\s+[\d\u2013-]+)?\s*[:—–-]\s*", re.I)
+_TRIM_TAIL = re.compile(r"\s*\((?:\d+(?:\.\d+)?\s*(?:hrs?|hours?)|Week\s+\d+)\)\s*$", re.I)
+
+
+def _num_label(num: str) -> str:
+    """"07" -> "7" · "07b" -> "7b" · "01-03" -> "1-3" (a range of lessons)."""
+    parts = num.split("-")
+    out = []
+    for part in parts:
+        digits = part[:2].lstrip("0") or "0"
+        out.append(digits + part[2:])
+    return "\u2013".join(out) if len(out) > 1 else out[0]
+
+
+def short_title(title: str) -> str:
+    """A list-row title. Never returns empty — an unmatched heading renders raw,
+    which is redundant rather than blank."""
+    if not title:
+        return title
+    out = title.strip()
+    # Repeat: the cloud course stacks two prefixes — "Worksheet — Lessons 1-3: ".
+    # Bounded so a pathological title cannot spin.
+    for _ in range(4):
+        nxt = _TRIM_LEAD.sub("", out, count=1).strip()
+        if nxt == out:
+            break
+        out = nxt
+    out = _TRIM_TAIL.sub("", out).strip()
+    return out or title.strip()
+
+
 PRIMARY_ORDER = ("worksheet", "mock-ctf", "exam", "ctf", "scrimmage", "readme")
 
 
 def primary_kind(slug: str, course_slug: str | None = None) -> str | None:
     """The document a bare week URL should open, or None if the week has none."""
     week = next((w for w in list_weeks(course_slug) if w["slug"] == slug), None)
-    if week is None:
-        return None
-    for kind in PRIMARY_ORDER:
-        if kind in week["available"]:
-            return kind
-    return week["available"][0] if week["available"] else None
+    return week["primary"] if week else None
 
 
 def _title_of(path: str) -> str | None:
@@ -259,17 +358,20 @@ def _title_of(path: str) -> str | None:
     return None
 
 
-def _slides_path(week_number: int, course_slug: str | None = None) -> str | None:
+def _slides_path(unit_token: str, course_slug: str | None = None) -> str | None:
     """slides/weekNN.md, if it exists. Outside the week directory, so it gets its
     own containment check rather than reusing the lab-dir one."""
-    base_root = _root_of(course_slug)
-    if base_root is None:
+    c = course(course_slug)
+    if c is None:
         return None
-    root = os.path.realpath(base_root)
+    if not re.fullmatch(r"\d{2}[a-z]?(?:-\d{2})?", unit_token or ""):
+        return None      # never let a caller-supplied string reach a path join
+    root = os.path.realpath(c["root"])
     # CONTENT_ROOT is `labs/` (or /content in the image); slides/ is its sibling
     # in a checkout and a sibling under /content in the image.
     for base in (os.path.dirname(root), root):
-        p = os.path.realpath(os.path.join(base, SLIDES_DIR, f"week{week_number:02d}.md"))
+        p = os.path.realpath(os.path.join(
+            base, SLIDES_DIR, f"{c.get('unit', 'week')}{unit_token}.md"))
         if (p == base or p.startswith(base + os.sep)) and os.path.isfile(p):
             return p
     return None
@@ -284,13 +386,15 @@ def read(slug: str, kind: str, course_slug: str | None = None) -> str | None:
     matters more, not less — it is now per-course, so a week slug can never
     reach out of its own course's root.
     """
-    if not WEEK_RE.match(slug or ""):
+    c = course(course_slug)
+    if c is None:
         return None
-    base_root = _root_of(course_slug)
-    if base_root is None:
+    if not unit_re(c.get("unit", "week")).match(slug or ""):
         return None
+    base_root = c["root"]
     if kind == "slides":
-        p = _slides_path(int(slug[4:6]), course_slug)
+        m = unit_re(course(course_slug).get("unit", "week")).match(slug)
+        p = _slides_path(m.group(1), course_slug) if m else None
         if p is None:
             return None
         with open(p, encoding="utf-8", errors="replace") as fh:
@@ -491,7 +595,9 @@ def render_document(slug: str, kind: str, course_slug: str | None = None) -> dic
         return None
     c = course(course_slug)
     if kind == "slides":
-        title = _title_of(_slides_path(int(slug[4:6]), course_slug)) or f"Slides — {slug}"
+        _m = unit_re(c.get("unit", "week")).match(slug)
+        title = (_title_of(_slides_path(_m.group(1), course_slug)) if _m else None) \
+            or f"Slides — {slug}"
     else:
         title = _title_of(os.path.join(c["root"], slug, PUBLIC_FILES[kind])) or slug
     return {"slug": slug, "kind": kind, "title": title, "html": render(md),
