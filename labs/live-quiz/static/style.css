@@ -623,3 +623,15 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; justif
   font: 600 13px/1.3 var(--mono); font-variant-numeric: tabular-nums;
   color: var(--faint);
 }
+
+/* STAKES — "this is marked". A separate vocabulary from `.need`, which says what
+   it costs to get in. They were one orange token, so orange meant "bring your
+   slip" on the front page and "this is graded" on the course page — and /play,
+   which is explicitly ungraded, wore it. One token, two meanings, on two pages a
+   student crosses in a single session.
+   The word is the signal; the colour only reinforces it. */
+.stakes {
+  font: 700 11px/1 var(--mono); letter-spacing: .09em;
+  padding: 4px 7px; border-radius: 6px; white-space: nowrap;
+  color: #fff; background: var(--kmitl-orange-deep);
+}
