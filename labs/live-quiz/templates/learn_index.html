@@ -1,27 +1,254 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ course.title }} — course material</title><link rel="stylesheet" href="/static/style.css"></head>
-<body><div class="pwrap"><section class="pjoin">
-  <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
-    <div class="sub">{{ course.title }} · course material</div></div>
-  <div class="join-card">
-    <h1>{{ course.unit_label }}s</h1>
-    <p class="lead">Worksheets and lab guides. Everything here is readable without
-      signing in.</p>
-    <ul class="home-list">
-      {% for w in weeks %}
-        <li class="home-item"><a href="/learn/{{ course.slug }}/{{ w.slug }}">
-          <span class="wk-n">{{ w.number_label }}</span>
-          <b>{{ w.short_title }}</b>
-          {% if w.badge %}<span class="need free">{{ w.badge }}</span>{% endif %}
-          {# The stakes marker is its own WORD, not a colour on the type badge.
-             Colour alone dies in greyscale, in a failed stylesheet, in a screen
-             reader and for a colour-blind reader — and this is the one signal on
-             the page with a real consequence behind it. #}
-          {% if w.graded %}<span class="stakes">GRADED</span>{% endif %}
-          <span class="what">{% for k in w.available %}{{ k }}{% if not loop.last %} · {% endif %}{% endfor %}</span></a></li>
-      {% endfor %}
-    </ul>
+{% extends "base.html" %}
+{#- ===========================================================================
+    learn_index.html — one course, its units grouped into modules.
 
-    <p class="lead"><a href="/">← Home</a> · quiz, hand-in, simulations and the arena</p>
-  </div></section></div></body></html>
+    Rendered by BOTH routes_content.course_index() (/learn/<c>/) AND
+    routes_content.index() (/learn) when only one course is configured, so it
+    has to read correctly as "one of several courses" and as "the whole site".
+    `only_course` is the flag that tells them apart; it already exists.
+
+    CONTEXT
+      course       {slug, title, root, unit, unit_label, arena_url}
+      weeks        list_weeks(slug)
+      only_course  bool — already passed by both routes
+      modules      OPTIONAL, does not exist today. A list of
+                   {label: str|None, weeks: [...]} groups, in order, whose
+                   concatenation reproduces `weeks` exactly. Absent or empty ->
+                   this page renders the flat list through the SAME row macro,
+                   so the two paths cannot drift. Two of the three live courses
+                   take the flat path, so it is the majority, not an edge case.
+      nav_courses  OPTIONAL, for base.html's course switcher.
+
+    This is the richest page on the site, because `weeks` is the one context
+    with real per-item structure: a type badge, a graded flag, and the documents
+    each unit actually carries. Every derived number below is counted from that
+    list at render time — nothing invented, nothing configured.
+-#}
+
+{% block title %}{{ course.title }} — course material{% endblock %}
+
+{% block main %}
+
+{#- ── the one place a unit row is defined ────────────────────────────────────
+    Used identically by the grouped path and the flat path. That is deliberate:
+    if the two paths had their own markup, the flat path (the one the
+    cryptography and cloud courses take today) would be the one that rots.
+    `course` and `KINDS` are passed explicitly rather than closed over, so the
+    macro does not depend on Jinja's scoping rules for template-level sets. -#}
+{%- macro unit_row(w, course, KINDS) -%}
+<li>
+  <a class="lx-unit" href="/learn/{{ course.slug }}/{{ w.slug }}">
+    {#- THE LEADING SLOT CARRIES THE NUMBER, not the type.
+
+        This is the single highest-value fix on this page. A 19-week course is
+        13 LABs, so a badge-keyed tile put thirteen identical blue squares down
+        the left edge of the densest page on the site — reproducing "eight
+        identical boxes" in the exact view the redesign exists to fix — while
+        the token a student actually navigates by ("Week 12") sat in 14px
+        secondary ink. The number differs on every single row, so the column is
+        scannable; the tint is keyed to the badge for rhythm and is always
+        redundant with the badge WORD in the tag row.
+
+        The unit word and the number are ONE readable phrase inside the tile
+        ("Week" over "12"), so the token is printed once on the row, not twice.
+        `number_label` is the display string and keeps the cloud course's real
+        irregularity: "7b", "1–3". -#}
+    <span class="lx-unit-tile lx-unit-tile--{{ (w.badge or 'none')|lower }}">
+      <span class="lx-unit-u">{{ w.unit_label }}</span>
+      <span class="lx-unit-n">{{ w.number_label }}</span>
+    </span>
+    <span class="lx-unit-b">
+      <span class="lx-unit-t">{{ w.short_title }}</span>
+      {#- The card footer slot. Coursera fills it with a rating and a review
+          count; we have neither and will not invent them. Same shape of
+          information — "what you get" — and it is true. The fallback
+          de-hyphenates and capitalises, so a new kind added to
+          content.PUBLIC_FILES can never render a raw slug or a blank. -#}
+      <span class="lx-unit-meta">{% for k in w.available %}{{ KINDS.get(k, k|replace('-', ' ')|capitalize) }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
+    </span>
+    <span class="lx-unit-tags">
+      {#- `badge` CAN be the empty string: a directory whose only public file is
+          a slide deck falls through PRIMARY_ORDER and content.py:262 yields "".
+          Rather than dropping the slot, print the primary document's own name —
+          a true word beats a missing one. -#}
+      <span class="lx-tag">{{ w.badge or (w.primary|upper) }}</span>
+      {% if w.graded %}<span class="lx-flag-graded">GRADED</span>{% endif %}
+    </span>
+  </a>
+</li>
+{%- endmacro -%}
+
+{%- set KINDS = {
+  'worksheet': 'Worksheet',
+  'readme': 'Overview',
+  'slides': 'Lecture slides',
+  'mock-ctf': 'Mock CTF',
+  'exam': 'Exam paper',
+  'ctf': 'CTF brief',
+  'scrimmage': 'Scrimmage',
+  'attack': 'Attack notes',
+  'harden': 'Hardening notes',
+  'dependency-confusion': 'Supply-chain notes',
+  'template': 'Template to fill in',
+  'pipeline': 'Pipeline guide'
+} -%}
+
+{#- Counted, not configured. #}
+{%- set ns = namespace(graded=0, slides=0, mi=0) -%}
+{%- for w in weeks -%}
+  {%- if w.graded %}{% set ns.graded = ns.graded + 1 %}{% endif -%}
+  {%- if 'slides' in w.available %}{% set ns.slides = ns.slides + 1 %}{% endif -%}
+{%- endfor -%}
+{%- set groups = modules|default(none) -%}
+{%- set labelled = (groups|selectattr('label')|list) if groups else [] -%}
+
+{# ── course landing head ─────────────────────────────────────────────────
+   Coursera's course-landing h1 is 44/600/52 on desktop and 32/600/40 on a
+   phone, over a text column capped at ~608px even on a 1440px screen. Prose
+   never runs the width of the viewport. #}
+<section class="lx-hero lx-hero--course">
+  <div class="lx-wrap">
+    {% if not only_course %}
+    <p class="lx-crumb"><a class="lx-link" href="/learn">All courses</a></p>
+    {% endif %}
+    <p class="lx-eyebrow">KOSEN·KMITL — course material</p>
+    <h1 class="lx-h1">{{ course.title }}</h1>
+    <p class="lx-lead lx-measure">Every document published for this course, free
+      to read and open to anyone. Each row below opens the main document for
+      that {{ course.unit_label|lower }}; the other documents it carries are
+      listed underneath it.</p>
+
+    <ul class="lx-facts">
+      <li class="lx-fact">
+        <span class="lx-fact-v">{{ weeks|length }}</span>
+        <span class="lx-fact-l">{{ course.unit_label|lower }}{{ '' if weeks|length == 1 else 's' }} published</span></li>
+      {% if labelled %}
+      <li class="lx-fact">
+        <span class="lx-fact-v">{{ labelled|length }}</span>
+        <span class="lx-fact-l">module{{ '' if labelled|length == 1 else 's' }}</span></li>
+      {% endif %}
+      <li class="lx-fact">
+        <span class="lx-fact-v">{{ ns.graded }}</span>
+        <span class="lx-fact-l">graded — needs the code from class</span></li>
+      {# Rendered only when it is above zero. The cloud course publishes no
+         slides at all, and "0 with lecture slides" is a true sentence that
+         reads like an apology. Omitting a fact is honest; inventing one is not. #}
+      {% if ns.slides %}
+      <li class="lx-fact">
+        <span class="lx-fact-v">{{ ns.slides }}</span>
+        <span class="lx-fact-l">with lecture slides</span></li>
+      {% endif %}
+    </ul>
+  </div>
+</section>
+
+<hr class="lx-rule">
+
+{# ── the units ───────────────────────────────────────────────────────────── #}
+<section class="lx-sec">
+  <div class="lx-wrap">
+
+    <h2 class="lx-h2">{% if labelled %}There {{ 'is' if labelled|length == 1 else 'are' }} {{ labelled|length }} module{{ '' if labelled|length == 1 else 's' }} in this course{% else %}{{ weeks|length }} {{ course.unit_label|lower }}{{ '' if weeks|length == 1 else 's' }} in this course{% endif %}</h2>
+
+    {#- The jump strip. Plain anchors, no script. Every module is open at rest,
+        which makes a 19-unit course a long page; this is the mitigation. It is
+        rendered ONLY when the course has more than one NAMED module: a strip of
+        fourteen bare unit tokens duplicating the list directly beneath it would
+        be a second list, not a shortcut, and it would not fit on two lines on a
+        phone. The anchor index is the position in `groups`, not in the filtered
+        list, so an unlabelled group between two labelled ones cannot shift it. -#}
+    {% if labelled|length > 1 %}
+    <nav class="lx-jump" aria-label="Modules in this course">
+      <p class="lx-jump-h">Jump to a module</p>
+      <ul class="lx-jumplist">
+        {% for g in groups %}{% if g.label %}
+        <li><a class="lx-jump-a" href="#lx-m{{ loop.index }}">{{ g.label }}</a></li>
+        {% endif %}{% endfor %}
+      </ul>
+    </nav>
+    {% endif %}
+
+    {% if groups %}
+      {#- GROUPED. Coursera's module list is a JavaScript accordion; ours is
+          <details>/<summary>, which needs no script and is explicitly allowed
+          under `default-src 'none'`.
+          Every group ships OPEN. Nothing on this page is hidden at rest — the
+          disclosure exists so a student can COLLAPSE a module they are done
+          with, never to hide a unit behind a click they might not make.
+          The open/closed state is carried by a WORD ("Hide" / "Show", drawn in
+          CSS on .lx-mod-tog) as well as by the native <details> state, so it
+          survives greyscale and a missing marker glyph. -#}
+      {% for g in groups %}
+        {% if g.label %}
+          {% set ns.mi = ns.mi + 1 %}
+          <details class="lx-mod" id="lx-m{{ loop.index }}" open>
+            <summary class="lx-mod-sum">
+              <span class="lx-mod-eyebrow">Module {{ ns.mi }}</span>
+              <span class="lx-mod-t">{{ g.label }}</span>
+              <span class="lx-mod-meta">{{ g.weeks|length }} {{ course.unit_label|lower }}{{ '' if g.weeks|length == 1 else 's' }} · {{ course.unit_label }} {{ g.weeks[0].number_label }}{% if g.weeks|length > 1 %}–{{ g.weeks[-1].number_label }}{% endif %}</span>
+              <span class="lx-mod-tog" aria-hidden="true"></span>
+            </summary>
+            <ul class="lx-units">
+              {% for w in g.weeks %}{{ unit_row(w, course, KINDS) }}{% endfor %}
+            </ul>
+          </details>
+        {% else %}
+          {#- A course that declares no modules, or units that fall outside every
+              declared range, degrade to a plain list IN PLACE — never to an
+              empty module, and never by vanishing. -#}
+          <ul class="lx-units lx-units--flat">
+            {% for w in g.weeks %}{{ unit_row(w, course, KINDS) }}{% endfor %}
+          </ul>
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      {#- FLAT. This is the path the cryptography and cloud courses take today,
+          and the path every course takes until `modules` exists. Same macro. -#}
+      <ul class="lx-units lx-units--flat">
+        {% for w in weeks %}{{ unit_row(w, course, KINDS) }}{% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if not weeks %}
+      <p class="lx-empty">Nothing is published for this course yet. Check back
+        after the first class.</p>
+    {% endif %}
+
+    {# ── the enrolled-student block ──────────────────────────────────────────
+       Coursera's sticky right-rail enrol card has no honest equivalent here:
+       there is no enrolment and no account. What takes its place is an outlined
+       aside, not a second tint band — the tint band is spent once, on the front
+       door, and it works because it is used once. Kept clearly secondary but
+       never hidden, because ~30 of this page's readers DO have the code and one
+       of them is looking for the arena right now.
+
+       The arena link in particular: app.py's own docstring says that when
+       courses declare different arenas "the link lives on each course's own
+       page instead". It did not — this template never rendered
+       course.arena_url. Now it does. #}
+    <aside class="lx-aside">
+      <h2 class="lx-aside-h">For enrolled students</h2>
+      <p class="lx-aside-p">Everything above is open to anyone. These are not:
+        each needs a one-time code handed out on paper in class, or the class
+        VPN.</p>
+      <ul class="lx-aside-list">
+        <li><a class="lx-link" href="/quiz">Weekly quiz</a>
+          <span class="lx-need">code on your slip</span>
+          <span class="lx-flag-graded">GRADED</span></li>
+        <li><a class="lx-link" href="/submit">Hand in your worksheet</a>
+          <span class="lx-need">code on your slip</span>
+          <span class="lx-flag-graded">GRADED</span></li>
+        {% if course.arena_url %}
+        <li><a class="lx-link" href="{{ course.arena_url }}">Security Arena</a>
+          <span class="lx-need">class VPN</span>
+          <span class="lx-flag-graded">GRADED</span></li>
+        {% endif %}
+        <li><a class="lx-link" href="/play">Join a live game</a>
+          <span class="lx-need lx-need--free">PIN on screen</span></li>
+      </ul>
+    </aside>
+
+  </div>
+</section>
+
+{% endblock %}

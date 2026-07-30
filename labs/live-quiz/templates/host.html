@@ -25,6 +25,12 @@
       </div>
       <div class="live"><span class="d"></span><span class="t" id="live-label">Lobby</span></div>
       <div class="pin-chip"><span class="lab">Game PIN</span><span class="digits">{{ created_pin[:3] }} {{ created_pin[3:] }}</span></div>
+      {#- This screen had NO link of any kind — once a game ended the only way
+          out was the browser's back button or retyping a URL. One small link,
+          not the five-item teacher nav the other pages carry: this page gets
+          projected onto the classroom wall, so anything added here is added to
+          the projection. -#}
+      <a class="host-exit" href="/console">Console</a>
     </header>
     <div class="drule"></div>
 

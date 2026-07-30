@@ -6,8 +6,14 @@
     <div class="sub">Worksheet submissions</div></div>
   <div class="join-card">
     <h1>Assignments</h1>
-    <p class="lead"><a href="/console">← question sets</a> · <a href="/assess">quizzes</a>
-      · <a href="/work/new">new assignment</a></p>
+    <nav class="tnav" aria-label="Teacher tools">
+      <a href="/console">Question sets</a>
+      <a href="/assess">Graded quizzes</a>
+      <a href="/work" aria-current="page">Worksheets</a>
+      <a href="/host">Run a game</a>
+      <a href="/">Student view</a>
+    </nav>
+    <p class="lead"><a href="/work/new">new assignment</a></p>
     {% if not assignments %}<p class="lead">Nothing set yet.</p>{% endif %}
     <ul>
       {% for a in assignments %}
