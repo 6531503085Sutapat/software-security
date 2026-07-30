@@ -87,17 +87,21 @@ def safe_display_name(raw: str) -> str:
 # --- assignments -----------------------------------------------------------
 
 def create_assignment(conn, *, teacher_id, title, now, week_slug=None,
-                      instructions="", due_at=None, rubric=None):
+                      instructions="", due_at=None, rubric=None,
+                      course_slug=None):
     rubric = rubric or DEFAULT_RUBRIC
     if not rubric:
         raise ValueError("an assignment needs a rubric")
     for r in rubric:
         if "criterion" not in r or float(r.get("max", 0)) <= 0:
             raise ValueError(f"bad rubric row: {r!r}")
+    import course_scope
+    course = course_scope.check(course_slug)
     cur = conn.execute(
-        "INSERT INTO assignments (teacher_id, title, week_slug, instructions,"
-        " due_at, rubric_json, released, created_at) VALUES (?,?,?,?,?,?,0,?)",
-        (teacher_id, title, week_slug, instructions, due_at,
+        "INSERT INTO assignments (teacher_id, course_slug, title, week_slug,"
+        " instructions, due_at, rubric_json, released, created_at)"
+        " VALUES (?,?,?,?,?,?,?,0,?)",
+        (teacher_id, course, title, week_slug, instructions, due_at,
          json.dumps(rubric, ensure_ascii=False), now))
     conn.commit()
     return cur.lastrowid
@@ -119,6 +123,18 @@ def total_points(row) -> float:
 def issue_codes(conn, assignment_id, student_ids, now):
     """Idempotent, like the quiz: adding a late enrolment must not invalidate
     slips already handed out."""
+    # Issuing slips IS the enrolment event — this is the one moment a real class
+    # list passes through the platform. Registering it here means the roster
+    # cannot drift from who actually holds a code, and it needs no second step a
+    # teacher could forget. The course is read off the assignment rather than
+    # taken as an argument, so a slip can never enrol someone into a course other
+    # than the one they are being assessed in.
+    import roster
+    _row = conn.execute(
+        "SELECT teacher_id, course_slug FROM assignments WHERE id = ?", (assignment_id,)).fetchone()
+    if _row is not None:
+        roster.enroll(conn, course_slug=_row["course_slug"],
+                      teacher_id=_row["teacher_id"], student_ids=student_ids, now=now)
     out = {}
     for sid in student_ids:
         row = conn.execute(

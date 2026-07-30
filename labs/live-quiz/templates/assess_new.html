@@ -13,6 +13,16 @@
       <select id="set_id" name="set_id" required>
         {% for s in sets %}<option value="{{ s.id }}">{{ s.title }}</option>{% endfor %}
       </select></div>
+    {# Which course this is FOR. Shown only when there is more than one, so the
+       single-course case keeps a form with no redundant choice on it. There is no
+       "all courses" option on purpose: a graded artifact belongs to exactly one
+       cohort, and an ambiguous default is how a quiz reaches the wrong class. #}
+    {% if courses|length > 1 %}
+      <div class="field"><label for="course_slug">Course</label>
+        <select id="course_slug" name="course_slug" required>
+          {% for c in courses %}<option value="{{ c.slug }}">{{ c.title }}</option>{% endfor %}
+        </select></div>
+    {% endif %}
     <div class="field"><label for="title">Title</label><input id="title" name="title"></div>
     <div class="field"><label for="variant">Form variant (A/B)</label>
       <input id="variant" name="variant" value="A" maxlength="8"></div>

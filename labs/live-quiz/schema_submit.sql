@@ -18,6 +18,11 @@
 
 CREATE TABLE IF NOT EXISTS assignments (
   id           INTEGER PRIMARY KEY,
+  -- Which course this belongs to. A STRING, not a foreign key: courses are
+  -- configured in the content registry ($COURSES / the curriculum monorepo),
+  -- not stored here, so a `courses` table would be a second source of truth.
+  -- Validated at the write boundary by course_scope.check().
+  course_slug  TEXT,
   teacher_id   INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
   title        TEXT NOT NULL,
   -- Optional link to a week in the content plane (/learn/<week_slug>), so the

@@ -12,8 +12,33 @@ from app import app, GAMES
 
 def test_player_join_page_renders():
     client = app.test_client()
+    resp = client.get("/play")
+    assert resp.status_code == 200
+    assert b"Game PIN" in resp.data
+
+
+def test_root_is_the_course_front_door_not_the_game():
+    """The bare hostname must mean "the course".
+
+    `/` used to render the game-PIN box, which is what made `learn.zcr.ai`
+    land a student on "enter a Game PIN" with no route to any coursework —
+    the exact confusion the rename was meant to end.
+    """
+    client = app.test_client()
     resp = client.get("/")
     assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert "Game PIN" not in body, "the front door must not be the game join box"
+    for dest in ("/learn/", "/play", "/quiz", "/submit", "/sim"):
+        assert dest in body, f"front door must name {dest}"
+
+
+def test_front_door_links_to_the_live_game():
+    """Moving the join screen must not strand the in-class game: the front door
+    has to name it, or a student who types the bare host has no way back."""
+    client = app.test_client()
+    resp = client.get("/")
+    assert b'href="/play"' in resp.data
 
 
 # Platform T6: /host and /host/create are now login + owned-set gated (games come from a DB
