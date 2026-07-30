@@ -70,8 +70,7 @@ def _column_names(conn, table):
     # is not valid SQL. _ident() has already restricted it to a bare SQL name.
     # (The suppressions below must sit on the line directly above the statement:
     # any other comment in between and semgrep no longer associates them.)
-    # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query
-    # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
+    # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query,python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
     return {r[1] for r in conn.execute(f"PRAGMA table_info({_ident(table)})")}
 
 
@@ -115,19 +114,17 @@ def migrate(conn, default_course=None):
             continue                      # table not created yet; schema runs first
         if column in existing:
             continue
-        # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query
-        # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
-        # — table/column/type are identifiers SQLite cannot bind; all three are
+        # table/column/type are identifiers SQLite cannot bind; all three are
         # constrained to bare SQL names by _ident() before reaching the string.
+        # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query,python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
         conn.execute(f"ALTER TABLE {_ident(table)} ADD COLUMN "
                      f"{_ident(column)} {_ident(coltype)}")
     if default_course:
         for table, column, _ in _ADDED_COLUMNS:
             if column in _column_names(conn, table):
-                # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query
-                # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
-                # — only the identifiers are interpolated. `default_course` is
-                # the sole untrusted value here and it is bound, not formatted.
+                # Only the identifiers are interpolated. `default_course` is the
+                # sole untrusted value here and it is bound, not formatted.
+                # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query,python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
                 conn.execute(
                     f"UPDATE {_ident(table)} SET {_ident(column)} = ? "
                     f"WHERE {_ident(column)} IS NULL",
