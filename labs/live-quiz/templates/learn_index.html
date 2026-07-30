@@ -106,7 +106,7 @@
    Coursera's course-landing h1 is 44/600/52 on desktop and 32/600/40 on a
    phone, over a text column capped at ~608px even on a 1440px screen. Prose
    never runs the width of the viewport. #}
-<section class="lx-hero lx-hero--course">
+<section class="lx-hero">
   <div class="lx-wrap">
     {% if not only_course %}
     <p class="lx-crumb"><a class="lx-link" href="/learn">All courses</a></p>
@@ -129,7 +129,7 @@
       {% endif %}
       <li class="lx-fact">
         <span class="lx-fact-v">{{ ns.graded }}</span>
-        <span class="lx-fact-l">graded — needs the code from class</span></li>
+        <span class="lx-fact-l">graded — needs a class code</span></li>
       {# Rendered only when it is above zero. The cloud course publishes no
          slides at all, and "0 with lecture slides" is a true sentence that
          reads like an apology. Omitting a fact is honest; inventing one is not. #}
@@ -142,9 +142,7 @@
   </div>
 </section>
 
-<hr class="lx-rule">
-
-{# ── the units ───────────────────────────────────────────────────────────── #}
+{# ── the units───────────────────────────────────────────────────────────── #}
 <section class="lx-sec">
   <div class="lx-wrap">
 

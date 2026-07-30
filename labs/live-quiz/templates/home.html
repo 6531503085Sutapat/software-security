@@ -70,20 +70,16 @@
         <span class="lx-fact-l">course{{ '' if courses|length == 1 else 's' }} published</span></li>
       <li class="lx-fact">
         <span class="lx-fact-v">{{ courses|sum(attribute='week_count') }}</span>
-        <span class="lx-fact-l">units of material, all readable</span></li>
+        <span class="lx-fact-l">units published</span></li>
       <li class="lx-fact">
         <span class="lx-fact-v">Free</span>
-        <span class="lx-fact-l">no account, no sign-up, no e-mail</span></li>
+        <span class="lx-fact-l">no account needed</span></li>
       <li class="lx-fact">
         <span class="lx-fact-v">On paper</span>
-        <span class="lx-fact-l">graded work opens with a code from class</span></li>
+        <span class="lx-fact-l">needs a class code</span></li>
     </ul>
   </div>
 </section>
-
-{# A hairline separates REGIONS; sections inside a region are separated by
-   whitespace alone. One rule on the page, not one per heading. #}
-<hr class="lx-rule">
 
 {# ── construction A · the course grid ─────────────────────────────────────
    li max-width ladder 100% -> 50% -> 33.33% -> 25%, card capped at 452px.

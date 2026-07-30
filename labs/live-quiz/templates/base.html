@@ -1,22 +1,28 @@
 {#- ===========================================================================
-    base.html — the shared shell for the three redesigned pages.  NEW FILE.
+    base.html — the shared shell. NEW FILE (as of the original redesign).
 
     Before it there was no base template at all: 27 templates each wrote their
     own <html>, and 23 of them had no link back to the front door. /host was a
     dead end with no links at all, not even sign out. The nav is the fix, so it
     lives here and every page in scope extends it.
 
-    NOTHING HERE EXECUTES. No script element, no style element, no style
-    attribute, no form element anywhere in the three pages that extend this.
-    The live /learn/* CSP is
+    NOTHING IN base.html ITSELF EXECUTES. No script element, no style element,
+    no style attribute, no form element in this file. That is still absolute —
+    but pages that extend it are no longer only the three content pages under
+    /learn's script-free CSP. login/register/quiz/submit DO contain forms of
+    their own (in {% block main %}), and their routes carry NO CSP header
+    today (a pre-existing gap shared with /, /play, /host, not introduced by
+    this shell) — so those forms submit exactly as they did before extending
+    this file. The live /learn/* CSP, which the three original pages still
+    render under, is
 
       default-src 'none'; style-src 'self'; img-src 'self' data:; font-src
       'self'; frame-src 'self'; base-uri 'none'; form-action 'none';
       frame-ancestors 'none'
 
-    so a script is dropped, an inline style is dropped, and a form would not
-    even submit — which is why there is no search box. Every rule this page
-    needs is a class in /static/style.css.
+    — a script is dropped, an inline style is dropped, and a form would not
+    even submit there, which is why there is no search box. Every rule this
+    page needs is a class in /static/style.css.
 
     CONTEXT THIS TEMPLATE READS
       nav_courses   OPTIONAL. list of {slug, title} (project it — never hand
@@ -113,7 +119,7 @@
       </div>
 
       {%- if not _staff %}
-      <a class="lx-staff-link" href="/login">Teaching staff</a>
+      <a class="lx-nav-a lx-staff-link" href="/login">Teaching staff</a>
       {%- endif %}
 
     </div>
