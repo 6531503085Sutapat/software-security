@@ -318,3 +318,33 @@ def test_legacy_url_still_redirects_for_a_real_kind(client):
     w = _a_week()
     kind = w["available"][0]
     assert client.get(f"/learn/{w['slug']}/{kind}").status_code == 301
+
+
+# ── the page a student lands on when they mistype ──────────────────────────
+
+def test_404_is_a_real_page_with_a_way_out(client):
+    """Werkzeug's default is 207 bytes of unstyled English with no link. Students
+    hit it from mistyped week slugs and stale bookmarks, and it left them stuck."""
+    r = client.get("/learn/software-security/week99-nope")
+    assert r.status_code == 404
+    body = r.get_data(as_text=True)
+    assert "/static/style.css" in body, "the error page must be styled"
+    assert 'href="/"' in body and 'href="/learn"' in body, "must offer a way onward"
+    assert len(body) > 600, f"still the bare Werkzeug page ({len(body)} bytes)"
+
+
+def test_404_carries_the_same_script_free_policy(client):
+    """It renders on the same origin as the teacher's grading session, and an
+    error page has no reason to execute anything."""
+    r = client.get("/nope-does-not-exist")
+    csp = r.headers.get("Content-Security-Policy", "")
+    assert "default-src 'none'" in csp and "script-src" not in csp
+    assert r.headers.get("X-Content-Type-Options") == "nosniff"
+
+
+def test_404_outside_any_blueprint_is_still_styled(client):
+    """Routing can fail before any blueprint owns the request, so the handler
+    cannot depend on a blueprint's after_request hook."""
+    r = client.get("/totally/unknown/path")
+    assert r.status_code == 404
+    assert "/static/style.css" in r.get_data(as_text=True)

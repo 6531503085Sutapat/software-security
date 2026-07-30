@@ -7,6 +7,7 @@ import os
 
 from flask import (
     Flask,
+    make_response,
     render_template,
     request,
     send_file,
@@ -153,6 +154,48 @@ def index():
     arenas = {c.get("arena_url") for c in courses if c.get("arena_url")}
     return render_template("home.html", courses=courses, one=len(courses) == 1,
                            arena_url=arenas.pop() if len(arenas) == 1 else None)
+
+
+# ── Error pages a student can actually get out of ──────────────────────────
+# Werkzeug's default 404 is 207 bytes of unstyled English with no link anywhere.
+# Students DO hit it: a mistyped week slug, a stale bookmark, a URL read off a
+# projector. Six weeks of them hit it for months because /learn/<week> 404'd for
+# the exam blocks, and the page gave them nothing to do about it.
+#
+# The headers are set explicitly rather than left to the content blueprint's
+# after_request: an error can be raised from any blueprint or from routing itself,
+# before any blueprint owns the request, so relying on that hook would leave some
+# error responses without a CSP.
+_ERRORS = {
+    404: ("Page not found",
+          "That address does not exist on this site. It is usually a mistyped "
+          "week name, or a link that has moved."),
+    403: ("Not allowed",
+          "You do not have access to that. If you were following a link from "
+          "class, ask your teacher to check it."),
+    500: ("Something broke on our side",
+          "This is our fault, not yours. Tell your teacher what you were doing "
+          "and try again in a minute."),
+}
+
+
+@app.errorhandler(404)
+@app.errorhandler(403)
+@app.errorhandler(500)
+def _error_page(exc):
+    code = getattr(exc, "code", 500) or 500
+    heading, message = _ERRORS.get(code, _ERRORS[500])
+    resp = make_response(render_template("error.html", code=code,
+                                         heading=heading, message=message), code)
+    # Same script-free policy as the content plane — an error page is rendered on
+    # the same origin as the teacher's authenticated session and has no reason to
+    # execute anything.
+    resp.headers["Content-Security-Policy"] = (
+        "default-src 'none'; style-src 'self'; img-src 'self' data:; "
+        "font-src 'self'; base-uri 'none'; form-action 'none'")
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["Referrer-Policy"] = "no-referrer"
+    return resp
 
 
 @app.route("/play")
