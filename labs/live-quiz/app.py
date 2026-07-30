@@ -8,6 +8,7 @@ import os
 
 from flask import (
     Flask,
+    Response,
     make_response,
     render_template,
     request,
@@ -223,6 +224,23 @@ _APP_CSP = ("default-src 'none'; script-src 'self'; connect-src 'self'; "
             "frame-ancestors 'none'")
 
 
+# Absolute URLs the site publishes about ITSELF — the sitemap's <loc>, the
+# canonical link, og:url, og:image. Building these from request.url_root means
+# building them from the HOST HEADER, which the client controls: a request with
+# a forged Host makes this app hand a crawler (or a link-preview fetcher, or a
+# shared cache) absolute URLs pointing at someone else's domain. Classic
+# host-header injection, and this is a security course's own platform.
+#
+# SITE_ORIGIN pins it. Unset, we fall back to the request — the app sits behind
+# Caddy, which only forwards its configured names — but the pinned value is what
+# production should use, and it is what makes the sitemap trustworthy.
+SITE_ORIGIN = os.environ.get("SITE_ORIGIN", "").rstrip("/")
+
+
+def site_origin() -> str:
+    return SITE_ORIGIN or request.url_root.rstrip("/")
+
+
 def _asset_version() -> str:
     """A cache-busting token derived from the stylesheet's own mtime.
 
@@ -261,7 +279,8 @@ def _shell_context():
     """
     return {"nav_courses": _content.nav_courses(),
             "kind_label": _content.kind_label,
-            "asset_v": ASSET_V}
+            "asset_v": ASSET_V,
+            "site_origin": site_origin()}
 
 
 @app.after_request
@@ -306,10 +325,8 @@ def robots():
             "Disallow: /submit\n"
             "Disallow: /work\n"
             "Disallow: /assess\n"
-            f"\nSitemap: {request.url_root.rstrip('/')}/sitemap.xml\n")
-    resp = make_response(body)
-    resp.headers["Content-Type"] = "text/plain; charset=utf-8"
-    return resp
+            f"\nSitemap: {site_origin()}/sitemap.xml\n")
+    return Response(body, mimetype="text/plain")
 
 
 @app.route("/sitemap.xml")
@@ -317,7 +334,7 @@ def sitemap():
     """Every publicly readable URL, built from the same content functions the
     pages use — so it cannot drift from what is actually served."""
     from xml.sax.saxutils import escape as _x
-    base = request.url_root.rstrip("/")
+    base = site_origin()
     urls = [f"{base}/", f"{base}/learn", f"{base}/sim"]
     for c in _content.COURSES:
         urls.append(f"{base}/learn/{c['slug']}/")
@@ -333,9 +350,7 @@ def sitemap():
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
             + "".join(f"  <url><loc>{_x(u)}</loc></url>\n" for u in urls)
             + "</urlset>\n")
-    resp = make_response(body)
-    resp.headers["Content-Type"] = "application/xml; charset=utf-8"
-    return resp
+    return Response(body, mimetype="application/xml")
 
 
 @app.route("/play")
