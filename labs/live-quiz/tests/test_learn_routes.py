@@ -348,3 +348,53 @@ def test_404_outside_any_blueprint_is_still_styled(client):
     r = client.get("/totally/unknown/path")
     assert r.status_code == 404
     assert "/static/style.css" in r.get_data(as_text=True)
+
+
+# ── the badge system must not lie about what is graded ─────────────────────
+
+def test_worksheets_are_marked_graded():
+    """syllabus.md:163 — "Weekly lab worksheets — 13 graded | 30%" — makes the
+    worksheets the LARGEST single component of the final grade.
+
+    GRADED_BADGES originally held only {EXAM, CTF}, so all 13 of them rendered in
+    the greyed "read anything, any time" style: the feature whose entire purpose
+    is to stop a student walking into graded work unawares was telling them the
+    biggest graded component was optional reading. A confident wrong answer is
+    worse than no answer.
+    """
+    assert "LAB" in C.GRADED_BADGES, "worksheets are 30% of the grade"
+    weeks = C.list_weeks()
+    labs = [w for w in weeks if w["badge"] == "LAB"]
+    assert labs, "fixture assumption broken"
+    assert all(w["graded"] for w in labs)
+
+
+def test_mock_ctf_weeks_are_not_marked_graded():
+    """REVIEW weeks are practice runs. Marking everything graded would be as
+    useless as marking nothing — the signal only works if it discriminates."""
+    for w in C.list_weeks():
+        if w["badge"] == "REVIEW":
+            assert not w["graded"], f"{w['slug']} is a mock, not an assessment"
+
+
+def test_graded_is_stated_as_a_word_not_only_a_colour(client):
+    """Colour alone dies in greyscale, in a failed stylesheet, in a screen reader
+    and for a colour-blind reader — and this is the one signal on the page with a
+    real consequence behind it."""
+    r = client.get(f"/learn/{_default_course()}/")
+    body = r.get_data(as_text=True)
+    assert "GRADED" in body, "the stakes marker must be a word in the markup"
+
+
+def test_access_cost_and_stakes_are_different_tokens(client):
+    """`need` says what it costs to get in; `stakes` says whether it is marked.
+    They were one orange token, so orange meant "bring your slip" on the front
+    page and "this is graded" on the course page — and /play, explicitly ungraded,
+    wore it. One token, two meanings, two pages a student crosses in one session.
+    """
+    home = client.get("/").get_data(as_text=True)
+    i = home.find("Join a live game")
+    assert i > 0
+    # the live game is NOT graded, so no stakes marker may attach to its card
+    card = home[i:i + 400]
+    assert "stakes" not in card, "the ungraded live game must not be marked graded"

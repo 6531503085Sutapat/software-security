@@ -42,7 +42,7 @@
       <ul class="home-list">
         <li class="home-item"><a href="/play">
           <b>Join a live game</b>
-          <span class="need">PIN on screen</span>
+          <span class="need free">PIN on screen</span>
           <span class="what">The fast quiz game we play together — not graded</span></a></li>
       </ul>
     </div>
@@ -56,16 +56,19 @@
       <ul class="home-list">
         <li class="home-item"><a href="/quiz">
           <b>Weekly quiz</b>
-          <span class="need">code on your slip</span>
+          <span class="need free">code on your slip</span>
+          <span class="stakes">GRADED</span>
           <span class="what">One attempt. You cannot go back to a question once you continue.</span></a></li>
         <li class="home-item"><a href="/submit">
           <b>Hand in your worksheet</b>
-          <span class="need">code on your slip</span>
+          <span class="need free">code on your slip</span>
+          <span class="stakes">GRADED</span>
           <span class="what">Upload your file — you can replace it until the deadline</span></a></li>
         {% if arena_url %}
           <li class="home-item"><a href="{{ arena_url }}">
             <b>Security Arena</b>
-            <span class="need">class VPN</span>
+            <span class="need free">class VPN</span>
+            <span class="stakes">GRADED</span>
             <span class="what">Hands-on challenges. Connect the class VPN first or your
               box will not open.</span></a></li>
         {% endif %}

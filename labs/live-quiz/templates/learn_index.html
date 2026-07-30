@@ -13,7 +13,12 @@
         <li class="home-item"><a href="/learn/{{ course.slug }}/{{ w.slug }}">
           <span class="wk-n">{{ w.number_label }}</span>
           <b>{{ w.short_title }}</b>
-          {% if w.badge %}<span class="need{{ '' if w.graded else ' free' }}">{{ w.badge }}</span>{% endif %}
+          {% if w.badge %}<span class="need free">{{ w.badge }}</span>{% endif %}
+          {# The stakes marker is its own WORD, not a colour on the type badge.
+             Colour alone dies in greyscale, in a failed stylesheet, in a screen
+             reader and for a colour-blind reader — and this is the one signal on
+             the page with a real consequence behind it. #}
+          {% if w.graded %}<span class="stakes">GRADED</span>{% endif %}
           <span class="what">{% for k in w.available %}{{ k }}{% if not loop.last %} · {% endif %}{% endfor %}</span></a></li>
       {% endfor %}
     </ul>
