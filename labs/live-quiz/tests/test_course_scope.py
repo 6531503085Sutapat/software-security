@@ -226,3 +226,26 @@ def test_the_default_course_is_the_first_configured(db, three_courses):
     """With no slug given, a quiz lands in the first course — which is why
     passing None must stay an explicit, documented choice rather than a guess."""
     assert course_scope.check(None) == "alpha"
+
+
+# ── the form must not be able to file work under a course that isn't there ──
+
+def test_posted_course_slug_is_validated_not_trusted(db):
+    """The picker is a <select>, but a hand-built POST is trivial. The slug is
+    validated server-side or a graded quiz lands in a course that does not
+    exist and drops out of every listing."""
+    with pytest.raises(ValueError, match="unknown course"):
+        A.publish(db, teacher_id=_tid(db), title="Q", questions=QS, now="n",
+                  course_slug="../../etc/passwd")
+    with pytest.raises(ValueError, match="unknown course"):
+        S.create_assignment(db, teacher_id=_tid(db), title="W", now="n",
+                            course_slug="'; DROP TABLE assessments; --")
+    # and the table is still there
+    assert db.execute("SELECT COUNT(*) c FROM assessments").fetchone()["c"] == 0
+
+
+def test_empty_string_from_a_form_is_treated_as_unset(db):
+    """An unselected <select> posts "", which must mean "the default course",
+    not a course literally named empty-string."""
+    import course_scope
+    assert course_scope.check("" or None) == C.COURSES[0]["slug"]

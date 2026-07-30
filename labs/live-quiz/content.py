@@ -281,6 +281,8 @@ def list_weeks(course_slug: str | None = None) -> list[dict]:
             "number": int(num[:2]),
             "number_label": _num_label(num),
             "unit_label": c.get("unit_label", "Week"),
+            "badge": PRIMARY_BADGE.get(primary, ""),
+            "graded": PRIMARY_BADGE.get(primary, "") in GRADED_BADGES,
             "title": title,
             "short_title": short_title(title),
             "primary": primary,
@@ -336,6 +338,21 @@ def short_title(title: str) -> str:
     out = _TRIM_TAIL.sub("", out).strip()
     return out or title.strip()
 
+
+# What KIND of thing a unit is, from the document that IS it. A student scanning
+# 19 rows needs to see at a glance which ones are assessments — the exam weeks and
+# the midterm/final CTFs look exactly like an ordinary lab in a bare list, and
+# that is how someone walks into a graded block expecting a worksheet.
+PRIMARY_BADGE = {
+    "worksheet": "LAB",
+    "mock-ctf": "REVIEW",
+    "exam": "EXAM",
+    "ctf": "CTF",
+    "scrimmage": "CAPSTONE",
+    "readme": "GUIDE",
+}
+# The two that carry a mark. Rendered differently, and never by colour alone.
+GRADED_BADGES = {"EXAM", "CTF"}
 
 PRIMARY_ORDER = ("worksheet", "mock-ctf", "exam", "ctf", "scrimmage", "readme")
 

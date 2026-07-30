@@ -109,7 +109,8 @@ def new():
             week_slug=(f.get("week_slug") or "").strip() or None,
             instructions=f.get("instructions", "").strip()[:8000],
             due_at=(f.get("due_at") or "").strip() or None,
-            rubric=rubric or None, now=_now())
+            rubric=rubric or None, now=_now(),
+            course_slug=(f.get("course_slug") or "").strip() or None)
     except ValueError as exc:
         return _new_form(error=str(exc)), 200
     return redirect(url_for("submit.detail", assignment_id=aid))
@@ -117,7 +118,13 @@ def new():
 
 def _new_form(error=None):
     import content as C
+    courses = C.list_courses()
+    # The week dropdown must list the weeks of the course being picked. With one
+    # course that is unambiguous; with several, a flat list of every course's
+    # weeks would let an assignment link to another course's material — so it is
+    # scoped to the default and the picker is the thing that narrows it.
     return render_template("work_new.html", weeks=C.list_weeks(),
+                           courses=courses,
                            rubric=S.DEFAULT_RUBRIC, csrf_token=_csrf(), error=error)
 
 
