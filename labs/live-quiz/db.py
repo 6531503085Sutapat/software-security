@@ -46,6 +46,31 @@ def _column_names(conn, table):
     return {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
 
 
+def _replace_dead_students_table(conn):
+    """Re-key `students` from (teacher_id, student_id) to student_id.
+
+    CREATE TABLE IF NOT EXISTS cannot change an existing table's shape, so the old
+    one has to go — and dropping a table is the one migration that can destroy
+    data irrecoverably. It is therefore guarded on being EMPTY. The table was
+    dead when this was written (no code path read or wrote it, zero rows in
+    production), so the guard should always pass; if it ever does not, something
+    started using it and a silent drop would take that with it. Leave it and
+    complain instead.
+    """
+    cols = _column_names(conn, "students")
+    if not cols or "student_id" not in cols:
+        return                                  # not created yet, or unrecognised
+    if "teacher_id" not in cols:
+        return                                  # already the new shape
+    rows = conn.execute("SELECT COUNT(*) FROM students").fetchone()[0]
+    if rows:
+        raise RuntimeError(
+            f"students still has the old (teacher_id, student_id) shape and holds "
+            f"{rows} rows. Migrate them into students+enrollments by hand — this "
+            f"will not drop data. See roster.py.")
+    conn.execute("DROP TABLE students")
+    conn.commit()
+
 def migrate(conn, default_course=None):
     """Add columns the schema files cannot, and backfill them.
 
@@ -72,6 +97,9 @@ def migrate(conn, default_course=None):
 
 
 def init_db(conn, default_course=None):
+    # Before the schema files run: a `students` table left over in the old shape
+    # would satisfy CREATE TABLE IF NOT EXISTS and silently keep the wrong keys.
+    _replace_dead_students_table(conn)
     for schema in _SCHEMAS:
         with open(schema, encoding="utf-8") as f:
             conn.executescript(f.read())

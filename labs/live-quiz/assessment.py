@@ -104,6 +104,18 @@ def issue_codes(conn, assessment_id, student_ids, now):
     """One single-use code per student. Idempotent — re-running keeps existing
     codes, so a late enrolment can be added without invalidating the sheets
     already printed for everyone else."""
+    # Issuing slips IS the enrolment event — this is the one moment a real class
+    # list passes through the platform. Registering it here means the roster
+    # cannot drift from who actually holds a code, and it needs no second step a
+    # teacher could forget. The course is read off the assessment rather than
+    # taken as an argument, so a slip can never enrol someone into a course other
+    # than the one they are being assessed in.
+    import roster
+    _row = conn.execute(
+        "SELECT teacher_id, course_slug FROM assessments WHERE id = ?", (assessment_id,)).fetchone()
+    if _row is not None:
+        roster.enroll(conn, course_slug=_row["course_slug"],
+                      teacher_id=_row["teacher_id"], student_ids=student_ids, now=now)
     out = {}
     for sid in student_ids:
         row = conn.execute(

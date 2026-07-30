@@ -123,6 +123,18 @@ def total_points(row) -> float:
 def issue_codes(conn, assignment_id, student_ids, now):
     """Idempotent, like the quiz: adding a late enrolment must not invalidate
     slips already handed out."""
+    # Issuing slips IS the enrolment event — this is the one moment a real class
+    # list passes through the platform. Registering it here means the roster
+    # cannot drift from who actually holds a code, and it needs no second step a
+    # teacher could forget. The course is read off the assignment rather than
+    # taken as an argument, so a slip can never enrol someone into a course other
+    # than the one they are being assessed in.
+    import roster
+    _row = conn.execute(
+        "SELECT teacher_id, course_slug FROM assignments WHERE id = ?", (assignment_id,)).fetchone()
+    if _row is not None:
+        roster.enroll(conn, course_slug=_row["course_slug"],
+                      teacher_id=_row["teacher_id"], student_ids=student_ids, now=now)
     out = {}
     for sid in student_ids:
         row = conn.execute(
