@@ -75,7 +75,7 @@ def index():
         " (SELECT COUNT(*) FROM submit_codes c WHERE c.assignment_id = a.id) AS issued,"
         " (SELECT COUNT(*) FROM submissions s WHERE s.assignment_id = a.id"
         "    AND s.submitted_at IS NOT NULL) AS handed_in"
-        " FROM assignments a WHERE a.teacher_id = ? ORDER BY a.id DESC",
+        " FROM assignments a WHERE a.teacher_id = ? ORDER BY a.course_slug, a.id DESC",
         (auth.current_teacher_id(),)).fetchall()
     return render_template("work_index.html", assignments=rows, csrf_token=_csrf())
 

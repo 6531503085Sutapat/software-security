@@ -64,7 +64,7 @@ def index():
         " (SELECT COUNT(*) FROM attempt_codes c WHERE c.assessment_id = a.id) AS issued,"
         " (SELECT COUNT(*) FROM attempts t WHERE t.assessment_id = a.id"
         "    AND t.submitted_at IS NOT NULL) AS submitted"
-        " FROM assessments a WHERE a.teacher_id = ? ORDER BY a.id DESC",
+        " FROM assessments a WHERE a.teacher_id = ? ORDER BY a.course_slug, a.id DESC",
         (auth.current_teacher_id(),)).fetchall()
     return render_template("assess_index.html", assessments=rows, csrf_token=_csrf())
 

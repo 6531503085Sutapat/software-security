@@ -17,11 +17,66 @@ def connect(path):
     return conn
 
 
-def init_db(conn):
+# ── Migrations ─────────────────────────────────────────────────────────────
+# The schema files are CREATE TABLE IF NOT EXISTS, which is idempotent for NEW
+# tables and does nothing at all for a new COLUMN on an existing one. So an added
+# column needs an explicit, guarded ALTER: SQLite has no ADD COLUMN IF NOT
+# EXISTS, and a bare ALTER raises "duplicate column name" on the second boot.
+#
+# WHY course_slug IS A STRING AND NOT A FOREIGN KEY
+# Courses are configured outside this database — $COURSES / the curriculum
+# monorepo's courses/*.yml — because a course is an ordering over content
+# directories, not a row someone maintains twice. A `courses` table here would
+# be a second source of truth that drifts the first time a slug is renamed in one
+# place and not the other. The write path validates the slug against the live
+# course registry instead (see assessment.create_assessment /
+# submission.create_assignment), so a bad value is rejected at the boundary
+# rather than tolerated in storage.
+_ADDED_COLUMNS = (
+    # (table, column, type) — graded artifacts must know which course they belong
+    # to. Without this a teacher of several courses gets one flat list of every
+    # quiz they have ever set, and per-course grades cannot be totalled at all.
+    ("assessments", "course_slug", "TEXT"),
+    ("assignments", "course_slug", "TEXT"),
+    ("question_sets", "course_slug", "TEXT"),
+)
+
+
+def _column_names(conn, table):
+    return {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+
+
+def migrate(conn, default_course=None):
+    """Add columns the schema files cannot, and backfill them.
+
+    Backfill matters: rows written before this existed have course_slug NULL, and
+    a NULL would silently drop them out of every per-course query — a teacher's
+    existing quiz would just vanish from the console. They are assigned
+    `default_course` instead, which is the only course that existed when they
+    were created.
+    """
+    for table, column, coltype in _ADDED_COLUMNS:
+        existing = _column_names(conn, table)
+        if not existing:
+            continue                      # table not created yet; schema runs first
+        if column in existing:
+            continue
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
+    if default_course:
+        for table, column, _ in _ADDED_COLUMNS:
+            if column in _column_names(conn, table):
+                conn.execute(
+                    f"UPDATE {table} SET {column} = ? WHERE {column} IS NULL",
+                    (default_course,))
+    conn.commit()
+
+
+def init_db(conn, default_course=None):
     for schema in _SCHEMAS:
         with open(schema, encoding="utf-8") as f:
             conn.executescript(f.read())
     conn.commit()
+    migrate(conn, default_course)
 
 
 def create_teacher(conn, username, password_hash, now):

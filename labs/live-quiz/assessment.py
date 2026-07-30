@@ -53,7 +53,8 @@ KIND_SHORT = "short"
 
 def publish(conn, *, teacher_id, title, questions, now, variant="A",
             shuffle_questions=True, shuffle_options=True,
-            time_limit_sec=None, opens_at=None, closes_at=None):
+            time_limit_sec=None, opens_at=None, closes_at=None,
+            course_slug=None):
     """Freeze `questions` into a new assessment and return its id.
 
     `questions` is the shape `quiz_loader.parse_topics_from_text` produces —
@@ -67,11 +68,13 @@ def publish(conn, *, teacher_id, title, questions, now, variant="A",
     if not questions:
         raise ValueError("an assessment needs at least one question")
 
+    import course_scope
+    course = course_scope.check(course_slug)
     cur = conn.execute(
-        "INSERT INTO assessments (teacher_id, title, variant, shuffle_questions,"
-        " shuffle_options, time_limit_sec, opens_at, closes_at, released, created_at)"
-        " VALUES (?,?,?,?,?,?,?,?,0,?)",
-        (teacher_id, title, variant, int(bool(shuffle_questions)),
+        "INSERT INTO assessments (teacher_id, course_slug, title, variant,"
+        " shuffle_questions, shuffle_options, time_limit_sec, opens_at, closes_at,"
+        " released, created_at) VALUES (?,?,?,?,?,?,?,?,?,0,?)",
+        (teacher_id, course, title, variant, int(bool(shuffle_questions)),
          int(bool(shuffle_options)), time_limit_sec, opens_at, closes_at, now),
     )
     aid = cur.lastrowid

@@ -32,7 +32,11 @@ socketio = SocketIO(app, async_mode="eventlet")
 DB_PATH = os.environ.get("DB_PATH", "/data/live-quiz.db")
 INVITE_CODE = os.environ.get("INVITE_CODE", "")
 _conn = dbmod.connect(DB_PATH)
-dbmod.init_db(_conn)
+# The default course backfills rows written before assessments/assignments knew
+# what a course was — see dbmod.migrate. content is imported here (not at the top)
+# because it reads $COURSES at import time and the tests reload it.
+import content as _content  # noqa: E402
+dbmod.init_db(_conn, default_course=_content.COURSES[0]["slug"])
 if not INVITE_CODE:
     print("WARNING: INVITE_CODE is unset — teacher registration is CLOSED until you set it.", flush=True)
 if app.config["SECRET_KEY"] == "dev-not-secret-override-in-prod":

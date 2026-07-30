@@ -87,17 +87,21 @@ def safe_display_name(raw: str) -> str:
 # --- assignments -----------------------------------------------------------
 
 def create_assignment(conn, *, teacher_id, title, now, week_slug=None,
-                      instructions="", due_at=None, rubric=None):
+                      instructions="", due_at=None, rubric=None,
+                      course_slug=None):
     rubric = rubric or DEFAULT_RUBRIC
     if not rubric:
         raise ValueError("an assignment needs a rubric")
     for r in rubric:
         if "criterion" not in r or float(r.get("max", 0)) <= 0:
             raise ValueError(f"bad rubric row: {r!r}")
+    import course_scope
+    course = course_scope.check(course_slug)
     cur = conn.execute(
-        "INSERT INTO assignments (teacher_id, title, week_slug, instructions,"
-        " due_at, rubric_json, released, created_at) VALUES (?,?,?,?,?,?,0,?)",
-        (teacher_id, title, week_slug, instructions, due_at,
+        "INSERT INTO assignments (teacher_id, course_slug, title, week_slug,"
+        " instructions, due_at, rubric_json, released, created_at)"
+        " VALUES (?,?,?,?,?,?,?,0,?)",
+        (teacher_id, course, title, week_slug, instructions, due_at,
          json.dumps(rubric, ensure_ascii=False), now))
     conn.commit()
     return cur.lastrowid
