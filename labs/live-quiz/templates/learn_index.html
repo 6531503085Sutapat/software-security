@@ -8,10 +8,13 @@
     <h1>{{ course.unit_label }}s</h1>
     <p class="lead">Worksheets and lab guides. Everything here is readable without
       signing in.</p>
-    <ul class="weeks">
+    <ul class="home-list">
       {% for w in weeks %}
-        <li><a href="/learn/{{ course.slug }}/{{ w.slug }}"><b>{{ w.unit_label }} {{ w.number_label }}</b> — {{ w.short_title }}</a>
-          <span class="sub">{% for k in w.available %}<a href="/learn/{{ course.slug }}/{{ w.slug }}/{{ k }}">{{ k }}</a>{% if not loop.last %} · {% endif %}{% endfor %}</span></li>
+        <li class="home-item"><a href="/learn/{{ course.slug }}/{{ w.slug }}">
+          <span class="wk-n">{{ w.number_label }}</span>
+          <b>{{ w.short_title }}</b>
+          {% if w.badge %}<span class="need{{ '' if w.graded else ' free' }}">{{ w.badge }}</span>{% endif %}
+          <span class="what">{% for k in w.available %}{{ k }}{% if not loop.last %} · {% endif %}{% endfor %}</span></a></li>
       {% endfor %}
     </ul>
 

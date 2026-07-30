@@ -614,3 +614,12 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; justif
   color: var(--kmitl-orange-deep); background: rgba(227, 82, 5, .09);
 }
 .home-item .need.free { color: var(--faint); background: rgba(97, 89, 72, .09); }
+
+/* The unit number, in a fixed gutter so 19 of them align into one column the eye
+   can run straight down. Subordinate to the title on purpose: a student scans for
+   "Injection", not for "4". Tabular figures so 1 and 19 occupy the same width. */
+.wk-n {
+  flex: none; min-width: 30px; text-align: right;
+  font: 600 13px/1.3 var(--mono); font-variant-numeric: tabular-nums;
+  color: var(--faint);
+}
