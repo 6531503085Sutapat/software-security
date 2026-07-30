@@ -66,9 +66,12 @@ def _ident(name: str) -> str:
 
 
 def _column_names(conn, table):
+    # `table` is an IDENTIFIER, which SQLite cannot bind — PRAGMA table_info(?)
+    # is not valid SQL. _ident() has already restricted it to a bare SQL name.
+    # (The suppressions below must sit on the line directly above the statement:
+    # any other comment in between and semgrep no longer associates them.)
     # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query
     # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
-    # — identifier, not a value; _ident() restricts it to [A-Za-z_][A-Za-z0-9_]*.
     return {r[1] for r in conn.execute(f"PRAGMA table_info({_ident(table)})")}
 
 
