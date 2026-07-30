@@ -37,6 +37,21 @@
   --shadow-soft: 0 10px 30px -18px rgba(24, 21, 18, .5);
 }
 
+/* Self-hosted, not loaded from Google — font-src 'self' on every route means a
+   third-party font host was never usable here anyway. Inter (SIL OFL 1.1,
+   licence file shipped alongside it in this same directory) rather than the
+   system ui-sans-serif stack: one variable file, 100-900 in a single request,
+   no separate italic/weight files. Scoped to body.lx-page only, below, so the
+   three original game screens (host/play, zero screenshot coverage) render in
+   exactly the fonts they always have. */
+@font-face {
+  font-family: "InterVariable";
+  src: url("/static/fonts/InterVariable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 * { box-sizing: border-box; }
 html { margin: 0; }
 body {
@@ -679,9 +694,11 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; justif
 
    ── DESIGN ─────────────────────────────────────────────────────────────────
    A faithful port of Coursera's visual language onto KOSEN-KMITL's identity.
-   One family (var(--sans), the system stack — font-src 'self' with no font
-   files on disk is SATISFIED by that, not violated), three weights
-   (400/600/700), a spacing ramp of 4/8/12/16/24/32/48/64, nested radius
+   One family (var(--sans) — self-hosted InterVariable.woff2, scoped to
+   .lx-page below so host.html/player.html keep the system stack they always
+   had; font-src 'self' is what makes self-hosting legal here at all), three
+   weights (400/600/700 as instances of the variable font, not separate
+   files), a spacing ramp of 4/8/12/16/24/32/48/64, nested radius
    16 outer / 8 inner / 50px pill, one hairline at rest with shadow only on
    hover, whitespace between sections and a tint band between regions. The
    accent is under 2% of the pixels.
@@ -732,6 +749,15 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; justif
   --lx-gutter: 16px;
   --lx-max: 1440px;
   --lx-read: 900px;           /* the unit list's own reading measure */
+
+  /* NOT an --lx- token: this REDEFINES the house --sans, which rule 5 above
+     forbids AT :root. This is not that — the redefinition is scoped to
+     .lx-page, a class that exists nowhere in host.html or player.html, so
+     their `var(--sans)` lookups never reach this selector and keep resolving
+     the :root system stack exactly as before. A deliberate, scoped exception,
+     not an application of rule 5. */
+  --sans: "InterVariable", ui-sans-serif, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 @media (min-width: 768px)  { .lx-page { --lx-gutter: 32px; } }
 @media (min-width: 1128px) { .lx-page { --lx-gutter: 48px; } }
@@ -787,7 +813,7 @@ body.lx-page {
 .lx-tier1-in { display: flex; align-items: stretch; gap: var(--lx-sp-3); min-height: 40px; }
 .lx-tier1-lab {
   flex: none; align-self: center;
-  font: 700 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase;
+  font: 700 12px/1 var(--sans);
   color: #CFC8BF;                       /* 11.0:1 on #181512 */
 }
 .lx-tier1-list {
@@ -832,9 +858,19 @@ body.lx-page {
   display: flex; align-items: center; flex-wrap: wrap;
   gap: var(--lx-sp-1) var(--lx-sp-2); margin-left: auto;
 }
+/* Below the tier-1 breakpoint this row used to wrap onto 2-3 lines of its own
+   (label, then links, then the CTA spilling to a line by itself) — on a 375px
+   phone that alone ran close to half the viewport before any page content
+   appeared. One horizontally-scrolling strip, no script required. */
+@media (max-width: 767px) {
+  .lx-actions {
+    flex-wrap: nowrap; overflow-x: auto; width: 100%; margin-left: 0;
+    padding-bottom: 2px; -webkit-overflow-scrolling: touch;
+  }
+}
 .lx-actions-lab {
-  flex: none; font: 700 11px/1 var(--sans); letter-spacing: .09em;
-  text-transform: uppercase; color: var(--lx-ink-3);   /* 6.93:1 */
+  flex: none; font: 700 12px/1 var(--sans);
+  color: var(--lx-ink-3);   /* 6.93:1 */
 }
 /* The position and construction of Coursera's `Join for Free` outline button.
    There is no commerce here, so the slot goes to the one time-critical
@@ -846,11 +882,11 @@ body.lx-page {
   font: 700 14px/20px var(--sans); text-decoration: none; white-space: nowrap;
 }
 .lx-cta:hover { background: var(--kmitl-orange-deep); color: #fff; }
-.lx-staff-link {
-  flex: none; font: 400 14px/20px var(--sans);
-  color: var(--lx-ink-3); text-decoration: none;
-}
-.lx-staff-link:hover { text-decoration: underline; }
+/* Same visual treatment as .lx-nav-a (Courses / Simulations): a sign-in link is
+   still just a link, and giving it its own colour/hover made the nav read as
+   four unrelated constructions instead of one. It is applied alongside
+   .lx-nav-a in the markup; this rule only adds the layout it needs. */
+.lx-staff-link { flex: none; }
 
 /* ── tier 3 · staff bar ───────────────────────────────────────────────────
    Signed-in teaching staff only, and only ever additive. It exists because the
@@ -869,7 +905,7 @@ body.lx-page {
 }
 .lx-staffbar-lab {
   flex: none; margin-right: var(--lx-sp-1);
-  font: 700 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase;
+  font: 700 12px/1 var(--sans);
   color: var(--kmitl-orange-deep);           /* 5.29:1 on #FFF6F1 ✓ AA */
 }
 .lx-staffbar-a {
@@ -905,9 +941,14 @@ body.lx-page {
   font-variant-numeric: tabular-nums;
 }
 
+/* A kicker has to read as bound to the headline below it, not as a stray
+   sentence above it: weight + brand colour do that work, and margin pulls it
+   in tight rather than letting the two sit at body-text's own line-height.
+   Colour is the deep blue link tone (7.1:1 on white), not orange — orange as
+   small text here is 3.84:1 and fails AA. */
 .lx-eyebrow {
-  display: block; margin: 0 0 var(--lx-sp-1);
-  font: 400 14px/20px var(--sans); color: var(--lx-ink-2);
+  display: block; margin: 0 0 6px;
+  font: 600 14px/18px var(--sans); color: var(--kosen-blue-deep);
 }
 .lx-lead { margin: var(--lx-sp-4) 0 0; font: 400 16px/24px var(--sans); color: var(--lx-ink-1); }
 .lx-sec-sub { margin: -12px 0 var(--lx-sp-5); font: 400 16px/24px var(--sans); color: var(--lx-ink-2); }
@@ -928,24 +969,23 @@ body.lx-page {
    any border, and it is one declaration. It is used ONCE on the whole site,
    which is why it works.
    ========================================================================== */
-.lx-hero { padding: var(--lx-sp-6) 0 var(--lx-sp-5); }
-.lx-sec  { padding: var(--lx-sp-6) 0; }
+.lx-hero { padding: var(--lx-sp-6) 0 var(--lx-sp-6); }
+.lx-sec  { padding: var(--lx-sp-7) 0; }
 .lx-sec--tight { padding-top: var(--lx-sp-2); }
 .lx-tint {
   padding: var(--lx-sp-6) 0 var(--lx-sp-7);
-  background: var(--lx-ground); border-top: 1px solid var(--lx-stroke);
-  margin-top: var(--lx-sp-5);
+  background: var(--lx-ground);
+  margin-top: var(--lx-sp-6);
 }
 .lx-ground { padding: var(--lx-sp-5) 0 var(--lx-sp-7); background: var(--lx-ground); }
 .lx-cathead { padding-bottom: var(--lx-sp-2); }
 @media (min-width: 768px) {
-  .lx-hero { padding: 56px 0 var(--lx-sp-7); }
-  .lx-sec  { padding: var(--lx-sp-7) 0; }
+  .lx-hero { padding: 56px 0 var(--lx-sp-8); }
+  .lx-sec  { padding: var(--lx-sp-8) 0; }
   .lx-sec--tight { padding-top: var(--lx-sp-3); }
   .lx-tint { padding: var(--lx-sp-7) 0 56px; }
   .lx-ground { padding: var(--lx-sp-6) 0 var(--lx-sp-8); }
 }
-.lx-rule { height: 1px; margin: 0; border: 0; background: var(--lx-stroke); }
 
 /* ---------- the facts strip (Coursera's "Details to know") ----------
    Every value is counted at render time or is a statement of policy. No
@@ -1000,12 +1040,26 @@ body.lx-page {
   text-align: center;
 }
 .lx-tile-n { font: 700 24px/1 var(--sans); font-variant-numeric: tabular-nums; }
-.lx-tile-u { margin-top: 3px; font: 700 9px/1 var(--sans); letter-spacing: .09em; text-transform: uppercase; }
+.lx-tile-u { margin-top: 3px; font: 700 11px/1 var(--sans); }
 /* Three flat brand fields. The COUNT inside each tile is what actually differs
    course to course, so the information never rests on the hue. */
-.lx-tile--a, .lx-sq--a { background: var(--kosen-blue-deep);   color: #fff; }  /* 7.1:1  */
-.lx-tile--b, .lx-sq--b { background: var(--kmitl-orange-deep); color: #fff; }  /* 5.63:1 */
-.lx-tile--c, .lx-sq--c { background: var(--ink);               color: #fff; }  /* 18.9:1 */
+.lx-tile--a, .lx-sq--a { background-color: var(--kosen-blue-deep);   color: #fff; }  /* 7.1:1  */
+.lx-tile--b, .lx-sq--b { background-color: var(--kmitl-orange-deep); color: #fff; }  /* 5.63:1 */
+.lx-tile--c, .lx-sq--c { background-color: var(--ink);               color: #fff; }  /* 18.9:1 */
+/* A sheen, not a pattern: texture on top of hue would have made the three
+   plates harder to tell apart in greyscale, which is exactly the failure
+   this field exists to avoid (the count is the only thing that must always
+   read). Two gradients of the SAME neutral (white highlight, black grounding
+   shadow) sit on every plate identically, so the hue-to-hue contrast that
+   keeps them distinguishable is untouched — only the sense of a lit surface
+   changes. background-image layers over background-color, never replaces it. */
+.lx-tile--a, .lx-tile--b, .lx-tile--c, .lx-sq--a, .lx-sq--b, .lx-sq--c {
+  background-image:
+    radial-gradient(130% 95% at 14% -15%, rgba(255,255,255,.32), transparent 55%),
+    linear-gradient(160deg, rgba(255,255,255,.08), transparent 45%);
+  background-repeat: no-repeat;
+  box-shadow: inset 0 -10px 16px -12px rgba(0,0,0,.35);
+}
 
 .lx-card-body {
   flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;
@@ -1144,7 +1198,7 @@ body.lx-page {
 }
 @media (min-width: 768px) { .lx-sq { width: 80px; height: 80px; } }
 .lx-sq-n { font: 700 22px/1 var(--sans); font-variant-numeric: tabular-nums; }
-.lx-sq-u { margin-top: 3px; font: 700 9px/1 var(--sans); letter-spacing: .09em; text-transform: uppercase; }
+.lx-sq-u { margin-top: 3px; font: 700 11px/1 var(--sans); }
 .lx-lcard-body { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; }
 .lx-pill--inline { position: static; }
 
@@ -1346,7 +1400,7 @@ body.lx-page {
   border-radius: var(--lx-r-in); text-align: center;
 }
 .lx-unit-u {
-  font: 700 8px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase;
+  font: 700 10px/1 var(--sans);
   opacity: .85;
 }
 .lx-unit-n {
