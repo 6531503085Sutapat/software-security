@@ -122,7 +122,7 @@ def _render_doc(course_slug, slug, kind):
         abort(404)
     week = next((w for w in C.list_weeks(course_slug) if w["slug"] == slug), None)
     return render_template("learn_doc.html", doc=doc, week=week,
-                           course=C.course(course_slug))
+                           course=C.course(course_slug), nav_courses=C.nav_courses())
 
 
 def _legacy(slug, kind=None):
