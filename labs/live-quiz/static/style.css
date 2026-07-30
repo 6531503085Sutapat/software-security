@@ -71,10 +71,20 @@ body {
 .glyph, .pglyph, .bglyph, .rglyph, .pwait .shapes svg { fill: currentColor; }
 
 button { font-family: inherit; }
-button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
-  outline: 3px solid rgba(1, 123, 196, .6);
+/* The site-wide focus ring, and for most elements the ONLY one. At 60% alpha it
+   measured 2.39:1 on white, 2.27:1 on the tint band and 2.18:1 on the dark
+   tier-1 bar — all under WCAG 1.4.11's 3:1 minimum for a non-text indicator.
+   Solid --kosen-blue is 4.53:1 on white and 4.06:1 on the tint. The dedicated
+   .lx- rules already used the solid colour; this brings the fallback in line
+   rather than leaving keyboard users a ring they cannot see. */
+button:focus-visible, input:focus-visible, select:focus-visible,
+textarea:focus-visible, summary:focus-visible, a:focus-visible {
+  outline: 3px solid var(--kosen-blue);
   outline-offset: 2px;
 }
+/* On the near-black course switcher the blue ring is 1.6:1 — invisible. Light
+   ring there instead, same 3px so the affordance is identical. */
+.lx-tier1 a:focus-visible { outline-color: #F1EDE7; }
 
 /* ---------- brand masthead ---------- */
 .masthead {
@@ -1673,3 +1683,138 @@ body.lx-page {
   font: 700 15px/20px var(--sans); text-decoration: none; cursor: pointer;
 }
 .lx-btn:hover { background: #014a78; }
+
+/* ==========================================================================
+   NEW COMPONENTS — contents box, document nav, sim list, error list, and the
+   quiz stem. All still .lx-prefixed, so none of them can reach /host or /play.
+   ========================================================================== */
+
+/* The teacher-authored question stem. It was rendered at .lx-h1 (44px on
+   desktop), a scale the rest of this design reserves for short page titles —
+   a two-sentence stem became several lines of 44px type that dwarfed the answer
+   options below it. Still an <h1> for the document outline; just sized as the
+   content it is. */
+.lx-stem {
+  margin: 0 0 var(--lx-sp-5); color: var(--lx-ink-1);
+  font: 600 22px/30px var(--sans); letter-spacing: -.06px;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 768px) { .lx-stem { font-size: 26px; line-height: 34px; } }
+.lx-hint--tight { margin: 0 0 var(--lx-sp-2); }
+
+/* Contents. Closed at rest: open would push a long document down on every
+   visit, and the summary already says what it is and how big. */
+.lx-toc {
+  max-width: 640px; margin: var(--lx-sp-5) 0 0;
+  border: 1px solid var(--lx-stroke); border-radius: var(--lx-r-in);
+  background: var(--lx-surface);
+}
+.lx-toc-sum {
+  display: flex; align-items: baseline; gap: var(--lx-sp-2); cursor: pointer;
+  padding: var(--lx-sp-3) var(--lx-sp-4);
+  font: 600 15px/20px var(--sans); color: var(--lx-ink-1);
+}
+.lx-toc-n { font: 400 14px/20px var(--sans); color: var(--lx-ink-3); }
+.lx-toclist {
+  list-style: none; margin: 0; padding: 0 var(--lx-sp-4) var(--lx-sp-4);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.lx-toc-i { font: 400 15px/22px var(--sans); }
+.lx-toc-i--h3 { padding-left: var(--lx-sp-4); }
+
+/* Where to go after reading. Two big targets, side by side above 600px. */
+.lx-docnav {
+  display: flex; flex-wrap: wrap; gap: var(--lx-sp-3);
+  max-width: 900px; margin: var(--lx-sp-7) 0 var(--lx-sp-4);
+}
+.lx-docnav-a {
+  flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 2px;
+  padding: var(--lx-sp-3) var(--lx-sp-4);
+  border: 1px solid var(--lx-stroke); border-radius: var(--lx-r-in);
+  background: var(--lx-surface); text-decoration: none;
+}
+.lx-docnav-a:hover { border-color: var(--kosen-blue-deep); background: var(--lx-hover); }
+.lx-docnav-a--next { text-align: right; }
+.lx-docnav-lab { font: 600 13px/18px var(--sans); color: var(--lx-ink-3); }
+.lx-docnav-t { font: 600 16px/22px var(--sans); color: var(--lx-ink-1); overflow-wrap: anywhere; }
+.lx-docnav-up { margin: 0; font: 400 15px/22px var(--sans); }
+.lx-crumb-sep { color: var(--lx-ink-3); }
+
+.lx-simlist { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--lx-sp-4); }
+.lx-simlist > li { flex: 1 1 320px; max-width: 520px; display: flex; }
+.lx-simcard {
+  width: 100%; padding: var(--lx-sp-4);
+  border: 1px solid var(--lx-stroke); border-radius: var(--lx-r-card);
+  background: var(--lx-surface);
+}
+.lx-simcard-t { margin: 0 0 var(--lx-sp-3); font: 600 18px/24px var(--sans); color: var(--lx-ink-1); }
+.lx-simcard-meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--lx-sp-3); font: 400 15px/22px var(--sans); }
+
+.lx-errlist {
+  list-style: none; margin: var(--lx-sp-5) 0 0; padding: 0;
+  display: flex; flex-direction: column; gap: var(--lx-sp-3);
+}
+.lx-err-what { display: block; margin-top: 2px; font: 400 14px/20px var(--sans); color: var(--lx-ink-2); }
+
+/* The active tier-2 item. Weight + underbar, never colour alone. */
+.lx-nav-a--here { font-weight: 700; color: var(--lx-ink-1); box-shadow: inset 0 -3px 0 var(--kmitl-orange); }
+.lx-staff-nav { flex: none; display: flex; }
+
+/* Module titles are <h3> now (they were <span>s inside <summary>, so a 7-module
+   19-unit course produced no heading outline at all). Reset the heading's own
+   box so the summary layout is unchanged. */
+.lx-mod-t { margin: 0; font: inherit; color: inherit; display: inline; }
+
+/* ==========================================================================
+   DARK MODE. The simulations already honoured prefers-color-scheme, so a
+   dark-OS student got a bright page with a dark iframe sitting in the middle of
+   it. Only the .lx-page token block is remapped — one place, and the game
+   screens keep their fixed theme.
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  .lx-page {
+    --lx-surface: #16191D;
+    --lx-ground:  #101317;
+    --lx-hover:   #1D2228;
+    --lx-ink-1: #E9E6E2;     /* 14.4:1 on --lx-surface */
+    --lx-ink-2: #B4ADA5;     /*  7.6:1 */
+    --lx-ink-3: #9A938B;     /*  5.6:1 */
+    --lx-stroke: rgba(233, 230, 226, .16);
+  }
+  body.lx-page { background: var(--lx-ground); color: var(--lx-ink-1); }
+  /* Link and CTA hues are chosen for white; on a dark ground the deep variants
+     fall under 4.5:1, so both step up to the brighter brand tones. */
+  .lx-page .lx-link, .lx-page .lx-foot-a { color: #7CC4F0; }        /* 7.4:1 */
+  .lx-page .lx-cta { color: #FF8A4C; border-color: #FF8A4C; background: transparent; }
+  .lx-page .lx-cta:hover { background: #FF8A4C; color: #16191D; }
+  .lx-page .lx-eyebrow { color: #7CC4F0; }
+  .lx-page .lx-tier2, .lx-page .lx-foot { background: var(--lx-surface); }
+  .lx-page .lx-prose pre, .lx-page .lx-prose code { background: #0B0D10; }
+  .lx-page .lx-opt:has(input:checked) { border-color: #7CC4F0; background: #14212B; }
+  .lx-page .lx-err { background: #2A1410; border-color: #7A3A28; color: #FFC2AE; }
+  .lx-page .lx-btn { background: #1E7FC2; }
+  .lx-page .lx-btn:hover { background: #2E93D8; }
+}
+
+/* ==========================================================================
+   PRINT. Students print worksheets to work from in the lab. Without this the
+   paper carried the two-tier header and the three-column footer, and every
+   code block was CLIPPED — .lx-prose pre relies on horizontal scrolling, which
+   does not exist on paper.
+   ========================================================================== */
+@media print {
+  .lx-top, .lx-foot, .lx-skip, .lx-staffbar, .lx-docnav, .lx-docnav-up,
+  .lx-toc, .lx-crumb { display: none !important; }
+  body.lx-page, .lx-ground, .lx-tint, .lx-page { background: #fff !important; color: #000; }
+  .lx-wrap { max-width: none; padding: 0; }
+  .lx-prose { max-width: none; }
+  .lx-prose pre { white-space: pre-wrap; overflow-x: visible; word-break: break-word;
+                  border: 1px solid #bbb; background: #f6f6f6; }
+  .lx-prose p, .lx-prose li { max-width: none; }
+  /* A printed link is dead text unless it says where it goes. Skipped for
+     in-page anchors, which say nothing useful on paper. */
+  .lx-prose a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 11px; word-break: break-all; }
+  .lx-prose h2, .lx-prose h3 { break-after: avoid; }
+  .lx-prose pre, .lx-prose table, .lx-prose blockquote { break-inside: avoid; }
+  .lx-h1 { font-size: 22pt; }
+}

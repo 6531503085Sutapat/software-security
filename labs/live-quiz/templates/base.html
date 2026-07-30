@@ -25,15 +25,18 @@
     page needs is a class in /static/style.css.
 
     CONTEXT THIS TEMPLATE READS
-      nav_courses   OPTIONAL. list of {slug, title} (project it — never hand
-                    over raw list_courses() dicts, they carry `root`, an
-                    absolute server filesystem path). Renders the course
-                    switcher. ABSENT -> the switcher is not rendered and
-                    `Courses` in tier 2 still reaches every course via /learn.
-                    Pass it explicitly from the three routes that render these
-                    templates — NOT from an app-wide context processor, which
-                    would run an os.listdir sweep on every /host and /play
-                    render too.
+      nav_courses   list of {slug, title}, supplied app-wide by app.py's
+                    _shell_context processor, so no route has to remember it.
+                    (It used to be per-route, and the four routes that forgot —
+                    quiz, submit, login, register — made the switcher appear and
+                    disappear between clicks. The earlier objection to a context
+                    processor was cost, but that applied to list_courses(),
+                    which walks the content tree; nav_courses() is a projection
+                    over an import-time list. It must stay a PROJECTION: raw
+                    course dicts carry `root`, an absolute server path.)
+                    An explicit kwarg still overrides it.
+      section       OPTIONAL. "learn" | "sim" | "quiz" — marks the current
+                    tier-2 item with aria-current.
       nav_teacher   OPTIONAL override. When absent this falls back to
                     session.teacher_id, which auth.py:44 already sets, so the
                     staff bar works TODAY with zero route changes. Anonymous
@@ -48,7 +51,35 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}KOSEN·KMITL{% endblock %}</title>
-<link rel="stylesheet" href="/static/style.css"></head>
+{#- Lecturers share these URLs in LINE, Teams and Discord. With no description
+    and no card tags every one of them unfurled as a bare link, and search
+    engines synthesised their own snippet for a site whose entire point is being
+    publicly readable. All four are inert metadata, so the /learn CSP is
+    unaffected. `description` is overridden per page; the default describes the
+    platform rather than any one document. -#}
+{#- `page_description` is set by a top-level {% set %} in the child template;
+    Jinja evaluates those before the parent renders, so the parent sees it. A
+    block would have to be rendered somewhere to be read, which is how it ends
+    up printed into the body by accident. -#}
+{%- set _desc = page_description | default(
+      'Course material for KOSEN·KMITL software security, cryptography and cloud '
+      'infrastructure: every worksheet, lab guide, exam paper and CTF brief, '
+      'free to read with no account.', true) -%}
+<meta name="description" content="{{ _desc }}">
+<meta property="og:site_name" content="KOSEN·KMITL">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{ self.title() | trim }}">
+<meta property="og:description" content="{{ _desc }}">
+<meta property="og:url" content="{{ request.base_url }}">
+<meta property="og:image" content="{{ request.url_root.rstrip('/') }}/static/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+{#- One canonical form per document. /learn/x and /learn/x/ both answer 200,
+    so without this they are two URLs for one page to every crawler. -#}
+<link rel="canonical" href="{{ request.base_url }}">
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/static/favicon.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="stylesheet" href="/static/style.css?v={{ asset_v }}"></head>
 <body class="lx-page">
 
 {#- The first focusable element on the page. There was none anywhere in the 27
@@ -99,9 +130,15 @@
         <span class="mark"><span class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></span></span>
       </a>
 
+      {#- `section` marks the current item. Tier 1 already did this for courses;
+          tier 2 did it for nothing, so on /learn and /sim the section nav was
+          state-blind. Carried by aria-current AND weight+underbar, never by
+          colour alone. -#}
       <nav class="lx-nav" aria-label="Course material">
-        <a class="lx-nav-a" href="/learn">Courses</a>
-        <a class="lx-nav-a" href="/sim">Simulations</a>
+        <a class="lx-nav-a{% if section == 'learn' %} lx-nav-a--here{% endif %}"
+           href="/learn"{% if section == 'learn' %} aria-current="page"{% endif %}>Courses</a>
+        <a class="lx-nav-a{% if section == 'sim' %} lx-nav-a--here{% endif %}"
+           href="/sim"{% if section == 'sim' %} aria-current="page"{% endif %}>Simulations</a>
       </nav>
 
       {#- Everything in this group needs something an anonymous visitor does not
@@ -111,15 +148,24 @@
           for them — and the ~30 who do hold a code can find it from any page.
           "Enrolled students", not "Enrolled students only": the footer explains
           why the door is shut instead of repeating that it is. -#}
-      <div class="lx-actions">
-        <span class="lx-actions-lab">Enrolled students</span>
-        <a class="lx-nav-a" href="/play">Live game</a>
-        <a class="lx-nav-a" href="/submit">Hand in work</a>
-        <a class="lx-cta" href="/quiz">Weekly quiz</a>
-      </div>
+      {#- A <nav> with its own label, not a bare <div>: landmark navigation in
+          the banner reached only Courses/Simulations, so the three destinations
+          the ~30 enrolled students actually need were invisible to it. The
+          visible "Enrolled students" text is the group's accessible name via
+          aria-labelledby, so the label is said once, not twice. -#}
+      <nav class="lx-actions" aria-labelledby="lx-actions-lab">
+        <span class="lx-actions-lab" id="lx-actions-lab">Enrolled students</span>
+        <a class="lx-nav-a{% if section == 'play' %} lx-nav-a--here{% endif %}"
+           href="/play"{% if section == 'play' %} aria-current="page"{% endif %}>Live game</a>
+        <a class="lx-nav-a{% if section == 'submit' %} lx-nav-a--here{% endif %}"
+           href="/submit"{% if section == 'submit' %} aria-current="page"{% endif %}>Hand in work</a>
+        <a class="lx-cta" href="/quiz"{% if section == 'quiz' %} aria-current="page"{% endif %}>Weekly quiz</a>
+      </nav>
 
       {%- if not _staff %}
-      <a class="lx-nav-a lx-staff-link" href="/login">Teaching staff</a>
+      <nav class="lx-staff-nav" aria-label="Teaching staff">
+        <a class="lx-nav-a lx-staff-link" href="/login">Teaching staff</a>
+      </nav>
       {%- endif %}
 
     </div>

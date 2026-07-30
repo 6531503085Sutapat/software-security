@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Submit your work — KOSEN·KMITL{% endblock %}
+{% set section = 'submit' %}
+{% block title %}Hand in your work — KOSEN·KMITL{% endblock %}
 {% block main %}
 <div class="lx-ground">
   <div class="lx-wrap">
@@ -9,11 +10,11 @@
       <p class="lx-lead">Use the submission code on your slip. You can come back with the
         same code until the deadline.</p>
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      {% if error %}<div class="lx-err">{{ error }}</div>{% endif %}
+      {% if error %}<div class="lx-err" id="form-error" role="alert">{{ error }}</div>{% endif %}
       <div class="lx-field"><label class="lx-label" for="code">Submission code</label>
-        <input class="lx-input" id="code" name="code" autocomplete="off" autocapitalize="characters"
+        <input class="lx-input" id="code" name="code"{% if error %} aria-invalid="true" aria-describedby="form-error"{% endif %} autocomplete="off" autocapitalize="characters"
                spellcheck="false" maxlength="16" required></div>
-      <button class="lx-btn" type="submit">Open ▸</button>
+      <button class="lx-btn" type="submit">Open<span aria-hidden="true"> ▸</span></button>
     </form>
   </div>
 </div>
