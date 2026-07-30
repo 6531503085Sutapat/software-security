@@ -152,7 +152,12 @@ def index():
     # to course A's arena, which is worse than no link at all. When they differ,
     # the link lives on each course's own page instead.
     arenas = {c.get("arena_url") for c in courses if c.get("arena_url")}
+    # The named modules a course declares, so its card can show the shape of the
+    # course rather than a sentence identical to every other card's. Courses that
+    # declare none map to [] and the card falls back to its composition line.
+    outline = {c["slug"]: C.list_modules(c["slug"]) for c in courses}
     return render_template("home.html", courses=courses, one=len(courses) == 1,
+                           outline=outline, nav_courses=C.nav_courses(),
                            arena_url=arenas.pop() if len(arenas) == 1 else None)
 
 

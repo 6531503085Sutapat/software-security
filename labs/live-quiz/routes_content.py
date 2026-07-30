@@ -94,8 +94,11 @@ def index():
     if len(courses) == 1:
         c = courses[0]
         return render_template("learn_index.html", course=c,
-                               weeks=C.list_weeks(c["slug"]), only_course=True)
-    return render_template("learn_courses.html", courses=courses)
+                               weeks=C.list_weeks(c["slug"]),
+                               modules=C.list_modules(c["slug"]),
+                               nav_courses=C.nav_courses(), only_course=True)
+    return render_template("learn_courses.html", courses=courses,
+                           nav_courses=C.nav_courses())
 
 
 # ── URL shapes under /learn ────────────────────────────────────────────────
@@ -153,6 +156,8 @@ def course_index(a):
     if c is not None:
         return render_template("learn_index.html", course=c,
                                weeks=C.list_weeks(a),
+                               modules=C.list_modules(a),
+                               nav_courses=C.nav_courses(),
                                only_course=len(C.COURSES) == 1)
     if C.WEEK_RE.match(a or ""):
         return _legacy(a)

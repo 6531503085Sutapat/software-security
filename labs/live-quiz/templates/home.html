@@ -1,79 +1,275 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% if one %}{{ courses[0].title }}{% else %}Courses{% endif %} — KOSEN·KMITL</title>
-<link rel="stylesheet" href="/static/style.css"></head>
-<body><div class="pwrap"><section class="pjoin">
-  <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
-    <div class="sub">{% if one %}{{ courses[0].title }}{% else %}course platform{% endif %}</div></div>
+{% extends "base.html" %}
+{#- ===========================================================================
+    home.html — route "/" (app.py:126).
 
-  <div class="join-card">
-    <h1>{% if one %}{{ courses[0].title }}{% else %}Your courses{% endif %}</h1>
-    <p class="lead">Everything for {% if one %}this course{% else %}these courses{% endif %}
-      lives here. Nothing below needs an account — the graded parts use the
-      one-time code your teacher hands you on paper, in class.</p>
+    CONTEXT
+      courses     list_courses() -> {slug, title, root, unit, unit_label,
+                                     arena_url, week_count}
+                  plus, after the content.py patch, the two DERIVED fields this
+                  page uses to stop the cards being identical:
+                    graded_count  int
+                    mix           list[str], e.g. ["13 labs", "2 exams",
+                                  "2 CTFs", "2 reviews"] — counted from
+                                  list_weeks(), never configured, never
+                                  fabricated. Both are OPTIONAL here: the page
+                                  renders correctly without either.
+      one         len(courses) == 1
+      arena_url   the single arena URL when every course that declares one
+                  agrees, else None
+      nav_courses OPTIONAL, for base.html's course switcher
+      outline     OPTIONAL, {course_slug: [ {label, weeks}, ... ]} from
+                  content.list_modules(). Purely additive: when a course
+                  declares named modules its card shows the SPINE instead of
+                  the composition line. Absent -> every card shows `mix`.
 
-    {# ── Read anything, any time ─────────────────────────────────────────── #}
-    <div class="home-sec">
-      <h2>Study</h2>
-      <ul class="home-list">
-        {% for c in courses %}
-          <li class="home-item"><a href="/learn/{{ c.slug }}/">
-            <b>{% if one %}Course material{% else %}{{ c.title }}{% endif %}</b>
-            <span class="need free">open</span>
-            {# unit_label, not a hardcoded "week": the cloud course is organised in
-               LESSONS, and its numbering is irregular (1-3, 7b). Saying "10 weeks"
-               to a student whose syllabus says "Lesson 4" is a small lie that makes
-               them doubt they are in the right place.
-               And not "19 weeks — worksheets, ...": only 13 of 19 carry a worksheet,
-               the rest are exam papers and CTF briefs. #}
-            <span class="what">{{ c.week_count }} {{ c.unit_label|lower }}{{ '' if c.week_count == 1 else 's' }}
-              — every document, from worksheets to the exam papers</span></a></li>
-        {% endfor %}
-        <li class="home-item"><a href="/sim">
-          <b>Interactive simulations</b>
-          <span class="need free">open</span>
-          <span class="what">Click through how an attack actually works, step by step</span></a></li>
-      </ul>
-    </div>
+    `root` is an absolute SERVER FILESYSTEM PATH. It is never printed here and
+    must never be.
 
-    {# ── In the room ─────────────────────────────────────────────────────── #}
-    <div class="home-sec">
-      <h2>In class</h2>
-      <ul class="home-list">
-        <li class="home-item"><a href="/play">
-          <b>Join a live game</b>
-          <span class="need free">PIN on screen</span>
-          <span class="what">The fast quiz game we play together — not graded</span></a></li>
-      </ul>
-    </div>
+    STRUCTURE — Coursera's marketing/browse page, ported. FOUR SECTIONS, FOUR
+    CARD CONSTRUCTIONS. That is Coursera's actual answer to card monotony and
+    the direct answer to "กล่อง 8 ใบเหมือนกันหมด": the hierarchy lives BETWEEN
+    sections, not inside one list.
 
-    {# ── Anything that becomes a mark ────────────────────────────────────────
-       Grouped and labelled as GRADED on purpose. The old front door made a
-       readable worksheet and a graded quiz look like the same kind of link,
-       which is how a student opens an assessment thinking it is practice. #}
-    <div class="home-sec">
-      <h2>Graded</h2>
-      <ul class="home-list">
-        <li class="home-item"><a href="/quiz">
-          <b>Weekly quiz</b>
-          <span class="need free">code on your slip</span>
-          <span class="stakes">GRADED</span>
-          <span class="what">One attempt. You cannot go back to a question once you continue.</span></a></li>
-        <li class="home-item"><a href="/submit">
-          <b>Hand in your worksheet</b>
-          <span class="need free">code on your slip</span>
-          <span class="stakes">GRADED</span>
-          <span class="what">Upload your file — you can replace it until the deadline</span></a></li>
-        {% if arena_url %}
-          <li class="home-item"><a href="{{ arena_url }}">
-            <b>Security Arena</b>
-            <span class="need free">class VPN</span>
-            <span class="stakes">GRADED</span>
-            <span class="what">Hands-on challenges. Connect the class VPN first or your
-              box will not open.</span></a></li>
-        {% endif %}
-      </ul>
-    </div>
+      hero + facts strip           (true, derived, nothing invented)
+      ── hairline: a REGION boundary ──
+      Courses           A   card grid (row on a phone, tile at >=1128px)
+      Free to read too  B   one wide strip
+      In class          B'  inverse anatomy — what it costs is read FIRST
+      Graded work       C   tint band, bordered rows, the literal word GRADED
+-#}
 
-    <p class="pdpa">Teaching staff: <a href="/login">sign in</a>.</p>
-  </div></section></div></body></html>
+{% block title %}{% if one %}{{ courses[0].title }}{% else %}Courses{% endif %} — KOSEN·KMITL{% endblock %}
+
+{% block main %}
+
+{# ── hero ─────────────────────────────────────────────────────────────── #}
+<section class="lx-hero">
+  <div class="lx-wrap">
+    <p class="lx-eyebrow">KOSEN·KMITL — course platform</p>
+    {# "Security engineering, taught in the open" over the merely descriptive
+       "Course material, free to read": an anonymous visitor arriving from the
+       internet learns WHAT is taught here and WHO may read it in one line, and
+       the line still holds if this ever stops being only a university site.
+       "Your courses" — the wording this replaced — assumed you were already
+       enrolled, which is precisely wrong for the audience the free-content
+       policy just created. #}
+    <h1 class="lx-h1">{% if one %}{{ courses[0].title }}{% else %}Security engineering, taught in the open{% endif %}</h1>
+    <p class="lx-lead lx-measure">The course material on this site is public: anyone
+      on the internet can read every worksheet, lab guide, exam paper and CTF
+      brief without an account. The graded parts — the weekly quiz, the
+      worksheet hand-in and the arena — are for enrolled students, and open with
+      the one-time code your teacher hands you on paper, in class.</p>
+
+    {# Coursera's "Details to know" strip. Every value is either counted from
+       the data on this page or a statement of policy. No duration, no rating,
+       no enrolment count: we do not have them, and with ~30 students inventing
+       them would be embarrassing. #}
+    <ul class="lx-facts">
+      <li class="lx-fact">
+        <span class="lx-fact-v">{{ courses|length }}</span>
+        <span class="lx-fact-l">course{{ '' if courses|length == 1 else 's' }} published</span></li>
+      <li class="lx-fact">
+        <span class="lx-fact-v">{{ courses|sum(attribute='week_count') }}</span>
+        <span class="lx-fact-l">units of material, all readable</span></li>
+      <li class="lx-fact">
+        <span class="lx-fact-v">Free</span>
+        <span class="lx-fact-l">no account, no sign-up, no e-mail</span></li>
+      <li class="lx-fact">
+        <span class="lx-fact-v">On paper</span>
+        <span class="lx-fact-l">graded work opens with a code from class</span></li>
+    </ul>
+  </div>
+</section>
+
+{# A hairline separates REGIONS; sections inside a region are separated by
+   whitespace alone. One rule on the page, not one per heading. #}
+<hr class="lx-rule">
+
+{# ── construction A · the course grid ─────────────────────────────────────
+   li max-width ladder 100% -> 50% -> 33.33% -> 25%, card capped at 452px.
+   That single pair of rules is why this reads as deliberate at 1 course (a
+   full-width feature card, not a lonely quarter-width tile), at 3 (three cards
+   and honest dead space) and at 10 (a filled four-up grid).
+
+   THE CARD BODY IS DIFFERENT ON EVERY CARD. It used to be one identical
+   sentence repeated N times, which is the sentence-level version of the exact
+   failure this redesign exists to fix — and it was also FALSE for two of the
+   three live courses (it promised exam papers and CTF briefs to a course that
+   publishes neither). What replaces it is counted from each course's own units:
+   the module spine when the course declares one, the real composition
+   otherwise. #}
+<section class="lx-sec">
+  <div class="lx-wrap">
+    <h2 class="lx-h2">{% if one %}Course material{% else %}Courses{% endif %}</h2>
+    <p class="lx-sec-sub lx-measure">Open to anyone. Nothing below asks who you are.</p>
+
+    <ul class="lx-grid{% if one %} lx-grid--solo{% endif %}">
+      {% for c in courses %}
+      {%- set _named = ((outline|default({})).get(c.slug) or [])|selectattr('label')|list -%}
+      <li>
+        <article class="lx-card">
+          {# Coursera's 16:9 preview image, filled honestly: no photo, no
+             invented cover art, no stock icon — a flat brand field carrying the
+             one number that genuinely differs between courses. Deleting this
+             slot is exactly how a page goes back to identical boxes; filling it
+             with a stock icon is how it goes hollow. #}
+          <span class="lx-tile lx-tile--{{ ['a', 'b', 'c'][loop.index0 % 3] }}" aria-hidden="true">
+            <span class="lx-tile-n">{{ c.week_count }}</span>
+            <span class="lx-tile-u">{{ c.unit_label|lower }}{{ '' if c.week_count == 1 else 's' }}</span>
+          </span>
+          <span class="lx-card-body">
+            <h3 class="lx-card-t"><a class="lx-card-a" href="/learn/{{ c.slug }}/">{{ c.title }}</a></h3>
+
+            {% if _named %}
+              {# The syllabus spine — the strongest per-course differentiator
+                 there is, and it is the same structure the course page shows at
+                 full size. Capped at three rows so a card with a spine and a
+                 card without do not end up wildly different heights. #}
+              <p class="lx-card-lab">Units in this course</p>
+              <ol class="lx-spine">
+                {% for g in _named[:3] %}
+                <li class="lx-spine-i">
+                  <span class="lx-spine-n">{{ loop.index }}</span>
+                  <span class="lx-spine-t">{{ g.label }}</span>
+                  <span class="lx-spine-c">{{ g.weeks|length }}</span>
+                </li>
+                {% endfor %}
+                {% if _named|length > 3 %}
+                <li class="lx-spine-more">+{{ _named|length - 3 }} more</li>
+                {% endif %}
+              </ol>
+            {% elif c.mix is defined and c.mix %}
+              {# Coursera's "Skills you'll gain:" label + inline list, carrying
+                 something we actually have. Every course's line is different
+                 because every course's units are different. #}
+              <p class="lx-card-p"><span class="lx-card-lab lx-card-lab--inline">Contains:</span>
+                {{ c.mix|join(' · ') }}</p>
+            {% endif %}
+
+            {# The footer block is pushed to the bottom of the card, so a card
+               with a three-row spine and a card with a one-line composition
+               still land their last line on the same baseline. That is what
+               turns a height delta into whitespace instead of dead space. #}
+            <span class="lx-card-foot">
+              {# ONE contiguous text run on purpose. A test asserts the literal
+                 substrings "1 week" and "1 lesson" here; splitting the number
+                 into its own element would break it silently. #}
+              <span class="lx-card-meta">{{ c.week_count }} {{ c.unit_label|lower }}{{ '' if c.week_count == 1 else 's' }} published{% if c.graded_count is defined %} · {{ c.graded_count }} graded{% endif %}</span>
+              {#- Coursera's status pill. In the card body on a phone (never
+                  hidden — every fact must be readable at rest, and a phone has
+                  no hover), lifted onto the tile's top-right corner once the
+                  card becomes a tile. Same element, two positions. -#}
+              <span class="lx-pill">Free to read</span>
+            </span>
+          </span>
+        </article>
+      </li>
+      {% endfor %}
+    </ul>
+
+    {% if not one %}
+    <p class="lx-sec-more"><a class="lx-link" href="/learn">See the full course catalogue</a></p>
+    {% endif %}
+  </div>
+</section>
+
+{# ── construction B · one wide strip ───────────────────────────────────────
+   Not a course, so not a course card. A single wide strip, visibly a different
+   object, and the heading says in words that this half is also free — the
+   anonymous visitor should never have to read a marker to know whether a
+   section is for them. #}
+<section class="lx-sec lx-sec--tight">
+  <div class="lx-wrap">
+    <h2 class="lx-h2">Also free to read</h2>
+    <p class="lx-sec-sub lx-measure">No account, no code, no class. Same as the
+      material above.</p>
+    <a class="lx-wide" href="/sim">
+      <span class="lx-wide-t">Interactive simulations</span>
+      <span class="lx-wide-p">Click through how an attack actually works, one step
+        at a time — trust boundaries, and what concatenating a string does to a
+        SQL parse tree.</span>
+      <span class="lx-need lx-need--free">open to anyone</span>
+    </a>
+  </div>
+</section>
+
+{# ── construction B' · inverse anatomy ─────────────────────────────────────
+   What it COSTS to walk in is the first thing read, because a student who gets
+   all the way here and only then discovers they needed something they do not
+   have was failed by this page. The live game is deliberately NOT graded and
+   this section says so in words — it carries no graded flag and must never
+   grow one. #}
+<section class="lx-sec lx-sec--tight">
+  <div class="lx-wrap">
+    <h2 class="lx-h2">In class, together</h2>
+    <p class="lx-sec-sub lx-measure">Nothing to prepare, and nothing to lose.</p>
+    <a class="lx-live" href="/play">
+      <span class="lx-need lx-need--free">PIN on screen</span>
+      <span class="lx-live-t">Join a live game</span>
+      <span class="lx-live-p">The fast quiz game we play together in class. It is
+        not marked and it never counts towards your grade.</span>
+    </a>
+  </div>
+</section>
+
+{# ── construction C · the graded band ─────────────────────────────────────
+   A warm tint behind the whole region, with white rows floating on it. One
+   move, and it does more hierarchy work than any border: a student can see from
+   across the room that this part of the page is a different kind of thing.
+   Used ONCE on the whole site — a device that works because it is rare.
+
+   GRADED is a WORD in its own slot, never a colour on a badge. This project
+   already shipped the bug where a coloured badge alone carried the meaning; the
+   word is the fix and it stays. `need` (what it costs to walk in) and the
+   graded flag (whether it is marked) are two separate vocabularies, kept apart
+   in SHAPE as well as hue. They were one orange token once, so orange meant
+   "bring your slip" on one page and "this is graded" on the next. #}
+<section class="lx-tint">
+  <div class="lx-wrap">
+    <h2 class="lx-h2">Graded work</h2>
+    <p class="lx-sec-sub lx-measure">These count towards your mark. Each one needs
+      something you can only get in class, so check you have it before you open
+      them.</p>
+
+    <ul class="lx-grows">
+
+      <li>
+        <a class="lx-grow" href="/quiz">
+          <span class="lx-grow-head">
+            <span class="lx-grow-t">Weekly quiz</span>
+            <span class="lx-flag-graded">GRADED</span>
+          </span>
+          <span class="lx-grow-p">One attempt. You cannot go back to a question once you continue.</span>
+          <span class="lx-need">code on your slip</span>
+        </a>
+      </li>
+
+      <li>
+        <a class="lx-grow" href="/submit">
+          <span class="lx-grow-head">
+            <span class="lx-grow-t">Hand in your worksheet</span>
+            <span class="lx-flag-graded">GRADED</span>
+          </span>
+          <span class="lx-grow-p">Upload your file — you can replace it until the deadline.</span>
+          <span class="lx-need">code on your slip</span>
+        </a>
+      </li>
+
+      {% if arena_url %}
+      <li>
+        <a class="lx-grow" href="{{ arena_url }}">
+          <span class="lx-grow-head">
+            <span class="lx-grow-t">Security Arena</span>
+            <span class="lx-flag-graded">GRADED</span>
+          </span>
+          <span class="lx-grow-p">Hands-on challenges. Connect the class VPN first or your box will not open.</span>
+          <span class="lx-need">class VPN</span>
+        </a>
+      </li>
+      {% endif %}
+
+    </ul>
+  </div>
+</section>
+
+{% endblock %}

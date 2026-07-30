@@ -635,3 +635,864 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; justif
   padding: 4px 7px; border-radius: 6px; white-space: nowrap;
   color: #fff; background: var(--kmitl-orange-deep);
 }
+
+
+/* ============================================================
+   Course-platform layer — the front door, catalog and course page.
+   Namespaced .lx-* and its own --lx-* tokens on purpose: this file is
+   SHARED with the live-quiz game screens (/host, /play), which no test
+   covers for appearance. Redefining a token above would restyle a working
+   game silently. Verified: 0 collisions with the 23 existing tokens and
+   the 80 existing classes.
+   ============================================================ */
+/* ==========================================================================
+   layer.css — APPEND THIS FILE VERBATIM TO THE END OF static/style.css.
+
+   INSTALL, stated once so there is no ambiguity: this is NOT a second
+   stylesheet. base.html links only /static/style.css, and this layer depends on
+   that file having already run — it reads style.css's tokens and inherits its
+   global :focus-visible ring and its blanket prefers-reduced-motion rule.
+   Append order matters: several rules here win on source order at equal
+   specificity, deliberately. (If you would rather ship it as
+   static/learn.css, that works too — but then base.html must link that exact
+   basename, or the page renders unstyled and nothing tells you.)
+
+   ── THE RULES THIS LAYER OBEYS (all mechanically checkable) ────────────────
+   1. NO :root BLOCK. Not one. style.css's 27 tokens are consumed by host.html,
+      player.html, host.js and player.js. Redefining one silently restyles a
+      working, verified game and no test would catch it. Tokens here live on
+      .lx-page and are all prefixed --lx-.
+   2. NEVER declares --o or --w. Those are NOT :root tokens — they are set at
+      runtime, per element, by host.js/player.js. Declaring either at any scope
+      would hand every game tile a silent fallback colour or width.
+   3. EVERY SELECTOR CONTAINS AT LEAST ONE .lx- CLASS. That is the proof that
+      no rule here can match anything on /host or /play: those templates and
+      their JS contain no `lx-` string at all, so the intersection is empty.
+   4. Redefines no existing class. The one place it reaches a shared class name
+      (.lx-logo .word) is ancestor-qualified by an .lx- class, so .mark on
+      host.html and player.html is untouched. Nothing is moved or deleted, so
+      .home-list / .home-item / .what stay defined for error.html, which
+      consumes them.
+   5. Reading existing tokens is safe and desirable, and this layer does it
+      everywhere: --ink, --muted, --faint, --hair, --sans and the four brand
+      colours. Only REDEFINING them is forbidden.
+
+   ── DESIGN ─────────────────────────────────────────────────────────────────
+   A faithful port of Coursera's visual language onto KOSEN-KMITL's identity.
+   One family (var(--sans), the system stack — font-src 'self' with no font
+   files on disk is SATISFIED by that, not violated), three weights
+   (400/600/700), a spacing ramp of 4/8/12/16/24/32/48/64, nested radius
+   16 outer / 8 inner / 50px pill, one hairline at rest with shadow only on
+   hover, whitespace between sections and a tint band between regions. The
+   accent is under 2% of the pixels.
+
+   NOT Coursera's palette. Coursera blue #0056D2 appears nowhere, and neither
+   does its cool neutral ramp (#F2F5FA / #48546E / #C1CBDB) — those fight the
+   warm KOSEN-KMITL paper. Structure is borrowed; not one hex value is.
+
+   ── COLOUR IS NEVER THE ONLY SIGNAL ────────────────────────────────────────
+   Contrast ratios are measured and recorded inline, in the house style already
+   set at style.css:19-20. Where a state is carried by colour it is ALSO carried
+   by a WORD (GRADED, LAB, Hide/Show), by WEIGHT (the active course), by
+   FILL-vs-OUTLINE (graded flag vs access pill) or by SHAPE. The pages are
+   readable in greyscale, in Windows high contrast, and they still say
+   everything they need to if the stylesheet fails to load entirely.
+
+   ── BREAKPOINTS (mobile first; the base rules ARE the phone) ────────────────
+      base    <720   one column. Cards are ROWS. Unit rows are 2-row grids.
+                     Course switcher hidden — every course is still one tap
+                     away via Courses -> /learn, which is exactly what Coursera
+                     does with its own utility row.
+      720            unit rows become a 3-column grid with a tabular unit gutter
+      768            two-up card ladder, gutter 16 -> 32, course switcher back
+      1128           three-up ladder, gutter -> 48; course cards become TILES
+      1440           four-up ladder
+   Only the top two type steps shrink on a phone. Body, metadata and card
+   titles are identical at 390px and 1440px — students read this in class.
+   ========================================================================== */
+
+/* ---------- tokens (namespaced; NOT :root) ---------- */
+.lx-page {
+  /* spacing ramp — Coursera's steps, measured */
+  --lx-sp-1: 4px;   --lx-sp-2: 8px;   --lx-sp-3: 12px;  --lx-sp-4: 16px;
+  --lx-sp-5: 24px;  --lx-sp-6: 32px;  --lx-sp-7: 48px;  --lx-sp-8: 64px;
+  /* radius — the nested rhythm 16 outer / 8 inner / 50 pill */
+  --lx-r-card: 16px; --lx-r-in: 8px; --lx-r-sm: 4px; --lx-r-pill: 50px;
+
+  --lx-surface: #FFFFFF;
+  --lx-ground:  #F5F2EC;  /* warm tint band. --ink on it 16.4:1, --faint 6.2:1 */
+  --lx-hover:   #F7F4EF;  /* ghost-row hover only; never carries meaning */
+
+  /* the three-level ink ramp, all measured on --lx-surface */
+  --lx-ink-1: var(--ink);     /* #181512 — 18.9:1 */
+  --lx-ink-2: var(--muted);   /* #726A61 —  5.31:1 ✓ AA */
+  --lx-ink-3: var(--faint);   /* #615948 —  6.93:1 ✓ AA */
+  --lx-stroke: var(--hair);   /* rgba(24,21,18,.14) */
+
+  --lx-gutter: 16px;
+  --lx-max: 1440px;
+  --lx-read: 900px;           /* the unit list's own reading measure */
+}
+@media (min-width: 768px)  { .lx-page { --lx-gutter: 32px; } }
+@media (min-width: 1128px) { .lx-page { --lx-gutter: 48px; } }
+
+/* The page ground. body carries a fixed warm gradient for the game screens;
+   Coursera's ground is a flat surface, so cover it here and only here.
+   The 100dvh pair matches the house pattern already set at style.css:331 —
+   100vh alone is wrong on a phone with a retracting URL bar. */
+body.lx-page {
+  background: var(--lx-surface);
+  color: var(--lx-ink-1);
+  font: 400 16px/24px var(--sans);
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.lx-main { flex: 1 1 auto; }
+
+/* ---------- skip link — the first focusable element on the page ----------
+   There was none anywhere in the 27 templates, so a keyboard or switch user
+   tabbed the whole nav on every single worksheet. */
+.lx-skip {
+  position: absolute; left: 8px; top: -64px; z-index: 30;
+  padding: 10px 16px; border-radius: 0 0 var(--lx-r-in) var(--lx-r-in);
+  background: var(--kosen-blue-deep); color: #fff;  /* 7.1:1 */
+  font: 700 14px/20px var(--sans); text-decoration: none;
+}
+.lx-skip:focus { top: 0; }
+
+/* ---------- container ---------- */
+.lx-wrap {
+  width: 100%; max-width: var(--lx-max); margin: 0 auto;
+  padding-left: var(--lx-gutter); padding-right: var(--lx-gutter);
+}
+/* Coursera caps the reading measure at 608-640px even on a 1440px screen.
+   Prose never runs the width of the viewport. */
+.lx-measure { max-width: 640px; }
+
+/* ==========================================================================
+   HEADER — three tiers, deliberately NOT sticky.
+   A 3-row sticky bar costs ~20% of a 390px phone viewport in a room where the
+   student is reading a worksheet, and constraint 1 rules it out. It scrolls.
+   ========================================================================== */
+.lx-top { position: static; }
+
+/* ── tier 1 · course switcher ────────────────────────────────────────────
+   Coursera's near-black utility row. The active item is BOLD + underbarred +
+   aria-current; the orange bar only reinforces the weight, and orange is legal
+   here because it is a RULE, not text. */
+.lx-tier1 { display: none; background: var(--ink); }
+@media (min-width: 768px) { .lx-tier1 { display: block; } }
+.lx-tier1-in { display: flex; align-items: stretch; gap: var(--lx-sp-3); min-height: 40px; }
+.lx-tier1-lab {
+  flex: none; align-self: center;
+  font: 700 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase;
+  color: #CFC8BF;                       /* 11.0:1 on #181512 */
+}
+.lx-tier1-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; align-items: stretch; gap: 0 2px; min-width: 0;
+}
+.lx-tier1-a {
+  display: flex; align-items: center; height: 100%; padding: 10px 8px;
+  font: 400 15px/20px var(--sans); color: #F1EDE7; text-decoration: none;  /* 16.4:1 */
+}
+.lx-tier1-a:hover { text-decoration: underline; }
+.lx-tier1-a--here { font-weight: 700; box-shadow: inset 0 -3px 0 var(--kmitl-orange); }
+
+/* ── tier 2 · the main bar ────────────────────────────────────────────────
+   1px hairline at the bottom, no shadow, and it does not gain one on scroll —
+   that flat-at-rest default is most of why Coursera reads calm. */
+.lx-tier2 { background: var(--lx-surface); border-bottom: 1px solid var(--lx-stroke); }
+.lx-tier2-in {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--lx-sp-2) var(--lx-sp-4); padding-top: 10px; padding-bottom: 10px;
+  min-height: 64px;
+}
+.lx-logo { flex: none; text-decoration: none; margin-right: var(--lx-sp-2); }
+/* The one selector in this layer that touches a shared class name. It is
+   ancestor-qualified by .lx-logo, which exists on no other template, so .mark
+   on host.html and player.html is untouched. */
+.lx-logo .word { font-size: 21px; }
+@media (min-width: 768px) { .lx-logo .word { font-size: 26px; } }
+
+.lx-nav { display: flex; align-items: center; gap: 2px; flex: none; }
+.lx-nav-a {
+  padding: 8px; border-radius: var(--lx-r-in); white-space: nowrap;
+  font: 400 15px/20px var(--sans); color: var(--lx-ink-2); text-decoration: none;
+}
+.lx-nav-a:hover { background: var(--lx-hover); color: var(--lx-ink-1); }
+
+/* Everything here needs something the anonymous visitor does not have. Grouped
+   and labelled in WORDS rather than greyed out: the visitor must be able to SEE
+   that it exists and read, in two words, that it is not for them — and the ~30
+   who do hold a code must be able to find it from any page. */
+.lx-actions {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--lx-sp-1) var(--lx-sp-2); margin-left: auto;
+}
+.lx-actions-lab {
+  flex: none; font: 700 11px/1 var(--sans); letter-spacing: .09em;
+  text-transform: uppercase; color: var(--lx-ink-3);   /* 6.93:1 */
+}
+/* The position and construction of Coursera's `Join for Free` outline button.
+   There is no commerce here, so the slot goes to the one time-critical
+   destination the enrolled students actually need from every page. */
+.lx-cta {
+  padding: 8px 12px; border: 1px solid var(--kmitl-orange-deep);
+  border-radius: var(--lx-r-in); background: var(--lx-surface);
+  color: var(--kmitl-orange-deep);      /* 5.63:1 ✓ AA */
+  font: 700 14px/20px var(--sans); text-decoration: none; white-space: nowrap;
+}
+.lx-cta:hover { background: var(--kmitl-orange-deep); color: #fff; }
+.lx-staff-link {
+  flex: none; font: 400 14px/20px var(--sans);
+  color: var(--lx-ink-3); text-decoration: none;
+}
+.lx-staff-link:hover { text-decoration: underline; }
+
+/* ── tier 3 · staff bar ───────────────────────────────────────────────────
+   Signed-in teaching staff only, and only ever additive. It exists because the
+   teacher tools were a broken graph: /console linked to nothing but its own
+   editor and /logout, and /host had no links at all — not even sign out.
+   Coursera would use a JS dropdown. This is a flat wrapping bar: five links,
+   always all five, at every width, with zero script. */
+.lx-staffbar {
+  background: #FFF6F1;                       /* --ink on it 17.1:1 */
+  border-bottom: 1px solid var(--lx-stroke);
+  border-left: 4px solid var(--kmitl-orange);
+}
+.lx-staffbar-in {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--lx-sp-1) var(--lx-sp-2); padding-top: 8px; padding-bottom: 8px;
+}
+.lx-staffbar-lab {
+  flex: none; margin-right: var(--lx-sp-1);
+  font: 700 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--kmitl-orange-deep);           /* 5.29:1 on #FFF6F1 ✓ AA */
+}
+.lx-staffbar-a {
+  padding: 6px 8px; border-radius: 6px; white-space: nowrap;
+  font: 600 14px/20px var(--sans); color: var(--lx-ink-1); text-decoration: none;
+}
+.lx-staffbar-a:hover { background: #FCE7DA; }
+.lx-staffbar-a--end { margin-left: auto; font-weight: 400; color: var(--lx-ink-3); }
+
+/* ==========================================================================
+   TYPE — Coursera's measured scale. Leading tightens as size grows
+   (14/20 = 1.43 -> 16/24 = 1.50 -> 20/24 = 1.20 -> 44/52 = 1.18).
+   ========================================================================== */
+.lx-h1 {
+  margin: 0; color: var(--lx-ink-1);
+  font: 600 32px/40px var(--sans); letter-spacing: -.1px;
+  overflow-wrap: anywhere; text-wrap: balance;
+}
+@media (min-width: 768px) { .lx-h1 { font-size: 44px; line-height: 52px; letter-spacing: -.15px; } }
+
+/* In-page section titles are QUIET — only 4px larger than body. Deliberately
+   not the tracked-out uppercase mono the old .home-sec h2 used: that is an
+   editorial idiom and it fights this one. */
+.lx-h2 {
+  margin: 0 0 20px; color: var(--lx-ink-1);
+  font: 600 20px/24px var(--sans); letter-spacing: -.06px;
+  overflow-wrap: anywhere;
+}
+.lx-h2--count { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; }
+.lx-count {
+  padding: 2px 10px; border: 1px solid var(--lx-stroke); border-radius: var(--lx-r-pill);
+  background: var(--lx-surface); font: 400 14px/20px var(--sans); color: var(--lx-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.lx-eyebrow {
+  display: block; margin: 0 0 var(--lx-sp-1);
+  font: 400 14px/20px var(--sans); color: var(--lx-ink-2);
+}
+.lx-lead { margin: var(--lx-sp-4) 0 0; font: 400 16px/24px var(--sans); color: var(--lx-ink-1); }
+.lx-sec-sub { margin: -12px 0 var(--lx-sp-5); font: 400 16px/24px var(--sans); color: var(--lx-ink-2); }
+.lx-sec-more { margin: var(--lx-sp-5) 0 0; font: 400 16px/24px var(--sans); }
+.lx-crumb { margin: 0 0 var(--lx-sp-3); font: 400 14px/20px var(--sans); }
+.lx-link {
+  color: var(--kosen-blue-deep); font-weight: 600;   /* 7.1:1 white · 6.4:1 tint */
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.lx-empty {
+  margin: var(--lx-sp-4) 0 0; max-width: 640px;
+  font: 400 16px/24px var(--sans); color: var(--lx-ink-2);
+}
+
+/* ==========================================================================
+   REGIONS — whitespace between sections, a hairline between REGIONS, a tint
+   band to separate a whole region. That last one does more hierarchy work than
+   any border, and it is one declaration. It is used ONCE on the whole site,
+   which is why it works.
+   ========================================================================== */
+.lx-hero { padding: var(--lx-sp-6) 0 var(--lx-sp-5); }
+.lx-sec  { padding: var(--lx-sp-6) 0; }
+.lx-sec--tight { padding-top: var(--lx-sp-2); }
+.lx-tint {
+  padding: var(--lx-sp-6) 0 var(--lx-sp-7);
+  background: var(--lx-ground); border-top: 1px solid var(--lx-stroke);
+  margin-top: var(--lx-sp-5);
+}
+.lx-ground { padding: var(--lx-sp-5) 0 var(--lx-sp-7); background: var(--lx-ground); }
+.lx-cathead { padding-bottom: var(--lx-sp-2); }
+@media (min-width: 768px) {
+  .lx-hero { padding: 56px 0 var(--lx-sp-7); }
+  .lx-sec  { padding: var(--lx-sp-7) 0; }
+  .lx-sec--tight { padding-top: var(--lx-sp-3); }
+  .lx-tint { padding: var(--lx-sp-7) 0 56px; }
+  .lx-ground { padding: var(--lx-sp-6) 0 var(--lx-sp-8); }
+}
+.lx-rule { height: 1px; margin: 0; border: 0; background: var(--lx-stroke); }
+
+/* ---------- the facts strip (Coursera's "Details to know") ----------
+   Every value is counted at render time or is a statement of policy. No
+   duration, no rating, no enrolment count. Orange appears as a RULE, which is
+   legal at any size; #E35205 as small text on white is 3.84:1 and is not. */
+.lx-facts {
+  list-style: none; margin: var(--lx-sp-5) 0 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: var(--lx-sp-4) var(--lx-sp-6);
+}
+.lx-fact {
+  flex: 1 1 150px; max-width: 280px;
+  padding-left: var(--lx-sp-3); border-left: 3px solid var(--kmitl-orange);
+}
+.lx-fact-v {
+  display: block; font: 700 20px/24px var(--sans); color: var(--lx-ink-1);
+  font-variant-numeric: tabular-nums;
+}
+.lx-fact-l { display: block; margin-top: 2px; font: 400 14px/20px var(--sans); color: var(--lx-ink-2); }
+
+/* ==========================================================================
+   CONSTRUCTION A — the course card, and the ladder that makes 1 / 3 / 10 all
+   look deliberate.
+
+   li max-width 100% -> 50% -> 33.33% -> 25%, card capped at 452px, 12px gutters
+   from 6px side padding against a -6px list margin. At 3 courses on a 1440px
+   screen you get three cards and honest dead space, NOT three stretched
+   monsters; at 10 the grid simply fills; at 1 the --solo modifier turns the
+   card into a full-width feature instead of a lonely quarter-width tile.
+
+   TWO CONSTRUCTIONS FROM ONE MARKUP: below 1128px the card is a ROW (72px
+   square marker beside the text); at 1128px and up it becomes a TILE with a
+   16:9 field on top. Pure media query, and it is Coursera's own answer to a
+   wall of identical boxes.
+   ========================================================================== */
+.lx-grid { list-style: none; margin: 0 -6px; padding: 0; display: flex; flex-wrap: wrap; }
+.lx-grid > li { display: flex; width: 100%; max-width: 100%; padding: 0 6px 12px; }
+@media (min-width: 768px)  { .lx-grid > li { max-width: 50%; } }
+@media (min-width: 1128px) { .lx-grid > li { max-width: 33.3333%; } }
+@media (min-width: 1440px) { .lx-grid > li { max-width: 25%; } }
+
+.lx-card {
+  position: relative; display: flex; flex-direction: row; gap: var(--lx-sp-3);
+  width: 100%; max-width: 452px; padding: var(--lx-sp-2);
+  background: var(--lx-surface);
+  border: 1px solid var(--lx-stroke); border-radius: var(--lx-r-card);
+  box-shadow: none;                      /* flat at rest — this is the point */
+}
+.lx-tile {
+  position: relative; flex: none; overflow: hidden;
+  width: 72px; height: 72px; border-radius: var(--lx-r-in);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center;
+}
+.lx-tile-n { font: 700 24px/1 var(--sans); font-variant-numeric: tabular-nums; }
+.lx-tile-u { margin-top: 3px; font: 700 9px/1 var(--sans); letter-spacing: .09em; text-transform: uppercase; }
+/* Three flat brand fields. The COUNT inside each tile is what actually differs
+   course to course, so the information never rests on the hue. */
+.lx-tile--a, .lx-sq--a { background: var(--kosen-blue-deep);   color: #fff; }  /* 7.1:1  */
+.lx-tile--b, .lx-sq--b { background: var(--kmitl-orange-deep); color: #fff; }  /* 5.63:1 */
+.lx-tile--c, .lx-sq--c { background: var(--ink);               color: #fff; }  /* 18.9:1 */
+
+.lx-card-body {
+  flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;
+  padding: var(--lx-sp-1);
+}
+.lx-card-t { margin: 0; font: 600 16px/20px var(--sans); color: var(--lx-ink-1); overflow-wrap: anywhere; }
+.lx-card-a { color: inherit; text-decoration: none; }
+/* Coursera's own whole-card click target: an overlay on the title link. No
+   script, one pseudo-element, and the accessible name stays the title. */
+.lx-card-a::before { content: ""; position: absolute; inset: 0; border-radius: var(--lx-r-card); }
+.lx-card-a:focus-visible { outline: 3px solid var(--kosen-blue); outline-offset: 3px; }
+
+/* label + list — the construction Coursera uses for "Skills you'll gain:". We
+   have no skills taxonomy, so it carries what the course actually contains,
+   counted from that course's own units. Every card's line is different. */
+.lx-card-lab {
+  display: block; margin: var(--lx-sp-4) 0 var(--lx-sp-2);
+  font: 700 14px/20px var(--sans); color: var(--lx-ink-1);
+}
+.lx-card-lab--inline { display: inline; margin: 0; }
+.lx-card-p { margin: var(--lx-sp-4) 0 0; font: 400 14px/20px var(--sans); color: var(--lx-ink-1); }
+
+/* The syllabus spine: a compact preview of the course's named units, capped in
+   the template at three rows so a spine card and a composition card cannot end
+   up wildly different heights. */
+.lx-spine { list-style: none; margin: 0; padding: 0; }
+.lx-spine-i {
+  display: flex; align-items: baseline; gap: var(--lx-sp-2);
+  padding: 3px 0; font: 400 14px/20px var(--sans); color: var(--lx-ink-1);
+}
+.lx-spine-n {
+  flex: none; width: 18px; text-align: right;
+  font: 700 12px/20px var(--sans); color: var(--lx-ink-3);   /* 6.93:1 */
+  font-variant-numeric: tabular-nums;
+}
+.lx-spine-t { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.lx-spine-c {
+  flex: none; font: 400 13px/20px var(--sans); color: var(--lx-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.lx-spine-more {
+  padding: 3px 0 0 26px; font: 400 13px/18px var(--sans); color: var(--lx-ink-2);
+}
+
+/* The footer block is pushed to the bottom of the card. Cards in a flex row are
+   equal height by default; without this, a card whose body is one line short
+   would leave that difference as dead white BELOW its last line. With it, every
+   card's last line lands on the same baseline and the delta becomes ordinary
+   whitespace. */
+.lx-card-foot {
+  margin-top: auto; padding-top: var(--lx-sp-4);
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--lx-sp-2);
+}
+.lx-card-meta {
+  font: 400 14px/20px var(--sans); color: var(--lx-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Coursera's status pill. Outline-only, so it reads as secondary without being
+   greyed into invisibility — exactly what the anonymous visitor needs from
+   every access marker on this site. Inline in the body on a phone, overlaid on
+   the tile's top-right corner once the card becomes a tile. */
+.lx-pill {
+  padding: 1px 8px; border: 1px solid var(--lx-ink-3); border-radius: var(--lx-r-pill);
+  background: var(--lx-surface); color: var(--lx-ink-3);   /* 6.93:1 */
+  font: 600 13px/18px var(--sans); white-space: nowrap;
+  /* LOAD-BEARING at >=1128px, where this pill is absolutely positioned and sits
+     AFTER the title link's inset:0 overlay in the DOM. Without it the pill
+     paints on top and swallows the click, leaving a ~90x22px dead zone in the
+     top-right corner of every course tile — which is the first place a
+     reviewer clicks. The pill is never interactive, so refusing pointer events
+     costs nothing. */
+  pointer-events: none;
+}
+
+@media (min-width: 1128px) {
+  .lx-card { flex-direction: column; gap: var(--lx-sp-2); }
+  .lx-tile { width: 100%; height: auto; aspect-ratio: 16 / 9; min-height: 120px; }
+  .lx-tile-n { font-size: 52px; }
+  .lx-tile-u { margin-top: 8px; font-size: 12px; }
+  .lx-card-body { padding: 0 var(--lx-sp-2) var(--lx-sp-2); }
+  .lx-pill {
+    position: absolute; top: 17px; right: 17px; z-index: 2;
+    border-color: transparent; background: #fff; color: var(--lx-ink-1);
+  }
+}
+
+/* n = 1. A single quarter-width tile in a four-column ladder reads as an
+   accident. The solo modifier keeps the ROW construction at every width and
+   gives it a real feature size. Two classes, so it beats the 1128px rules on
+   specificity regardless of source order. */
+.lx-grid--solo > li { max-width: 100%; }
+.lx-grid--solo .lx-card { max-width: 720px; flex-direction: row; gap: var(--lx-sp-4); padding: var(--lx-sp-4); }
+.lx-grid--solo .lx-tile { width: 96px; height: 96px; aspect-ratio: auto; min-height: 0; }
+.lx-grid--solo .lx-tile-n { font-size: 32px; }
+.lx-grid--solo .lx-tile-u { margin-top: 4px; font-size: 10px; }
+.lx-grid--solo .lx-card-t { font-size: 20px; line-height: 26px; }
+.lx-grid--solo .lx-pill { position: static; border-color: var(--lx-ink-3); background: var(--lx-surface); color: var(--lx-ink-3); }
+
+/* Hover is decoration only — every fact on these pages is visible at rest,
+   because the phones students use in class have no hover at all. Guarded on
+   BOTH hover capability and reduced motion; style.css:464's blanket
+   `* { transition: none !important }` already covers the second, twice over. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .lx-card, .lx-lcard, .lx-wide, .lx-live, .lx-grow {
+    transition: box-shadow .3s cubic-bezier(0, 0, .5, 1),
+                transform  .3s cubic-bezier(0, 0, .5, 1),
+                border-color .3s cubic-bezier(0, 0, .5, 1);
+  }
+  .lx-card:hover, .lx-lcard:hover, .lx-wide:hover, .lx-live:hover, .lx-grow:hover {
+    box-shadow: 0 0 4px rgba(1, 123, 196, .12), 0 4px 12px 4px rgba(24, 21, 18, .10);
+    transform: translate3d(0, -2px, 0);
+    border-color: rgba(24, 21, 18, .24);
+  }
+}
+
+/* ==========================================================================
+   CONSTRUCTION A' — the catalogue list card (/learn).
+   Same data, rebuilt as a row at every width. Four honest fields read as
+   deliberate density in a row and as an empty tile in a tile, so the catalogue
+   takes the row — a different construction from "/" on purpose.
+   ========================================================================== */
+.lx-clist { list-style: none; margin: 0 -6px; padding: 0; display: flex; flex-wrap: wrap; }
+.lx-clist > li { display: flex; width: 100%; padding: 0 6px 12px; }
+@media (min-width: 768px)  { .lx-clist > li { width: 50%; } }
+@media (min-width: 1128px) { .lx-clist > li { width: 33.3333%; } }
+.lx-lcard {
+  position: relative; display: flex; gap: var(--lx-sp-4);
+  width: 100%; max-width: 452px; padding: var(--lx-sp-4);
+  background: var(--lx-surface);
+  border: 1px solid var(--lx-stroke); border-radius: var(--lx-r-card);
+}
+.lx-sq {
+  flex: none; width: 64px; height: 64px; border-radius: var(--lx-r-in);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+@media (min-width: 768px) { .lx-sq { width: 80px; height: 80px; } }
+.lx-sq-n { font: 700 22px/1 var(--sans); font-variant-numeric: tabular-nums; }
+.lx-sq-u { margin-top: 3px; font: 700 9px/1 var(--sans); letter-spacing: .09em; text-transform: uppercase; }
+.lx-lcard-body { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; }
+.lx-pill--inline { position: static; }
+
+/* ==========================================================================
+   CONSTRUCTION B — one wide strip (the simulations).
+   Not a shrunken card: a different object. The eye reads "different kind of
+   thing" before it reads a word.
+   ========================================================================== */
+.lx-wide {
+  position: relative; display: block; max-width: 900px; padding: var(--lx-sp-5);
+  background: var(--lx-surface); color: var(--lx-ink-1); text-decoration: none;
+  border: 1px solid var(--lx-stroke);
+  border-left: 4px solid var(--kosen-blue);   /* a RULE, not text */
+  border-radius: var(--lx-r-card);
+}
+.lx-wide:focus-visible { outline: 3px solid var(--kosen-blue); outline-offset: 2px; }
+.lx-wide-t { display: block; font: 600 20px/28px var(--sans); overflow-wrap: anywhere; }
+.lx-wide-p {
+  display: block; margin-top: var(--lx-sp-2); max-width: 60ch;
+  font: 400 14px/20px var(--sans); color: var(--lx-ink-2);
+}
+.lx-wide .lx-need { margin-top: var(--lx-sp-3); }
+
+/* ==========================================================================
+   CONSTRUCTION B' — inverse anatomy (the live game).
+   The access marker comes FIRST, before the title: a student who reaches this
+   row and only then discovers they needed something they do not have was failed
+   by the page. Also the visible proof that this row is a different kind of
+   thing from the graded rows below, which put the title first and the marker
+   last. This row is NOT graded and carries no graded flag — it must never
+   grow one.
+   ========================================================================== */
+.lx-live {
+  position: relative; display: block; max-width: 900px; padding: var(--lx-sp-5);
+  background: var(--lx-surface); color: var(--lx-ink-1); text-decoration: none;
+  border: 1px dashed var(--lx-ink-3);      /* dashed: an in-the-room thing */
+  border-radius: var(--lx-r-card);
+}
+.lx-live:focus-visible { outline: 3px solid var(--kosen-blue); outline-offset: 2px; }
+.lx-live-t { display: block; margin-top: var(--lx-sp-3); font: 600 20px/28px var(--sans); overflow-wrap: anywhere; }
+.lx-live-p {
+  display: block; margin-top: var(--lx-sp-2); max-width: 60ch;
+  font: 400 14px/20px var(--sans); color: var(--lx-ink-2);
+}
+
+/* ==========================================================================
+   CONSTRUCTION C — the graded rows, on the tint band.
+   ========================================================================== */
+.lx-grows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--lx-sp-3); }
+@media (min-width: 768px) {
+  .lx-grows { flex-direction: row; flex-wrap: wrap; gap: 0; margin: 0 -6px; }
+  .lx-grows > li { display: flex; flex: 1 1 260px; max-width: 452px; padding: 0 6px 12px; }
+}
+.lx-grow {
+  position: relative; display: flex; flex-direction: column; gap: var(--lx-sp-2);
+  width: 100%; padding: var(--lx-sp-4);
+  background: var(--lx-surface); color: var(--lx-ink-1); text-decoration: none;
+  border: 1px solid var(--lx-stroke);
+  border-left: 4px solid var(--kmitl-orange);   /* a RULE, not text — legal at 3.84:1 */
+  border-radius: var(--lx-r-card);
+}
+.lx-grow:focus-visible { outline: 3px solid var(--kosen-blue); outline-offset: 2px; }
+.lx-grow-head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--lx-sp-2); }
+.lx-grow-t { font: 600 18px/24px var(--sans); overflow-wrap: anywhere; }
+.lx-grow-p { font: 400 14px/20px var(--sans); color: var(--lx-ink-2); }
+.lx-grow .lx-need { align-self: flex-start; margin-top: auto; }
+
+/* ==========================================================================
+   THE TWO MARKER VOCABULARIES — kept apart in SHAPE as well as in colour.
+
+   `.lx-need`        what it COSTS to walk in     — outlined pill
+   `.lx-flag-graded` whether it is MARKED         — filled square-cornered flag
+
+   They were one orange token once, so orange meant "bring your slip" on the
+   front page and "this is graded" on the course page — and /play, explicitly
+   ungraded, wore it. One token, two meanings, two pages a student crosses in a
+   single session. GRADED stays a literal WORD: colour alone dies in greyscale,
+   in a failed stylesheet, in a screen reader and for a colour-blind reader, and
+   this is the one signal on the page with a real consequence behind it.
+
+   Neither class name contains the substring "stakes", so the test asserting
+   that the ungraded live game carries no graded marker cannot be tripped by a
+   class name — belt and braces on top of the layout distance.
+   ========================================================================== */
+.lx-need {
+  flex: none; display: inline-block; padding: 1px 10px;
+  border: 1px solid var(--kmitl-orange-deep); border-radius: var(--lx-r-pill);
+  background: var(--lx-surface); color: var(--kmitl-orange-deep);  /* 5.63:1 ✓ AA */
+  font: 600 13px/18px var(--sans); white-space: nowrap;
+}
+.lx-need--free { border-color: var(--lx-ink-3); color: var(--lx-ink-3); }  /* 6.93:1 */
+.lx-flag-graded {
+  flex: none; display: inline-block; padding: 3px 8px; border-radius: var(--lx-r-sm);
+  background: var(--kmitl-orange-deep); color: #fff;                /* 5.63:1 ✓ AA */
+  font: 700 12px/16px var(--sans); letter-spacing: .09em; white-space: nowrap;
+}
+
+/* ==========================================================================
+   THE JUMP STRIP — plain anchors, no script. Rendered only when a course has
+   more than one NAMED module. Everything below it is open at rest, which makes
+   a 19-unit course a long page; this is the mitigation.
+   ========================================================================== */
+.lx-jump {
+  max-width: var(--lx-read); margin: 0 0 var(--lx-sp-5);
+  padding: var(--lx-sp-3) var(--lx-sp-4);
+  background: var(--lx-ground); border: 1px solid var(--lx-stroke);
+  border-radius: var(--lx-r-in);
+}
+.lx-jump-h {
+  margin: 0 0 var(--lx-sp-2);
+  font: 700 13px/18px var(--sans); color: var(--lx-ink-1);
+}
+.lx-jumplist { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--lx-sp-2); }
+.lx-jump-a {
+  display: inline-block; padding: 4px 10px;
+  border: 1px solid var(--lx-stroke); border-radius: var(--lx-r-pill);
+  background: var(--lx-surface); color: var(--kosen-blue-deep);   /* 7.1:1 */
+  font: 600 13px/18px var(--sans); text-decoration: none;
+}
+.lx-jump-a:hover { border-color: var(--kosen-blue-deep); }
+
+/* ==========================================================================
+   MODULES — Coursera's accordion is JavaScript. This is <details>/<summary>,
+   which needs no script and is explicitly allowed under `default-src 'none'`.
+
+   The native marker is removed on purpose (in WebKit it lands on its own line
+   above a flex summary row, which looks like a typo repeated seven times down
+   the page). What replaces it is a WORD — "Hide" when open, "Show" when closed
+   — drawn in CSS on an aria-hidden span. That is a stronger signal than a
+   triangle: it survives greyscale, high contrast and a missing glyph font, and
+   the <details> element still carries the real state for assistive tech.
+   ========================================================================== */
+.lx-mod { max-width: var(--lx-read); margin: 0; border-bottom: 1px solid var(--lx-stroke); }
+.lx-mod:first-of-type { border-top: 1px solid var(--lx-stroke); }
+.lx-mod-sum {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px var(--lx-sp-3);
+  padding: var(--lx-sp-3); margin: 0 -12px;
+  border-radius: var(--lx-r-in); cursor: pointer;
+  list-style: none;                       /* Firefox / spec marker */
+}
+.lx-mod-sum::-webkit-details-marker { display: none; }
+.lx-mod-sum:hover { background: var(--lx-hover); }
+.lx-mod-sum:focus-visible { outline: 3px solid var(--kosen-blue); outline-offset: -2px; }
+.lx-mod-eyebrow { flex: none; font: 400 14px/20px var(--sans); color: var(--lx-ink-2); }
+.lx-mod-t { font: 600 20px/28px var(--sans); color: var(--lx-ink-1); overflow-wrap: anywhere; }
+.lx-mod-meta {
+  flex: 1 1 100%; font: 400 14px/20px var(--sans); color: var(--lx-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.lx-mod-tog {
+  flex: none; font: 600 13px/20px var(--sans); color: var(--lx-ink-3);  /* 6.93:1 */
+}
+.lx-mod-tog::after { content: "Hide"; }
+.lx-mod:not([open]) > .lx-mod-sum .lx-mod-tog::after { content: "Show"; }
+@media (min-width: 768px) {
+  .lx-mod-meta { flex: none; margin-left: auto; }
+  .lx-mod-tog { margin-left: var(--lx-sp-3); }
+}
+.lx-mod > .lx-units { padding-bottom: var(--lx-sp-3); }
+
+/* ==========================================================================
+   THE UNIT ROW — one definition, used by the grouped and the flat path alike.
+
+   Capped at --lx-read (900px). Without a cap these rows run the full 1344px of
+   a 1440px viewport and the GRADED flag ends up most of a screen away from the
+   unit number — which is a spreadsheet, not a module list.
+   ========================================================================== */
+.lx-units { list-style: none; margin: 0; padding: 0; max-width: var(--lx-read); }
+.lx-units--flat { border-top: 1px solid var(--lx-stroke); }
+.lx-units > li { border-bottom: 1px solid var(--lx-stroke); }
+.lx-units--flat > li:last-child { border-bottom: 0; }
+.lx-mod .lx-units > li:last-child { border-bottom: 0; }
+
+/* The negative margin is the trick: the hover field bleeds past the text column
+   while the text itself stays aligned to the container. */
+.lx-unit {
+  position: relative;
+  display: grid; grid-template-columns: 52px minmax(0, 1fr);
+  grid-template-areas:
+    "tile main"
+    "tile tags";
+  gap: var(--lx-sp-2) var(--lx-sp-3);
+  padding: 14px var(--lx-sp-3); margin: 0 -12px;
+  border-radius: var(--lx-r-in); color: var(--lx-ink-1); text-decoration: none;
+}
+.lx-unit:hover { background: var(--lx-hover); }
+.lx-unit:focus-visible { outline: 3px solid var(--kosen-blue); outline-offset: -2px; }
+
+/* The leading slot carries the NUMBER, which differs on every row, so 19 of
+   them form a column the eye can run straight down. A badge-keyed tile put 13
+   identical blue squares here instead — the very failure this redesign exists
+   to fix, reproduced in the densest view on the site. The unit word and the
+   number are one readable phrase, so the token is printed once per row and
+   never twice. */
+.lx-unit-tile {
+  grid-area: tile; align-self: start;
+  width: 52px; min-height: 52px; padding: 5px 2px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: var(--lx-r-in); text-align: center;
+}
+.lx-unit-u {
+  font: 700 8px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase;
+  opacity: .85;
+}
+.lx-unit-n {
+  margin-top: 2px; font: 700 17px/1.1 var(--sans);
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+}
+/* The tint is keyed to the badge for rhythm only, and it is ALWAYS redundant
+   with the badge word printed in the tag row of the same line. Every pairing
+   measured against the tile fill. */
+.lx-unit-tile--lab      { background: #EEF6FB; color: var(--lx-ink-1);
+                          box-shadow: inset 3px 0 0 var(--kosen-blue); }        /* 16.6:1 */
+.lx-unit-tile--exam     { background: #FDF0E8; color: var(--lx-ink-1);
+                          box-shadow: inset 3px 0 0 var(--kmitl-orange); }      /* 16.3:1 */
+.lx-unit-tile--ctf      { background: var(--ink); color: #fff; }                /* 18.9:1 */
+.lx-unit-tile--capstone { background: var(--kmitl-orange); color: var(--ink); } /*  4.74:1 ✓ AA */
+.lx-unit-tile--review   { background: var(--lx-surface); color: var(--lx-ink-1);
+                          border: 2px solid var(--kosen-blue-deep); }           /* 18.9:1 */
+.lx-unit-tile--guide    { background: #F1EDE6; color: var(--lx-ink-1); }        /* 15.6:1 */
+.lx-unit-tile--none     { background: var(--lx-surface); color: var(--lx-ink-1);
+                          border: 1px dashed var(--lx-stroke); }                /* 18.9:1 */
+
+.lx-unit-b { grid-area: main; min-width: 0; display: flex; flex-direction: column; }
+.lx-unit-t { font: 600 17px/24px var(--sans); overflow-wrap: anywhere; }
+@media (min-width: 768px) { .lx-unit-t { font-size: 20px; line-height: 28px; } }
+.lx-unit-meta {
+  margin-top: var(--lx-sp-1); font: 400 14px/20px var(--sans); color: var(--lx-ink-2);
+  overflow-wrap: anywhere;
+}
+.lx-unit-tags {
+  grid-area: tags; display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--lx-sp-2);
+}
+/* The type word. Outlined, so LAB / EXAM / CTF / REVIEW / GUIDE read as
+   classification and never compete with the filled GRADED flag beside them. */
+.lx-tag {
+  flex: none; display: inline-block; padding: 2px 8px;
+  border: 1px solid var(--lx-stroke); border-radius: var(--lx-r-sm);
+  background: var(--lx-surface); color: var(--lx-ink-3);   /* 6.93:1 */
+  font: 700 12px/16px var(--sans); letter-spacing: .07em; white-space: nowrap;
+}
+
+@media (min-width: 720px) {
+  /* The unit row becomes a real three-column grid: the number tile keeps its
+     own gutter so the column stays scannable, the title and documents take the
+     middle, and the classification right-aligns into a third. */
+  .lx-unit {
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    grid-template-areas: "tile main tags";
+    align-items: center; gap: var(--lx-sp-4);
+  }
+  .lx-unit-tile { width: 64px; min-height: 64px; align-self: center; }
+  .lx-unit-n { font-size: 20px; }
+  .lx-unit-u { font-size: 9px; }
+  .lx-unit-tags { justify-content: flex-end; }
+}
+
+/* ==========================================================================
+   THE ENROLLED-STUDENT ASIDE (catalogue page and course page).
+   Coursera's sticky right-rail enrol card has no honest equivalent — there is
+   no enrolment and no account. This is what takes its place: an outlined block,
+   NOT a second tint band. The tint band is spent once, on the front door's
+   graded region, and it works precisely because it is used once.
+   ========================================================================== */
+.lx-aside {
+  margin-top: var(--lx-sp-7); max-width: 640px; padding: var(--lx-sp-5);
+  background: var(--lx-surface);
+  border: 1px solid var(--lx-stroke); border-radius: var(--lx-r-card);
+}
+.lx-aside-h { margin: 0; font: 600 20px/24px var(--sans); color: var(--lx-ink-1); }
+.lx-aside-p { margin: 6px 0 var(--lx-sp-4); font: 400 14px/20px var(--sans); color: var(--lx-ink-2); }
+.lx-aside-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.lx-aside-list > li { display: flex; align-items: center; flex-wrap: wrap; gap: var(--lx-sp-2); }
+
+/* ==========================================================================
+   FOOTER — every public destination restated, plus the staff door. 23 of 27
+   templates had no link back to anything; this is the floor under that.
+   ========================================================================== */
+.lx-foot {
+  border-top: 1px solid var(--lx-stroke); background: var(--lx-surface);
+  padding: var(--lx-sp-6) 0 var(--lx-sp-7);
+}
+.lx-foot-in { display: flex; flex-wrap: wrap; gap: var(--lx-sp-5) var(--lx-sp-7); }
+.lx-foot-col { flex: 1 1 200px; min-width: 0; }
+.lx-foot-h { margin: 0 0 var(--lx-sp-3); font: 700 14px/20px var(--sans); color: var(--lx-ink-1); }
+.lx-foot-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--lx-sp-2); }
+.lx-foot-a { font: 400 15px/20px var(--sans); color: var(--kosen-blue-deep); text-decoration: none; }
+.lx-foot-a:hover { text-decoration: underline; }
+.lx-foot-need { font: 400 13px/18px var(--sans); color: var(--lx-ink-3); white-space: nowrap; }
+.lx-foot-legal {
+  margin: var(--lx-sp-6) 0 0; max-width: 640px;
+  font: 400 13px/20px var(--sans); color: var(--lx-ink-2);
+}
+
+/* ==========================================================================
+   FORCED-COLOURS / Windows high contrast. Background fills are stripped there,
+   so every element whose meaning is partly carried by a fill gets a border back.
+   The WORD inside each survives regardless — that is why the words exist.
+   ========================================================================== */
+@media (forced-colors: active) {
+  .lx-tag, .lx-flag-graded, .lx-need, .lx-pill, .lx-tile, .lx-sq,
+  .lx-unit-tile, .lx-jump-a {
+    border: 1px solid currentColor;
+  }
+  .lx-tier1-a--here { text-decoration: underline; }
+  .lx-card, .lx-lcard, .lx-wide, .lx-live, .lx-grow, .lx-aside { border: 1px solid CanvasText; }
+}
+
+
+/* ── Teacher tool bar ────────────────────────────────────────────────────────
+   /console, /assess, /work and /host are four separate route groups that until
+   now linked to almost nothing: /console (the page you land on after signing in)
+   reached only its own set editor, and /host reached nothing at all. This is the
+   one strip that connects them.
+
+   Deliberately NOT the .lx-* course-platform nav: these pages keep the warm
+   paper theme, and dropping a white Coursera-style bar onto them would make the
+   teacher side look like two different products. Plain links, no JS.
+
+   The current page is marked by WEIGHT and an underline via [aria-current], not
+   colour — same rule the rest of this stylesheet follows. */
+.tnav { display: flex; flex-wrap: wrap; gap: 2px 18px; margin: 2px 0 14px; }
+.tnav a {
+  font: 600 13.5px/1.5 var(--sans);
+  color: var(--ink-2);
+  text-decoration: none;
+  padding: 4px 0;
+  border-bottom: 2px solid transparent;
+}
+.tnav a:hover { color: var(--kmitl-orange-deep); border-bottom-color: var(--hair); }
+.tnav a[aria-current] {
+  color: var(--ink);
+  font-weight: 800;
+  border-bottom-color: var(--kmitl-orange);
+}
+/* In the masthead (console) the strip sits between the wordmark and Sign out. */
+.masthead .tnav { margin: 0; flex: 1 1 auto; justify-content: center; }
+
+/* The host screen is PROJECTED. One quiet link, sized to be legible to the
+   teacher at the keyboard and ignorable by the room. */
+.host-exit {
+  font: 600 12.5px/1 var(--sans);
+  letter-spacing: .04em;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 6px 10px;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+}
+.host-exit:hover { color: var(--ink); border-color: var(--hair-2); }

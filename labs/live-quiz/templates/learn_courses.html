@@ -1,17 +1,106 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Courses — KOSEN·KMITL</title><link rel="stylesheet" href="/static/style.css"></head>
-<body><div class="pwrap"><section class="pjoin">
-  <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
-    <div class="sub">course material</div></div>
-  <div class="join-card">
-    <h1>Courses</h1>
-    <p class="lead">Pick your course. Everything here is readable without signing in.</p>
-    <ul class="weeks">
+{% extends "base.html" %}
+{#- ===========================================================================
+    learn_courses.html — route "/learn" (routes_content.py:85), rendered ONLY
+    when len(COURSES) > 1. With exactly one course the route renders
+    learn_index.html instead, so this file never has to make sense at n=1.
+
+    NOTE FOR WHOEVER TESTS THIS: the default checkout has ONE course, so the
+    whole test suite renders learn_index.html for /learn and never touches this
+    file. A Jinja error here passes 309/309 green. It must be rendered
+    explicitly against the 3-course registry before it ships.
+
+    CONTEXT
+      courses     — and today, nothing else. After the content.py patch each
+                    course also carries `graded_count` and `mix`, both derived
+                    and both optional here.
+      nav_courses OPTIONAL, for base.html's course switcher.
+
+    Four honest fields per card is what we have, so this page uses Coursera's
+    LIST card rather than its grid tile: a row reads as deliberate density where
+    a tall tile with four fields reads as an empty tile. Same data as "/",
+    different construction, on purpose — that is Coursera's per-section rule
+    applied across pages.
+
+    Coursera's /search sets `main { background: #F2F5FA }` and floats white
+    cards on it; that one move separates a whole region better than any border.
+    Ours is warm (#F5F2EC), from the existing --paper family — Coursera's cool
+    grey fights the KOSEN·KMITL palette.
+
+    FIXES A LIVE BUG. This template hardcoded the noun "week":
+        {{ c.week_count }} week{{ '' if c.week_count == 1 else 's' }}
+    so /learn said "10 weeks" for the cloud course, whose unit_label is Lesson —
+    while "/" one click earlier said "10 lessons", because home.html already did
+    it correctly. Same student, same session, two different answers.
+-#}
+
+{% block title %}Courses — KOSEN·KMITL{% endblock %}
+
+{% block main %}
+<div class="lx-ground">
+  <div class="lx-wrap">
+
+    <header class="lx-cathead">
+      <h1 class="lx-h1">Courses</h1>
+      <p class="lx-lead lx-measure">Every course taught on this platform. All of
+        the material below is public — pick a course and start reading, no
+        account and no sign-in.</p>
+    </header>
+
+    {# Coursera's "All Results" line: a quiet 20/600 heading with the real count
+       beside it. The count is len(courses); there is nothing to fabricate. #}
+    <h2 class="lx-h2 lx-h2--count">All courses
+      <span class="lx-count">{{ courses|length }}</span></h2>
+
+    <ul class="lx-clist">
       {% for c in courses %}
-        <li><a href="/learn/{{ c.slug }}/"><b>{{ c.title }}</b></a>
-          <span class="sub">{{ c.week_count }} week{{ '' if c.week_count == 1 else 's' }}</span></li>
+      <li>
+        <article class="lx-lcard">
+          {# The square thumbnail slot. Flat brand field, no invented artwork,
+             carrying the one number that differs course to course. #}
+          <span class="lx-sq lx-sq--{{ ['a', 'b', 'c'][loop.index0 % 3] }}" aria-hidden="true">
+            <span class="lx-sq-n">{{ c.week_count }}</span>
+            <span class="lx-sq-u">{{ c.unit_label|lower }}{{ '' if c.week_count == 1 else 's' }}</span>
+          </span>
+          <span class="lx-lcard-body">
+            <h3 class="lx-card-t"><a class="lx-card-a" href="/learn/{{ c.slug }}/">{{ c.title }}</a></h3>
+            {% if c.mix is defined and c.mix %}
+            {# Counted from this course's own units, so no two cards say the
+               same thing. The sentence that used to sit here was identical on
+               every card and false on two of them. #}
+            <p class="lx-card-p"><span class="lx-card-lab lx-card-lab--inline">Contains:</span>
+              {{ c.mix|join(' · ') }}</p>
+            {% endif %}
+            <span class="lx-card-foot">
+              {# One contiguous run: "10 lessons published", never "10 weeks". #}
+              <span class="lx-card-meta">{{ c.week_count }} {{ c.unit_label|lower }}{{ '' if c.week_count == 1 else 's' }} published{% if c.graded_count is defined %} · {{ c.graded_count }} graded{% endif %}</span>
+              <span class="lx-pill lx-pill--inline">Free to read</span>
+            </span>
+          </span>
+        </article>
+      </li>
       {% endfor %}
     </ul>
-    <p class="lead"><a href="/">← Home</a></p>
-  </div></section></div></body></html>
+
+    {# The two-audience rule: what an anonymous visitor can never use must be
+       clearly secondary, but it must still be DISCOVERABLE, because ~30 people
+       reading this page are enrolled and do hold the code. An outlined block,
+       not a second tint band — the tint band is spent once, on the front
+       door's graded region, and it works because it is used once. #}
+    <aside class="lx-aside">
+      <h2 class="lx-aside-h">Enrolled students</h2>
+      <p class="lx-aside-p">These need something you can only get in class.</p>
+      <ul class="lx-aside-list">
+        <li><a class="lx-link" href="/quiz">Weekly quiz</a>
+          <span class="lx-need">code on your slip</span>
+          <span class="lx-flag-graded">GRADED</span></li>
+        <li><a class="lx-link" href="/submit">Hand in your worksheet</a>
+          <span class="lx-need">code on your slip</span>
+          <span class="lx-flag-graded">GRADED</span></li>
+        <li><a class="lx-link" href="/play">Join a live game</a>
+          <span class="lx-need lx-need--free">PIN on screen</span></li>
+      </ul>
+    </aside>
+
+  </div>
+</div>
+{% endblock %}

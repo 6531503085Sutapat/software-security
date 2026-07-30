@@ -107,6 +107,90 @@ WEEK_RE = re.compile(r"^week\d{2}[a-z]?(?:-\d{2})?-[a-z0-9-]+$")
 COURSE_SLUG_RE = re.compile(r"^[a-z][a-z0-9-]{1,63}$")
 
 
+def _clean_modules(slug: str, raw) -> list[dict]:
+    """Validate a course's optional `modules` declaration.
+
+    Shape: [{"label": "Unit A — Foundations", "from": 1, "to": 3}, ...] — an
+    ordered list of INCLUSIVE ranges over a unit's `number`. A course that
+    declares none gets `[]` and renders exactly as it does today.
+
+    Ranges are matched against `number`, which is NOT unique: the cloud course
+    has both `lesson07` and `lesson07b`, and both carry number 7. That is the
+    behaviour we want — 7 and 7b belong to the same module — but it means a
+    range must never be treated as a count of units.
+
+    Validated here, at load, rather than at render: a typo in the deployment's
+    $COURSES should stop the container from starting, not silently drop a week
+    out of the outline where nobody would notice it.
+    """
+    if not raw:
+        return []
+    if not isinstance(raw, list):
+        raise ValueError(f"COURSES: {slug!r} modules must be a list")
+    out, hi_prev = [], None
+    for m in raw:
+        if not isinstance(m, dict):
+            raise ValueError(f"COURSES: {slug!r} module entries must be objects")
+        try:
+            lo = int(m["from"])
+            hi = int(m.get("to", lo))
+        except (KeyError, TypeError, ValueError):
+            raise ValueError(f"COURSES: {slug!r} module {m!r} needs an integer 'from'")
+        if hi < lo:
+            raise ValueError(f"COURSES: {slug!r} module {m!r} ends before it starts")
+        # Overlap would put one unit in two modules, and the grouper resolves
+        # that by first-match — i.e. silently. Refuse it instead.
+        if hi_prev is not None and lo <= hi_prev:
+            raise ValueError(
+                f"COURSES: {slug!r} module {m!r} overlaps the previous one "
+                f"(which ended at {hi_prev}); ranges must be ordered and disjoint")
+        hi_prev = hi
+        label = m.get("label")
+        out.append({"label": str(label) if label else None, "from": lo, "to": hi})
+    return out
+
+
+def list_modules(course_slug: str | None = None) -> list[dict]:
+    """Group a course's units into modules: [{label, weeks}, ...].
+
+    THE CONTRACT the template relies on: concatenating every group's `weeks`
+    reproduces `list_weeks(course_slug)` exactly — same units, same order. It
+    holds by construction, because this walks `weeks` and never reorders or
+    filters; a unit that matches no declared range lands in an UNLABELLED group
+    in its own position. So a half-written `modules` declaration degrades to a
+    partly-flat page, never to a page that has quietly lost week 14.
+
+    Returns [] when the course declares no modules, which is the signal
+    learn_index.html reads to render the flat list it renders today. Two of the
+    three live courses take that path, so it is the majority, not a fallback.
+    """
+    c = course(course_slug)
+    weeks = list_weeks(course_slug)
+    spec = (c or {}).get("modules") or []
+    if not spec or not weeks:
+        return []
+
+    def which(n: int):
+        for i, m in enumerate(spec):
+            if m["from"] <= n <= m["to"]:
+                return i
+        return None
+
+    groups: list[dict] = []
+    for w in weeks:
+        i = which(w["number"])
+        # Merge only into a RUN of the same module. Two separate unlabelled
+        # stretches either side of a named module must stay separate, or the
+        # page would claim week 7 sits next to week 17.
+        if groups and groups[-1]["_i"] == i:
+            groups[-1]["weeks"].append(w)
+        else:
+            groups.append({"_i": i,
+                           "label": spec[i]["label"] if i is not None else None,
+                           "weeks": [w]})
+    return [{"label": g["label"], "weeks": g["weeks"]} for g in groups]
+
+
 def _load_courses() -> list[dict]:
     """Course registry, from $COURSES (JSON) or a single course from CONTENT_ROOT.
 
@@ -125,6 +209,7 @@ def _load_courses() -> list[dict]:
             "root": CONTENT_ROOT,
             "arena_url": os.environ.get("ARENA_URL", "").strip() or None,
             "unit": "week",
+            "modules": [],
             "unit_label": "Week",
         }]
     out, seen = [], set()
@@ -147,6 +232,7 @@ def _load_courses() -> list[dict]:
         out.append({"slug": slug, "title": str(c.get("title") or slug),
                     "root": root, "arena_url": (c.get("arena_url") or None),
                     "unit": unit,
+                    "modules": _clean_modules(slug, c.get("modules")),
                     "unit_label": str(c.get("unit_label") or unit.capitalize())})
     if not out:
         raise ValueError("COURSES was set but produced no courses")
@@ -156,9 +242,75 @@ def _load_courses() -> list[dict]:
 COURSES = _load_courses()
 
 
+# Plural nouns for the card's composition line, in the order they are shown.
+# "13 labs · 2 exams · 2 CTFs · 2 reviews" is the one sentence on a course card
+# that differs between courses, which is the whole reason the card exists —
+# three cards carrying the same sentence is the "eight identical boxes" the
+# front door was rebuilt to fix.
+_MIX_NOUNS = [("LAB", "lab", "labs"), ("EXAM", "exam", "exams"),
+              ("CTF", "CTF", "CTFs"), ("REVIEW", "review", "reviews"),
+              ("CAPSTONE", "capstone", "capstones"), ("GUIDE", "guide", "guides")]
+
+
+def course_mix(course_slug: str | None = None) -> list[str]:
+    """What a course is made of, counted from what is actually on disk.
+
+    Never configured and never estimated: if a directory stops publishing a
+    worksheet its badge changes and this line changes with it. That is the
+    difference between a card that describes the course and a card that
+    describes what somebody once typed into an env var.
+
+    A unit whose directory carries no recognised primary (badge == "", which is
+    reachable — a slides-only directory does it) is counted under "other"
+    rather than dropped, so the parts always sum to week_count.
+    """
+    counts: dict[str, int] = {}
+    for w in list_weeks(course_slug):
+        counts[w.get("badge") or ""] = counts.get(w.get("badge") or "", 0) + 1
+    out = []
+    for key, one, many in _MIX_NOUNS:
+        n = counts.get(key, 0)
+        if n:
+            out.append(f"{n} {one if n == 1 else many}")
+    n = counts.get("", 0)
+    if n:
+        out.append(f"{n} other")
+    return out
+
+
+def nav_courses() -> list[dict]:
+    """Just {slug, title} for the shared nav's course switcher.
+
+    A PROJECTION, deliberately — never the course dicts themselves. Those carry
+    `root`, an absolute path on the server's filesystem, and the nav is rendered
+    into every page by base.html: one stray `{{ c }}` in a future edit would
+    print the deployment's directory layout onto a public page. Handing the
+    template only the two fields it needs makes that impossible rather than
+    merely unlikely.
+
+    Cheap on purpose: no list_weeks() call, so adding the switcher to a page
+    costs no directory scan. That is also why this is not a context_processor —
+    Flask would run it for /host and /play too, which is the one surface that
+    must not gain new work or new ways to fail.
+    """
+    return [{"slug": c["slug"], "title": c["title"]} for c in COURSES]
+
+
 def list_courses() -> list[dict]:
-    """Every configured course, with how many weeks each currently publishes."""
-    return [{**c, "week_count": len(list_weeks(c["slug"]))} for c in COURSES]
+    """Every configured course, with the derived fields the course card shows.
+
+    `week_count`, `graded_count` and `mix` are all counted from list_weeks() at
+    call time. They are additive — every existing caller that only reads slug /
+    title / week_count is unaffected.
+    """
+    out = []
+    for c in COURSES:
+        weeks = list_weeks(c["slug"])
+        out.append({**c,
+                    "week_count": len(weeks),
+                    "graded_count": sum(1 for w in weeks if w.get("graded")),
+                    "mix": course_mix(c["slug"])})
+    return out
 
 
 def course(slug: str | None) -> dict | None:

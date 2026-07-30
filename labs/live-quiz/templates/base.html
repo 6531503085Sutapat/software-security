@@ -1,0 +1,186 @@
+{#- ===========================================================================
+    base.html — the shared shell for the three redesigned pages.  NEW FILE.
+
+    Before it there was no base template at all: 27 templates each wrote their
+    own <html>, and 23 of them had no link back to the front door. /host was a
+    dead end with no links at all, not even sign out. The nav is the fix, so it
+    lives here and every page in scope extends it.
+
+    NOTHING HERE EXECUTES. No script element, no style element, no style
+    attribute, no form element anywhere in the three pages that extend this.
+    The live /learn/* CSP is
+
+      default-src 'none'; style-src 'self'; img-src 'self' data:; font-src
+      'self'; frame-src 'self'; base-uri 'none'; form-action 'none';
+      frame-ancestors 'none'
+
+    so a script is dropped, an inline style is dropped, and a form would not
+    even submit — which is why there is no search box. Every rule this page
+    needs is a class in /static/style.css.
+
+    CONTEXT THIS TEMPLATE READS
+      nav_courses   OPTIONAL. list of {slug, title} (project it — never hand
+                    over raw list_courses() dicts, they carry `root`, an
+                    absolute server filesystem path). Renders the course
+                    switcher. ABSENT -> the switcher is not rendered and
+                    `Courses` in tier 2 still reaches every course via /learn.
+                    Pass it explicitly from the three routes that render these
+                    templates — NOT from an app-wide context processor, which
+                    would run an os.listdir sweep on every /host and /play
+                    render too.
+      nav_teacher   OPTIONAL override. When absent this falls back to
+                    session.teacher_id, which auth.py:44 already sets, so the
+                    staff bar works TODAY with zero route changes. Anonymous
+                    visitors get the public shell, which is the safe default.
+      course        the current course dict, when the page is about one. Used
+                    only to mark the active item in the switcher.
+=========================================================================== -#}
+{%- set _navc = nav_courses|default([]) -%}
+{%- set _here = (course.slug if course is defined and course else '') -%}
+{%- set _staff = (nav_teacher if nav_teacher is defined
+                  else (session is defined and session.get('teacher_id') is not none)) -%}
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}KOSEN·KMITL{% endblock %}</title>
+<link rel="stylesheet" href="/static/style.css"></head>
+<body class="lx-page">
+
+{#- The first focusable element on the page. There was none anywhere in the 27
+    templates, so a keyboard or switch user tabbed the whole nav on every single
+    worksheet. Costs one line of markup and two CSS rules. -#}
+<a class="lx-skip" href="#lx-main">Skip to main content</a>
+
+<header class="lx-top">
+
+  {#- ── tier 1 · course switcher ────────────────────────────────────────────
+      Coursera's near-black utility row carries its audience segments (For
+      Individuals / For Businesses / ...). Ours carries the courses: the same
+      thing structurally — a small set of sibling top-level scopes, one of which
+      you are currently in.
+      The active one is BOLD and carries aria-current, not merely a colour, so
+      it survives greyscale, colour-blindness and a screen reader.
+      Suppressed at one course: a switcher between one thing is noise.
+  -#}
+  {%- if _navc|length > 1 %}
+  <nav class="lx-tier1" aria-label="Courses on this site">
+    <div class="lx-wrap lx-tier1-in">
+      <span class="lx-tier1-lab">Courses</span>
+      <ul class="lx-tier1-list">
+        {%- for c in _navc %}
+        <li>{% if c.slug == _here %}<a class="lx-tier1-a lx-tier1-a--here" href="/learn/{{ c.slug }}/" aria-current="page">{{ c.title }}</a>{% else %}<a class="lx-tier1-a" href="/learn/{{ c.slug }}/">{{ c.title }}</a>{% endif %}</li>
+        {%- endfor %}
+      </ul>
+    </div>
+  </nav>
+  {%- endif %}
+
+  {#- ── tier 2 · the main bar ───────────────────────────────────────────────
+      Coursera: logo · Explore · Degrees · search · Log In · Join for Free.
+      Ours:     logo · Courses · Simulations ·      [ student actions ] · staff
+
+      No search field, and not because it would be ugly: `form-action 'none'`
+      on the content plane means a form cannot submit. With 3–10 courses the
+      switcher above is the search.
+
+      The `Weekly quiz` pill takes the position and construction of Coursera's
+      `Join for Free` outline button, because it is the one time-critical
+      destination the ~30 enrolled students actually need from any page.
+  -#}
+  <div class="lx-tier2">
+    <div class="lx-wrap lx-tier2-in">
+
+      <a class="lx-logo" href="/" aria-label="KOSEN·KMITL — home">
+        <span class="mark"><span class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></span></span>
+      </a>
+
+      <nav class="lx-nav" aria-label="Course material">
+        <a class="lx-nav-a" href="/learn">Courses</a>
+        <a class="lx-nav-a" href="/sim">Simulations</a>
+      </nav>
+
+      {#- Everything in this group needs something an anonymous visitor does not
+          have (a paper code, a PIN, a login). It is grouped and LABELLED IN
+          WORDS rather than mixed into the public nav or greyed out, so a
+          visitor can see that it exists and read, in two words, that it is not
+          for them — and the ~30 who do hold a code can find it from any page.
+          "Enrolled students", not "Enrolled students only": the footer explains
+          why the door is shut instead of repeating that it is. -#}
+      <div class="lx-actions">
+        <span class="lx-actions-lab">Enrolled students</span>
+        <a class="lx-nav-a" href="/play">Live game</a>
+        <a class="lx-nav-a" href="/submit">Hand in work</a>
+        <a class="lx-cta" href="/quiz">Weekly quiz</a>
+      </div>
+
+      {%- if not _staff %}
+      <a class="lx-staff-link" href="/login">Teaching staff</a>
+      {%- endif %}
+
+    </div>
+  </div>
+
+  {#- ── tier 3 · staff bar ──────────────────────────────────────────────────
+      Signed-in teaching staff only, and only ever additive. It exists because
+      the teacher tools were a broken graph: /console linked to nothing but its
+      own set editor and /logout, and /host was a dead end with no links at all.
+      Coursera would put this behind a JS dropdown; we cannot run one, so it is
+      a flat wrapping bar — five links, always all five, at every width.
+      Deliberately unlike the public nav (orange left rule + the literal words
+      "Teaching staff") so no one confuses a grading tool for a student page.
+  -#}
+  {%- if _staff %}
+  <nav class="lx-staffbar" aria-label="Teaching staff tools">
+    <div class="lx-wrap lx-staffbar-in">
+      <span class="lx-staffbar-lab">Teaching staff</span>
+      <a class="lx-staffbar-a" href="/console">Question sets</a>
+      <a class="lx-staffbar-a" href="/host">Run a live game</a>
+      <a class="lx-staffbar-a" href="/assess">Weekly quizzes</a>
+      <a class="lx-staffbar-a" href="/work">Worksheets &amp; marking</a>
+      <a class="lx-staffbar-a lx-staffbar-a--end" href="/logout">Sign out</a>
+    </div>
+  </nav>
+  {%- endif %}
+
+</header>
+
+<main id="lx-main" class="lx-main">
+{% block main %}{% endblock %}
+</main>
+
+<footer class="lx-foot">
+  <div class="lx-wrap lx-foot-in">
+
+    <div class="lx-foot-col">
+      <h2 class="lx-foot-h">Free to read</h2>
+      <ul class="lx-foot-list">
+        <li><a class="lx-foot-a" href="/learn">All courses</a></li>
+        <li><a class="lx-foot-a" href="/sim">Interactive simulations</a></li>
+      </ul>
+    </div>
+
+    <div class="lx-foot-col">
+      <h2 class="lx-foot-h">Enrolled students</h2>
+      <ul class="lx-foot-list">
+        <li><a class="lx-foot-a" href="/quiz">Weekly quiz</a> <span class="lx-foot-need">code on your slip</span></li>
+        <li><a class="lx-foot-a" href="/submit">Hand in your worksheet</a> <span class="lx-foot-need">code on your slip</span></li>
+        <li><a class="lx-foot-a" href="/play">Join a live game</a> <span class="lx-foot-need">PIN on screen</span></li>
+      </ul>
+    </div>
+
+    <div class="lx-foot-col">
+      <h2 class="lx-foot-h">Teaching staff</h2>
+      <ul class="lx-foot-list">
+        <li><a class="lx-foot-a" href="/login">Sign in</a></li>
+      </ul>
+    </div>
+
+  </div>
+  <div class="lx-wrap">
+    <p class="lx-foot-legal">KOSEN·KMITL — course material is public and free to
+      read. Graded work is unlocked with a one-time code handed out on paper in
+      class; there are no student accounts and no student passwords on this
+      site.</p>
+  </div>
+</footer>
+
+</body></html>
