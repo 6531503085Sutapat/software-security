@@ -1,5 +1,6 @@
 # db.py — SQLite access for the live-quiz platform (teachers + question_sets).
 import os
+import re
 import sqlite3
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -42,8 +43,33 @@ _ADDED_COLUMNS = (
 )
 
 
+# SQLite cannot bind an IDENTIFIER — `PRAGMA table_info(?)` and
+# `ALTER TABLE ? ADD COLUMN ?` are not valid SQL, so the table and column names
+# in the migration below have to be interpolated into the statement text. Every
+# one of them comes from _ADDED_COLUMNS, a literal tuple three lines up, so no
+# untrusted value can reach them today.
+#
+# "No untrusted value reaches them TODAY" is exactly the property that quietly
+# stops being true — someone makes the migration list configurable, or feeds it
+# a course slug, and the f-string is still sitting there. This course teaches
+# students to look for precisely that shape (Week 4, Injection & Input
+# Handling), so the guard is enforced here rather than asserted in a comment:
+# an identifier that is not a plain lowercase SQL name never reaches a query.
+_SQL_IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,62}$")
+
+
+def _ident(name: str) -> str:
+    """Return `name` if it is a bare SQL identifier, else refuse to build SQL."""
+    if not _SQL_IDENT_RE.match(name or ""):
+        raise ValueError(f"refusing to interpolate {name!r} into SQL")
+    return name
+
+
 def _column_names(conn, table):
-    return {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+    # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query
+    # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
+    # — identifier, not a value; _ident() restricts it to [A-Za-z_][A-Za-z0-9_]*.
+    return {r[1] for r in conn.execute(f"PRAGMA table_info({_ident(table)})")}
 
 
 def _replace_dead_students_table(conn):
@@ -86,12 +112,22 @@ def migrate(conn, default_course=None):
             continue                      # table not created yet; schema runs first
         if column in existing:
             continue
-        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
+        # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query
+        # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
+        # — table/column/type are identifiers SQLite cannot bind; all three are
+        # constrained to bare SQL names by _ident() before reaching the string.
+        conn.execute(f"ALTER TABLE {_ident(table)} ADD COLUMN "
+                     f"{_ident(column)} {_ident(coltype)}")
     if default_course:
         for table, column, _ in _ADDED_COLUMNS:
             if column in _column_names(conn, table):
+                # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query
+                # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
+                # — only the identifiers are interpolated. `default_course` is
+                # the sole untrusted value here and it is bound, not formatted.
                 conn.execute(
-                    f"UPDATE {table} SET {column} = ? WHERE {column} IS NULL",
+                    f"UPDATE {_ident(table)} SET {_ident(column)} = ? "
+                    f"WHERE {_ident(column)} IS NULL",
                     (default_course,))
     conn.commit()
 
