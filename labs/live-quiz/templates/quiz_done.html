@@ -1,15 +1,26 @@
 {% extends "base.html" %}
-{% block title %}Done — KOSEN·KMITL{% endblock %}
+{#- The last screen of the graded flow. It used to be a bare 44px h1 and one
+    line floating on the tint band — no container, no onward link — which read
+    as unfinished next to the framed form one click earlier. Same .lx-form
+    column as every other step, so the flow ends in the shape it ran in. -#}
+{% set section = 'quiz' %}
+{% block title %}Quiz submitted — KOSEN·KMITL{% endblock %}
 {% block main %}
 <div class="lx-ground">
   <div class="lx-wrap">
-    <h1 class="lx-h1">{{ message }}</h1>
-    {% if score %}
-      <p class="lx-lead">{{ '%.1f'|format(score[0]) }} / {{ '%.1f'|format(score[1]) }}
-        {%- if not score[2] %} (short answer not marked yet){% endif %}</p>
-    {% else %}
-      <p class="lx-lead">Your score will be released by your instructor.</p>
-    {% endif %}
+    <div class="lx-form">
+      <p class="lx-eyebrow">Weekly quiz</p>
+      <h1 class="lx-h1">{{ message }}</h1>
+      {% if score %}
+        <p class="lx-lead">You scored
+          <b>{{ '%.1f'|format(score[0]) }} / {{ '%.1f'|format(score[1]) }}</b>
+          {%- if not score[2] %}, with the short answer still to be marked{% endif %}.</p>
+      {% else %}
+        <p class="lx-lead">Your score will be released by your instructor.</p>
+      {% endif %}
+      <p class="lx-hint">Nothing else to do here — your answers are saved.</p>
+      <p class="lx-docnav-up"><a class="lx-link" href="/learn">Back to the course material</a></p>
+    </div>
   </div>
 </div>
 {% endblock %}

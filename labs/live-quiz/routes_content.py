@@ -78,7 +78,7 @@ def simulation(slug):
 
 @bp.route("/sim")
 def simulations():
-    return render_template("sim_index.html", sims=sorted(C.SIMS.items()))
+    return render_template("sim_index.html", sims=C.sim_entries())
 
 
 @bp.route("/learn")
@@ -120,8 +120,17 @@ def _render_doc(course_slug, slug, kind):
         # response must not tell the difference between "no such week" and
         # "that file exists but isn't yours to read" (solution_app.py).
         abort(404)
-    week = next((w for w in C.list_weeks(course_slug) if w["slug"] == slug), None)
+    weeks = C.list_weeks(course_slug)
+    idx = next((n for n, w in enumerate(weeks) if w["slug"] == slug), None)
+    week = weeks[idx] if idx is not None else None
+    # Where to go after reading. A worksheet runs to 6000px and ended in the
+    # footer: the only way on to the next unit was to scroll all the way back
+    # up to the crumb. Derived from the list the page already loaded, so it
+    # costs nothing and cannot disagree with the course index.
+    prev_w = weeks[idx - 1] if idx not in (None, 0) else None
+    next_w = weeks[idx + 1] if idx is not None and idx + 1 < len(weeks) else None
     return render_template("learn_doc.html", doc=doc, week=week,
+                           prev_week=prev_w, next_week=next_w,
                            course=C.course(course_slug), nav_courses=C.nav_courses())
 
 
@@ -141,11 +150,39 @@ def _legacy(slug, kind=None):
     """
     if kind is not None and kind not in C.PUBLIC_FILES and kind != "slides":
         abort(404)
-    default = C.COURSES[0]["slug"]
-    target = (url_for("learn.doc_kind", course_slug=default, slug=slug, kind=kind)
+    # WHICH course owns this slug. This used to be hardcoded to COURSES[0], from
+    # when there was only one course: with three configured, every crypto legacy
+    # URL 301'd into software-security and dead-ended on a 404 — and the crypto
+    # week07 review page emits six such links, so it was reachable in the wild.
+    # Ask the courses instead, and only fall back to the first when nobody
+    # claims it (so a genuinely unknown slug still 301s to a 404 in the default
+    # course exactly as before, rather than becoming a new kind of error).
+    owner = next((c["slug"] for c in C.COURSES
+                  if any(w["slug"] == slug for w in C.list_weeks(c["slug"]))),
+                 None)
+    if owner is None:
+        abort(404)
+    target = (url_for("learn.doc_kind", course_slug=owner, slug=slug, kind=kind)
               if kind else
-              url_for("learn.doc", course_slug=default, slug=slug))
+              url_for("learn.doc", course_slug=owner, slug=slug))
     return redirect(target, code=301)
+
+
+@bp.route("/learn/<course_slug>/doc/<name>")
+def course_doc(course_slug, name):
+    """A course-root document: the hand-in instructions, the ethics note, the
+    project brief. Registered ABOVE the <slug>/<kind> rule and with a literal
+    `doc` segment, which Werkzeug prefers over a converter, so it cannot be
+    shadowed by a week called "doc" (no week can be — unit_re forbids it).
+    """
+    if C.course(course_slug) is None:
+        abort(404)
+    doc = C.render_course_doc(name, course_slug)
+    if doc is None:
+        abort(404)
+    return render_template("learn_doc.html", doc=doc, week=None,
+                           prev_week=None, next_week=None,
+                           course=C.course(course_slug), nav_courses=C.nav_courses())
 
 
 @bp.route("/learn/<a>")

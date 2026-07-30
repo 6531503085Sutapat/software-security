@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Question {{ q.index }} of {{ q.total }}{% endblock %}
+{% set section = 'quiz' %}
+{% block title %}Question {{ q.index }} of {{ q.total }} — KOSEN·KMITL{% endblock %}
 {% block main %}
 <div class="lx-ground">
   <div class="lx-wrap">
@@ -8,7 +9,7 @@
         {%- if time_left is not none %} · {{ (time_left // 60) | int }}m {{ (time_left % 60) | int }}s left{% endif %}</p>
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="question_id" value="{{ q.question_id }}">
-      <h1 class="lx-h1">{{ q.stem }}</h1>
+      <h1 class="lx-stem">{{ q.stem }}</h1>
       {% if q.kind == 'mcq' %}
         {% for o in q.options %}
           <label class="lx-opt">
@@ -16,11 +17,15 @@
             <span>{{ o.text }}</span></label>
         {% endfor %}
       {% else %}
-        <p class="lx-lead">Answer from your own work — a generic answer scores 0.</p>
-        <div class="lx-field"><textarea class="lx-textarea" name="text" rows="5" maxlength="2000" required></textarea></div>
+        <div class="lx-field">
+          <label class="lx-label" for="answer">Your answer</label>
+          <p class="lx-hint lx-hint--tight" id="answer-help">Answer from your own work — a generic answer scores 0.</p>
+          <textarea class="lx-textarea" id="answer" name="text" rows="5" maxlength="2000"
+                    aria-describedby="answer-help" required></textarea>
+        </div>
       {% endif %}
       <button class="lx-btn" type="submit">
-        {% if q.index == q.total %}Submit ▸{% else %}Next ▸{% endif %}</button>
+        {% if q.index == q.total %}Submit{% else %}Next{% endif %}<span aria-hidden="true"> ▸</span></button>
       <p class="lx-hint">You cannot return to this question after continuing.</p>
     </form>
   </div>

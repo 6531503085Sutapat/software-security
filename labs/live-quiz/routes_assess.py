@@ -276,11 +276,17 @@ def quiz_take():
                 _db(), att, request.form.get("question_id", type=int),
                 choice=request.form.get("choice", type=int),
                 text=(request.form.get("text") or "").strip() or None, now=_now())
-        except A.AttemptError as exc:
+        except A.AttemptError:
             # Time-up is the expected way a timed quiz ends — close it out and
             # show the student their state rather than an error page.
+            #
+            # The exception's own text used to become the page's <h1>. That
+            # string is written for a developer reading a log, and this is the
+            # last thing a student sees at the end of a graded attempt; whatever
+            # went wrong, the true and useful thing to tell them is the same.
             A.submit(_db(), att, _now())
-            return render_template("quiz_done.html", message=str(exc),
+            return render_template("quiz_done.html",
+                                   message="Time is up — your quiz was submitted.",
                                    released=False, score=None)
         return redirect(url_for("assess.quiz_take"))
 

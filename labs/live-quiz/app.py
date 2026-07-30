@@ -3,10 +3,12 @@ import csv
 import datetime
 import io
 import json
+import mimetypes
 import os
 
 from flask import (
     Flask,
+    Response,
     make_response,
     render_template,
     request,
@@ -22,6 +24,9 @@ import auth
 import db as dbmod
 import quiz_loader
 from game import GameSession, generate_pin
+
+mimetypes.add_type("font/woff2", ".woff2")
+mimetypes.add_type("font/woff", ".woff")
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-not-secret-override-in-prod")
@@ -203,6 +208,151 @@ def _error_page(exc):
     return resp
 
 
+# The app-plane CSP. `/learn/*` and `/sim/*` set their own, stricter ones in
+# routes_content.py and are left alone here; everything else — `/`, `/login`,
+# `/quiz`, `/submit`, `/play`, the teacher console — had NO CSP at all, which
+# meant the one public page carrying a password form was the least protected
+# page on the site.
+#
+# It differs from the content plane's policy in exactly two ways, both required:
+#   script-src 'self'  — /play and /host run first-party Socket.IO
+#   form-action 'self' — these pages are the ones with real forms to submit
+# Still no 'unsafe-inline' anywhere, so a stored payload cannot execute.
+_APP_CSP = ("default-src 'none'; script-src 'self'; connect-src 'self'; "
+            "style-src 'self'; img-src 'self' data:; font-src 'self'; "
+            "frame-src 'self'; base-uri 'none'; form-action 'self'; "
+            "frame-ancestors 'none'")
+
+
+# Absolute URLs the site publishes about ITSELF — the sitemap's <loc>, the
+# canonical link, og:url, og:image. Building these from request.url_root means
+# building them from the HOST HEADER, which the client controls: a request with
+# a forged Host makes this app hand a crawler (or a link-preview fetcher, or a
+# shared cache) absolute URLs pointing at someone else's domain. Classic
+# host-header injection, and this is a security course's own platform.
+#
+# SITE_ORIGIN pins it. Unset, we fall back to the request — the app sits behind
+# Caddy, which only forwards its configured names — but the pinned value is what
+# production should use, and it is what makes the sitemap trustworthy.
+SITE_ORIGIN = os.environ.get("SITE_ORIGIN", "").rstrip("/")
+
+
+def site_origin() -> str:
+    return SITE_ORIGIN or request.url_root.rstrip("/")
+
+
+def _asset_version() -> str:
+    """A cache-busting token derived from the stylesheet's own mtime.
+
+    Long-lived caching and a URL that never changes are incompatible: the CSS
+    was being revalidated on every navigation precisely because it had no
+    fingerprint to make caching safe. `?v=<mtime>` gives it one, so the file can
+    be cached hard and still change the instant a deploy rewrites it. Computed
+    once at import — the file cannot change under a running container.
+    """
+    try:
+        return str(int(os.path.getmtime(
+            os.path.join(app.static_folder, "style.css"))))
+    except OSError:
+        return "0"
+
+
+ASSET_V = _asset_version()
+
+
+@app.context_processor
+def _shell_context():
+    """Give every template the course switcher without each route remembering to.
+
+    base.html renders its tier-1 switcher only when `nav_courses` has more than
+    one entry, so the four routes that forgot to pass it (quiz, submit, login,
+    register) made the black bar appear and disappear as a student navigated —
+    the header changed shape between clicks.
+
+    Doing this app-wide was previously ruled out for cost, but that reasoning
+    applied to list_courses(), which walks the content directories. nav_courses()
+    is a projection over COURSES, a list built once at import: three dicts, no
+    filesystem access. It is also deliberately a PROJECTION — the raw course
+    dicts carry `root`, an absolute server path that must never reach a template.
+    An explicit nav_courses= kwarg still wins, so nothing that passes its own is
+    affected, and /host and /play simply never read the name.
+    """
+    return {"nav_courses": _content.nav_courses(),
+            "kind_label": _content.kind_label,
+            "asset_v": ASSET_V,
+            "site_origin": site_origin()}
+
+
+@app.after_request
+def _app_headers(resp):
+    # setdefault throughout: a blueprint that already chose a policy (the content
+    # plane's stricter one, or /work/file's `sandbox`) keeps it. Duplicate
+    # nosniff headers used to be emitted on /learn for exactly this reason.
+    resp.headers.setdefault("Content-Security-Policy", _APP_CSP)
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    resp.headers.setdefault("Referrer-Policy", "no-referrer")
+    # Static assets are content-addressed by name only, so they were revalidated
+    # on every navigation — a 352 KB font and a 90 KB stylesheet, every page.
+    # Immutable for a year for the fingerprinted font; the stylesheet gets a
+    # shorter window because its URL never changes.
+    if request.path.startswith("/static/"):
+        # Fonts are content-stable and their names never change; the stylesheet
+        # is cached just as hard because base.html appends ?v=<mtime>, so a
+        # deploy changes the URL. Assignment, not setdefault: Flask's static
+        # handler has already put `no-cache` here, which is the thing being fixed.
+        if request.path.startswith(("/static/fonts/", "/static/style.css")):
+            resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        else:
+            resp.headers["Cache-Control"] = "public, max-age=3600"
+    return resp
+
+
+@app.route("/robots.txt")
+def robots():
+    """Crawl policy. The course material is deliberately public and we WANT it
+    indexed; the graded surfaces and the teacher tools are noise at best and a
+    login wall at worst, so they are excluded rather than left to be crawled and
+    soft-404'd."""
+    body = ("User-agent: *\n"
+            "Allow: /learn\n"
+            "Allow: /sim\n"
+            "Disallow: /login\n"
+            "Disallow: /register\n"
+            "Disallow: /console\n"
+            "Disallow: /host\n"
+            "Disallow: /play\n"
+            "Disallow: /quiz\n"
+            "Disallow: /submit\n"
+            "Disallow: /work\n"
+            "Disallow: /assess\n"
+            f"\nSitemap: {site_origin()}/sitemap.xml\n")
+    return Response(body, mimetype="text/plain")
+
+
+@app.route("/sitemap.xml")
+def sitemap():
+    """Every publicly readable URL, built from the same content functions the
+    pages use — so it cannot drift from what is actually served."""
+    from xml.sax.saxutils import escape as _x
+    base = site_origin()
+    urls = [f"{base}/", f"{base}/learn", f"{base}/sim"]
+    for c in _content.COURSES:
+        urls.append(f"{base}/learn/{c['slug']}/")
+        for d in _content.list_course_docs(c["slug"]):
+            urls.append(f"{base}/learn/{c['slug']}/doc/{d['name']}")
+        for w in _content.list_weeks(c["slug"]):
+            urls.append(f"{base}/learn/{c['slug']}/{w['slug']}")
+            for kind in w.get("available", ()):
+                urls.append(f"{base}/learn/{c['slug']}/{w['slug']}/{kind}")
+    for slug in _content.SIMS:
+        urls.append(f"{base}/sim/{slug}")
+    body = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            + "".join(f"  <url><loc>{_x(u)}</loc></url>\n" for u in urls)
+            + "</urlset>\n")
+    return Response(body, mimetype="application/xml")
+
+
 @app.route("/play")
 def play():
     """The live-quiz join screen — Game PIN + nickname.
@@ -269,24 +419,31 @@ def host_export(pin):
 
 @app.route("/register", methods=["GET", "POST"])
 def register_page():
-    if request.method == "GET":
-        return render_template("register.html", csrf_token=_issue_csrf(), error=None)
+    # HEAD is dispatched to this view too (Flask derives it from GET). Testing
+    # `== "GET"` let it fall through to the POST branch and abort(400) on the
+    # missing CSRF field, so every uptime monitor and link checker saw the
+    # sign-up page as broken.
+    if request.method in ("GET", "HEAD"):
+        return render_template("register.html", csrf_token=_issue_csrf(),
+                               error=None, nav_courses=_content.nav_courses())
     _check_csrf()
     username = (request.form.get("username") or "").strip()[:40]
     password = request.form.get("password") or ""
     if not auth.invite_ok(request.form.get("invite"), INVITE_CODE):
-        return render_template("register.html", csrf_token=_issue_csrf(), error="Invalid invite code."), 200
+        return render_template("register.html", csrf_token=_issue_csrf(), nav_courses=_content.nav_courses(), error="Invalid invite code."), 200
     if len(username) < 3 or len(password) < 8:
         return render_template("register.html", csrf_token=_issue_csrf(),
+                               nav_courses=_content.nav_courses(),
                                error="Username ≥ 3 chars, password ≥ 8 chars."), 200
     # DELIBERATE DEVIATION FROM PLAN: bcrypt 5.x RAISES `ValueError: password cannot be longer
     # than 72 bytes` (no silent truncation), so an over-long password would 500 hash_password.
     # Reject it here with a friendly 200 form error instead of letting the route crash.
     if len(password.encode("utf-8")) > 72:
         return render_template("register.html", csrf_token=_issue_csrf(),
+                               nav_courses=_content.nav_courses(),
                                error="Password must be 8–72 characters."), 200
     if dbmod.get_teacher_by_username(get_db(), username):
-        return render_template("register.html", csrf_token=_issue_csrf(), error="Username taken."), 200
+        return render_template("register.html", csrf_token=_issue_csrf(), nav_courses=_content.nav_courses(), error="Username taken."), 200
     tid = dbmod.create_teacher(get_db(), username, auth.hash_password(password), _now())
     session["teacher_id"] = tid
     return redirect(url_for("console_page"))
@@ -294,8 +451,9 @@ def register_page():
 
 @app.route("/login", methods=["GET", "POST"])
 def login_page():
-    if request.method == "GET":
-        return render_template("login.html", csrf_token=_issue_csrf(), error=None)
+    if request.method in ("GET", "HEAD"):        # see register_page
+        return render_template("login.html", csrf_token=_issue_csrf(),
+                               error=None, nav_courses=_content.nav_courses())
     _check_csrf()
     t = dbmod.get_teacher_by_username(get_db(), (request.form.get("username") or "").strip())
     if t and auth.verify_password(request.form.get("password") or "", t["password_hash"]):
@@ -303,7 +461,7 @@ def login_page():
         session["teacher_id"] = t["id"]
         session["csrf"] = auth.new_csrf_token()      # a fresh token bound to the new session
         return redirect(url_for("console_page"))
-    return render_template("login.html", csrf_token=_issue_csrf(), error="Wrong username or password."), 200
+    return render_template("login.html", csrf_token=_issue_csrf(), nav_courses=_content.nav_courses(), error="Wrong username or password."), 200
 
 
 @app.route("/logout")

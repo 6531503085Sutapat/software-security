@@ -1,32 +1,82 @@
 {% extends "base.html" %}
 {#- ===========================================================================
-    learn_doc.html — one document: a worksheet, README, exam paper or CTF
-    brief. The page students spend the most time on, and until now the only
-    one still on the pre-redesign shell — reachable only by clicking through
-    the new home page and course index, so the product visibly changed
-    underfoot one click in.
+    learn_doc.html — one document: a worksheet, README, exam paper, CTF brief,
+    lecture deck, or one of the course-root guides (SUBMISSION.md and friends).
+    The page students spend the most time on.
 
     content.py escapes every byte before recognising any markdown — see its
-    module docstring and test_content.py — so `doc.html | safe` below is
-    inert by construction. THIS TEMPLATE CHANGE DOES NOT TOUCH THAT ORDERING;
-    it only re-skins the chrome around the same server-rendered HTML. The
-    route (routes_content.py) keeps its own script-free CSP regardless of
-    which shell renders it.
+    module docstring and test_content.py — so `doc.html | safe` below is inert
+    by construction. NOTHING HERE TOUCHES THAT ORDERING; this template only
+    dresses the HTML content.py already produced. The route keeps its own
+    script-free CSP regardless of which shell renders it.
+
+    CONTEXT
+      doc        {title, kind, html, outline}. `outline` is the h2/h3 list
+                 content.py extracted from its own output, for the contents box.
+      week       the unit this document belongs to, or None for a course guide.
+      prev_week
+      next_week  neighbours in list_weeks() order, or None at either end.
+      course     the course dict.
 =========================================================================== -#}
+{% set page_description = doc.title ~ ' — ' ~ course.title ~ ', KOSEN·KMITL. Free to read, no account needed.' %}
+{% set section = 'learn' %}
 
 {% block title %}{{ doc.title }} — KOSEN·KMITL{% endblock %}
 
 {% block main %}
 <div class="lx-ground">
   <div class="lx-wrap">
-    <p class="lx-crumb"><a class="lx-link" href="/learn/{{ course.slug }}/">← all {{ course.unit_label|lower }}s</a>
+
+    {#- Sibling documents of the same unit. Printed through kind_label (a Jinja
+        global from app.py) so this page and the course index one click earlier
+        call the same file the same thing — the crumb used to print raw slugs
+        ("readme · template") against the index's "Overview · Template to fill
+        in". -#}
+    <p class="lx-crumb"><a class="lx-link" href="/learn/{{ course.slug }}/">All {{ course.unit_label|lower }}s</a>
       {%- if week %}{% for k in week.available %}{% if k != doc.kind %}
-        · <a class="lx-link" href="/learn/{{ course.slug }}/{{ week.slug }}/{{ k }}">{{ k }}</a>{% endif %}{% endfor %}{% endif %}</p>
-    <p class="lx-eyebrow">{% if week %}{{ week.unit_label }} {{ week.number_label }} · {% endif %}{{ doc.kind }}</p>
+        <span class="lx-crumb-sep">·</span> <a class="lx-link" href="/learn/{{ course.slug }}/{{ week.slug }}/{{ k }}">{{ kind_label(k) }}</a>{% endif %}{% endfor %}{% endif %}</p>
+
+    <p class="lx-eyebrow">{% if week %}{{ week.unit_label }} {{ week.number_label }} · {% endif %}{{ kind_label(doc.kind) }}</p>
     <h1 class="lx-h1">{{ doc.title }}</h1>
+
+    {#- Contents. Rendered only when there is enough document to be worth
+        navigating — a three-heading README does not need one. <details> because
+        the CSP forbids script; open at rest on wide screens would push the
+        document down, so it starts closed and the summary says what it is. -#}
+    {% if doc.outline and doc.outline|length >= 4 %}
+    <details class="lx-toc">
+      <summary class="lx-toc-sum">Contents<span class="lx-toc-n">{{ doc.outline|length }} sections</span></summary>
+      <ul class="lx-toclist">
+        {% for h in doc.outline %}
+        <li class="lx-toc-i lx-toc-i--h{{ h.level }}"><a class="lx-link" href="#{{ h.id }}">{{ h.text }}</a></li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+
     <article class="lx-prose">
       {{ doc.html | safe }}
     </article>
+
+    {#- Where to go next. A worksheet runs past 6000px and used to end in the
+        footer: the only route onward was to scroll all the way back to the top
+        crumb. Plain anchors, no script. -#}
+    <nav class="lx-docnav" aria-label="More in this course">
+      {% if prev_week %}
+      <a class="lx-docnav-a lx-docnav-a--prev" href="/learn/{{ course.slug }}/{{ prev_week.slug }}">
+        <span class="lx-docnav-lab">Previous</span>
+        <span class="lx-docnav-t">{{ prev_week.unit_label }} {{ prev_week.number_label }} · {{ prev_week.short_title }}</span>
+      </a>
+      {% endif %}
+      {% if next_week %}
+      <a class="lx-docnav-a lx-docnav-a--next" href="/learn/{{ course.slug }}/{{ next_week.slug }}">
+        <span class="lx-docnav-lab">Next</span>
+        <span class="lx-docnav-t">{{ next_week.unit_label }} {{ next_week.number_label }} · {{ next_week.short_title }}</span>
+      </a>
+      {% endif %}
+    </nav>
+    <p class="lx-docnav-up"><a class="lx-link" href="/learn/{{ course.slug }}/">All {{ course.unit_label|lower }}s in {{ course.title }}</a></p>
+
   </div>
 </div>
 {% endblock %}

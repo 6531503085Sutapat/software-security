@@ -12,6 +12,7 @@ representative ones.
 """
 
 import os
+import re
 import sys
 
 import pytest
@@ -159,7 +160,38 @@ def test_missing_document_is_none():
 
 def test_headings_shift_down_so_the_page_owns_h1():
     out = C.render("# Doc title\n\n## Section\n")
-    assert "<h2>Doc title</h2>" in out and "<h3>Section</h3>" in out
+    assert ">Doc title</h2>" in out and ">Section</h3>" in out
+    assert "<h1" not in out
+
+
+def test_headings_carry_stable_unique_ids():
+    """Without ids nothing inside a 17 KB worksheet is addressable: no table of
+    contents and no deep link, even though _SAFE_LINK already allows `#`."""
+    out = C.render("## Part 1 — Setup\n\n## Part 2\n\n## Part 1 — Setup\n")
+    ids = re.findall(r'<h\d id="([^"]+)"', out)
+    assert ids == ["s-part-1-setup", "s-part-2", "s-part-1-setup-2"]
+    assert len(set(ids)) == len(ids), "a repeated heading must not repeat its id"
+
+
+def test_first_heading_matching_the_title_is_dropped():
+    """The page chrome renders doc.title as the <h1>; a document whose own first
+    heading repeats it was printing the same sentence twice, back to back."""
+    md = "# Worksheet 4\n\nbody\n\n## Worksheet 4\n"
+    assert ">Worksheet 4</h2>" not in C.render(md, title="Worksheet 4")
+    # a LATER section that happens to share the wording is real content, kept
+    assert ">Worksheet 4</h3>" in C.render(md, title="Worksheet 4")
+    # and with no title given, nothing is dropped
+    assert ">Worksheet 4</h2>" in C.render(md)
+
+
+def test_slide_chrome_strip_removes_frontmatter_and_speaker_notes():
+    """Decks are Marp sources: the YAML block and the lecturer's own
+    `<!-- Cold-call: ... -->` cues were rendering as student-visible body text."""
+    md = ('---\nmarp: true\ntheme: default\n---\n\n'
+          '# Week 4\n\n<!-- Hook: promise the demo. ~2 min -->\n\nReal content.\n')
+    out = C.render(C.strip_slide_chrome(md))
+    assert "marp: true" not in out and "Hook:" not in out
+    assert "Real content." in out
 
 
 def test_fenced_code_is_verbatim():
