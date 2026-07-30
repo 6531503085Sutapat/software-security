@@ -1550,3 +1550,126 @@ body.lx-page {
   border-radius: 999px;
 }
 .host-exit:hover { color: var(--ink); border-color: var(--hair-2); }
+
+/* ==========================================================================
+   .lx-prose — the worksheet body. content.py escapes every byte before
+   recognising any markdown (its module docstring, test_content.py), so this
+   layer never touches that ordering: it only styles the HTML content.py
+   already produced. Every element here comes from a real worksheet — see
+   week01/04/05/11 — plus <img> and <iframe> for completeness (content.py:689
+   embeds a sandboxed simulation as a bare <iframe>, no wrapper class, so it
+   is styled by tag name).
+   Container capped wider than .lx-measure (900px vs 640px): a paragraph at
+   640px reads well, but a <pre> or <table> at 640px wraps code and numbers
+   that don't need to. EVERY .lx- selector here still contains .lx-, so this
+   cannot match /host or /play — same rule the rest of this layer follows.
+   ========================================================================== */
+.lx-prose { max-width: 900px; }
+.lx-prose > :first-child { margin-top: 0; }
+.lx-prose h2 {
+  margin: var(--lx-sp-7) 0 var(--lx-sp-3); color: var(--lx-ink-1);
+  font: 700 24px/32px var(--sans); letter-spacing: -.06px;
+}
+.lx-prose h3 {
+  margin: var(--lx-sp-6) 0 var(--lx-sp-2); color: var(--lx-ink-1);
+  font: 700 19px/28px var(--sans);
+}
+.lx-prose h4 {
+  margin: var(--lx-sp-5) 0 var(--lx-sp-2); color: var(--lx-ink-2);
+  font: 700 15px/22px var(--sans);
+}
+.lx-prose p { margin: 0 0 var(--lx-sp-4); font: 400 16px/26px var(--sans); color: var(--lx-ink-1); max-width: 640px; }
+.lx-prose ul, .lx-prose ol { margin: 0 0 var(--lx-sp-4); padding-left: 22px; font: 400 16px/26px var(--sans); color: var(--lx-ink-1); max-width: 640px; }
+.lx-prose li { margin-bottom: 4px; }
+.lx-prose li > ul, .lx-prose li > ol { margin: 4px 0 0; }
+.lx-prose strong { font-weight: 700; }
+.lx-prose a { color: var(--kosen-blue-deep); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.lx-prose hr { height: 1px; margin: var(--lx-sp-6) 0; border: 0; background: var(--lx-stroke); }
+.lx-prose img { max-width: 100%; height: auto; border-radius: var(--lx-r-in); border: 1px solid var(--lx-stroke); }
+.lx-prose iframe {
+  display: block; width: 100%; aspect-ratio: 4 / 3; margin: var(--lx-sp-2) 0 var(--lx-sp-4);
+  border: 1px solid var(--lx-stroke); border-radius: var(--lx-r-card);
+}
+
+/* Blockquote carries the two callouts every worksheet opens with — course
+   metadata and the ethics note — so it needs to read as important, not as a
+   quotation. Left rule, not a filled tint band: the tint band is spent once,
+   on the front door's graded region (home.html), and reusing it here would
+   spend the ONE device that works because it's rare. */
+.lx-prose blockquote {
+  margin: 0 0 var(--lx-sp-4); padding: var(--lx-sp-1) 0 var(--lx-sp-1) var(--lx-sp-4);
+  border-left: 3px solid var(--kmitl-orange); max-width: 640px;
+  font: 400 15px/24px var(--sans); color: var(--lx-ink-2);
+}
+.lx-prose blockquote p { margin: 0 0 var(--lx-sp-1); max-width: none; }
+.lx-prose blockquote p:last-child { margin-bottom: 0; }
+
+.lx-prose table {
+  width: 100%; margin: 0 0 var(--lx-sp-5); border-collapse: collapse;
+  font: 400 15px/22px var(--sans); color: var(--lx-ink-1);
+}
+.lx-prose th, .lx-prose td {
+  padding: var(--lx-sp-2) var(--lx-sp-3); text-align: left; vertical-align: top;
+  border-bottom: 1px solid var(--lx-stroke);
+}
+.lx-prose th { font-weight: 700; color: var(--lx-ink-1); border-bottom: 2px solid var(--lx-ink-1); }
+
+/* Code: a distinct surface (--lx-ground, the same warm tint used for the
+   graded band and the catalogue background) so it reads as literal input
+   inside a page that is otherwise all body text. overflow-x is load-bearing
+   — several worksheets' bash blocks run past 900px unwrapped. */
+.lx-prose pre {
+  margin: 0 0 var(--lx-sp-4); padding: var(--lx-sp-3); overflow-x: auto;
+  background: var(--lx-ground); border-radius: var(--lx-r-in);
+  font: 400 13.5px/20px var(--mono); color: var(--lx-ink-1);
+}
+.lx-prose pre code { padding: 0; background: none; border: 0; }
+.lx-prose code {
+  padding: 1px 5px; background: var(--lx-ground); border-radius: var(--lx-r-sm);
+  font: 400 13.5px/1 var(--mono); color: var(--lx-ink-1);
+}
+
+/* ==========================================================================
+   .lx-form — the single-column code-entry / sign-in shape shared by login,
+   register, the quiz/submit access-code screens and the quiz question form.
+   Deliberately small: submit_work.html's file-upload + inline-delete + note
+   page needs more than this covers and stays on the pre-redesign shell for
+   now (see labs/live-quiz's own commit history, not this file, for why).
+   ========================================================================== */
+.lx-form { max-width: 440px; }
+/* .lx-lead's own rule is top-margin-only — built for the hero pattern, where
+   .lx-facts supplies the gap below it. A form has no .lx-facts, so the field
+   that follows needs its own breathing room here instead. */
+.lx-form > .lx-lead { margin-bottom: var(--lx-sp-4); }
+.lx-field { margin: 0 0 var(--lx-sp-4); }
+.lx-label {
+  display: block; margin: 0 0 6px; font: 600 14px/20px var(--sans); color: var(--lx-ink-1);
+}
+.lx-input, .lx-textarea {
+  display: block; width: 100%; padding: 10px var(--lx-sp-3);
+  border: 1px solid var(--lx-stroke); border-radius: var(--lx-r-in);
+  background: var(--lx-surface); color: var(--lx-ink-1);
+  font: 400 16px/24px var(--sans);
+}
+.lx-input:focus, .lx-textarea:focus { outline: 2px solid var(--kosen-blue-deep); outline-offset: 1px; }
+.lx-textarea { resize: vertical; }
+.lx-opt {
+  display: flex; align-items: flex-start; gap: var(--lx-sp-2);
+  padding: var(--lx-sp-2) var(--lx-sp-3); margin-bottom: var(--lx-sp-2);
+  border: 1px solid var(--lx-stroke); border-radius: var(--lx-r-in);
+  font: 400 16px/24px var(--sans); color: var(--lx-ink-1);
+}
+.lx-opt:has(input:checked) { border-color: var(--kosen-blue-deep); background: #F3F8FC; }
+.lx-hint { margin: var(--lx-sp-4) 0 0; font: 400 14px/20px var(--sans); color: var(--lx-ink-3); }
+.lx-err {
+  margin: 0 0 var(--lx-sp-4); padding: var(--lx-sp-2) var(--lx-sp-3);
+  border: 1px solid #E8B4A6; border-radius: var(--lx-r-in);
+  background: #FDF0EC; color: #7A2A0F;
+  font: 600 14px/20px var(--sans);
+}
+.lx-btn {
+  display: inline-block; padding: 10px var(--lx-sp-5); border: 0; border-radius: var(--lx-r-in);
+  background: var(--kosen-blue-deep); color: #fff;                 /* 7.1:1 */
+  font: 700 15px/20px var(--sans); text-decoration: none; cursor: pointer;
+}
+.lx-btn:hover { background: #014a78; }

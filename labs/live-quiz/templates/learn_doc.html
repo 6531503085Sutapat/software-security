@@ -1,16 +1,32 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ doc.title }} — KOSEN·KMITL</title><link rel="stylesheet" href="/static/style.css"></head>
-<body><div class="pwrap"><section class="pjoin doc">
-  <div class="mark"><div class="sub">
-    {%- if week %}{{ week.unit_label }} {{ week.number_label }} · {% endif %}{{ doc.kind }}</div></div>
-  <article class="join-card prose">
-    <h1>{{ doc.title }}</h1>
-    <p class="lead"><a href="/learn/{{ course.slug }}/">← all {{ course.unit_label|lower }}s</a>
+{% extends "base.html" %}
+{#- ===========================================================================
+    learn_doc.html — one document: a worksheet, README, exam paper or CTF
+    brief. The page students spend the most time on, and until now the only
+    one still on the pre-redesign shell — reachable only by clicking through
+    the new home page and course index, so the product visibly changed
+    underfoot one click in.
+
+    content.py escapes every byte before recognising any markdown — see its
+    module docstring and test_content.py — so `doc.html | safe` below is
+    inert by construction. THIS TEMPLATE CHANGE DOES NOT TOUCH THAT ORDERING;
+    it only re-skins the chrome around the same server-rendered HTML. The
+    route (routes_content.py) keeps its own script-free CSP regardless of
+    which shell renders it.
+=========================================================================== -#}
+
+{% block title %}{{ doc.title }} — KOSEN·KMITL{% endblock %}
+
+{% block main %}
+<div class="lx-ground">
+  <div class="lx-wrap">
+    <p class="lx-crumb"><a class="lx-link" href="/learn/{{ course.slug }}/">← all {{ course.unit_label|lower }}s</a>
       {%- if week %}{% for k in week.available %}{% if k != doc.kind %}
-        · <a href="/learn/{{ course.slug }}/{{ week.slug }}/{{ k }}">{{ k }}</a>{% endif %}{% endfor %}{% endif %}</p>
-    {# content.py escapes every byte before recognising any markdown, so this is
-       inert by construction — see its module docstring and test_content.py.
-       The route also sets a script-free CSP. #}
-    {{ doc.html | safe }}
-  </article></section></div></body></html>
+        · <a class="lx-link" href="/learn/{{ course.slug }}/{{ week.slug }}/{{ k }}">{{ k }}</a>{% endif %}{% endfor %}{% endif %}</p>
+    <p class="lx-eyebrow">{% if week %}{{ week.unit_label }} {{ week.number_label }} · {% endif %}{{ doc.kind }}</p>
+    <h1 class="lx-h1">{{ doc.title }}</h1>
+    <article class="lx-prose">
+      {{ doc.html | safe }}
+    </article>
+  </div>
+</div>
+{% endblock %}

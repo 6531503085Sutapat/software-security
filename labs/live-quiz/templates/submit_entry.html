@@ -1,17 +1,20 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Submit your work — KOSEN·KMITL</title><link rel="stylesheet" href="/static/style.css"></head>
-<body><div class="pwrap"><section class="pjoin">
-  <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
-    <div class="sub">Submit your work</div></div>
-  <form class="join-card" method="post" action="/submit"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
-    <h1>Enter your code</h1>
-    <p class="lead">Use the submission code on your slip. You can come back with the
-      same code until the deadline.</p>
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    {% if error %}<div class="join-err">{{ error }}</div>{% endif %}
-    <div class="field"><label for="code">Submission code</label>
-      <input id="code" name="code" autocomplete="off" autocapitalize="characters"
-             spellcheck="false" maxlength="16" required></div>
-    <button class="btn blue" type="submit">Open ▸</button>
-  </form></section></div></body></html>
+{% extends "base.html" %}
+{% block title %}Submit your work — KOSEN·KMITL{% endblock %}
+{% block main %}
+<div class="lx-ground">
+  <div class="lx-wrap">
+    <form class="lx-form" method="post" action="/submit"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+      <p class="lx-eyebrow">Submit your work</p>
+      <h1 class="lx-h1">Enter your code</h1>
+      <p class="lx-lead">Use the submission code on your slip. You can come back with the
+        same code until the deadline.</p>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {% if error %}<div class="lx-err">{{ error }}</div>{% endif %}
+      <div class="lx-field"><label class="lx-label" for="code">Submission code</label>
+        <input class="lx-input" id="code" name="code" autocomplete="off" autocapitalize="characters"
+               spellcheck="false" maxlength="16" required></div>
+      <button class="lx-btn" type="submit">Open ▸</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
