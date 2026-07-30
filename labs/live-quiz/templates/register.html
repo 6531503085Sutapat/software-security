@@ -1,23 +1,23 @@
 {% extends "base.html" %}
 {#- Same CSRF note as login.html: Flask/Jinja2, not Django; CSRF is this
     project's own hidden-field mechanism verified by auth.csrf_ok(). -#}
-{% block title %}Register — KOSEN·KMITL Live Quiz{% endblock %}
+{% block title %}Register — KOSEN·KMITL{% endblock %}
 {% block main %}
 <div class="lx-ground">
   <div class="lx-wrap">
     <form class="lx-form" method="post" action="/register"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
-      <p class="lx-eyebrow">Live Quiz · Teacher registration</p>
+      <p class="lx-eyebrow">KOSEN·KMITL · Teaching staff</p>
       <h1 class="lx-h1">Register</h1>
       <p class="lx-lead">Create a teacher account with the invite code your coordinator gave you.</p>
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      {% if error %}<div class="lx-err">{{ error }}</div>{% endif %}
+      {% if error %}<div class="lx-err" id="form-error" role="alert">{{ error }}</div>{% endif %}
       <div class="lx-field"><label class="lx-label" for="username">Username</label>
         <input class="lx-input" id="username" name="username" autocomplete="username"></div>
       <div class="lx-field"><label class="lx-label" for="password">Password</label>
         <input class="lx-input" id="password" name="password" type="password" autocomplete="new-password"></div>
       <div class="lx-field"><label class="lx-label" for="invite">Invite code</label>
         <input class="lx-input" id="invite" name="invite" autocomplete="off"></div>
-      <button class="lx-btn" type="submit">Create account ▸</button>
+      <button class="lx-btn" type="submit">Create account<span aria-hidden="true"> ▸</span></button>
       <p class="lx-hint">Already have an account? <a class="lx-link" href="/login">Sign in</a>.</p>
     </form>
   </div>

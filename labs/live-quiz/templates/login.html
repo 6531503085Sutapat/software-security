@@ -6,21 +6,21 @@
     tests/test_auth.py, test_auth_routes.py). Route sets no CSP header today
     (a pre-existing gap shared with /, /play, /host — not introduced here),
     so this form works exactly as it did on the old shell. -#}
-{% block title %}Sign in — KOSEN·KMITL Live Quiz{% endblock %}
+{% block title %}Sign in — KOSEN·KMITL{% endblock %}
 {% block main %}
 <div class="lx-ground">
   <div class="lx-wrap">
     <form class="lx-form" method="post" action="/login"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
-      <p class="lx-eyebrow">Live Quiz · Teacher sign-in</p>
+      <p class="lx-eyebrow">KOSEN·KMITL · Teaching staff</p>
       <h1 class="lx-h1">Sign in</h1>
       <p class="lx-lead">Sign in to build question sets and run live games.</p>
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      {% if error %}<div class="lx-err">{{ error }}</div>{% endif %}
+      {% if error %}<div class="lx-err" id="form-error" role="alert">{{ error }}</div>{% endif %}
       <div class="lx-field"><label class="lx-label" for="username">Username</label>
         <input class="lx-input" id="username" name="username" autocomplete="username"></div>
       <div class="lx-field"><label class="lx-label" for="password">Password</label>
         <input class="lx-input" id="password" name="password" type="password" autocomplete="current-password"></div>
-      <button class="lx-btn" type="submit">Sign in ▸</button>
+      <button class="lx-btn" type="submit">Sign in<span aria-hidden="true"> ▸</span></button>
       <p class="lx-hint">New teacher? <a class="lx-link" href="/register">Register with your invite code</a>.</p>
     </form>
   </div>

@@ -358,6 +358,32 @@ PUBLIC_FILES = {
 # a binary the renderer can't make inert, and the markdown is the source anyway).
 SLIDES_DIR = "slides"
 
+# Human labels for the document kinds. Lives here, not in a template, because
+# BOTH the course index and the reading page print them: while it was a Jinja
+# `set` inside learn_index.html the reading page had no access and printed raw
+# slugs instead, so the same document was "Lecture slides" on one page and
+# "slides" on the next click. The fallback de-hyphenates and capitalises, so a
+# kind added to PUBLIC_FILES can never render as a bare slug.
+KIND_LABELS = {
+    "worksheet": "Worksheet",
+    "readme": "Overview",
+    "slides": "Lecture slides",
+    "mock-ctf": "Mock CTF",
+    "exam": "Exam paper",
+    "ctf": "CTF brief",
+    "scrimmage": "Scrimmage",
+    "attack": "Attack notes",
+    "harden": "Hardening notes",
+    "dependency-confusion": "Supply-chain notes",
+    "template": "Template to fill in",
+    "pipeline": "Pipeline guide",
+    "guide": "Course guide",
+}
+
+
+def kind_label(kind: str) -> str:
+    return KIND_LABELS.get(kind) or (kind or "").replace("-", " ").capitalize()
+
 # Interactive simulations a worksheet may embed, by slug. An ALLOWLIST, because
 # this is the one construct in the whole renderer that produces an <iframe> —
 # a slug that isn't here renders as an ordinary code block, so a typo or a
@@ -375,6 +401,32 @@ SIMS = {
     "trust-boundary": "Trust boundaries & threat chaining (Week 1)",
     "sqli-parse": "How concatenation changes the SQL parse tree (Week 4)",
 }
+
+# Which unit each simulation belongs to. /sim's own copy says "each one is
+# embedded in the worksheet it belongs to" and its titles even name the week,
+# but nothing linked there — the page was a dead end reachable from the global
+# nav on every page. Kept as its own table rather than folded into SIMS so the
+# allowlist above stays a plain slug->title map, which is what the renderer and
+# the route both read.
+SIM_SOURCE = {
+    "trust-boundary": ("software-security", "week01-threat-modeling"),
+    "sqli-parse": ("software-security", "week04-injection"),
+}
+
+
+def sim_entries() -> list[dict]:
+    """The simulations, each with the unit it illustrates (when that unit is
+    actually published in a configured course — otherwise the link is omitted
+    rather than pointed at a 404)."""
+    out = []
+    for slug in sorted(SIMS):
+        course_slug, week = SIM_SOURCE.get(slug, (None, None))
+        href = None
+        if course_slug and course(course_slug) is not None:
+            if any(w["slug"] == week for w in list_weeks(course_slug)):
+                href = f"/learn/{course_slug}/{week}"
+        out.append({"slug": slug, "title": SIMS[slug], "week_href": href})
+    return out
 
 
 def list_weeks(course_slug: str | None = None) -> list[dict]:
@@ -526,15 +578,36 @@ def primary_kind(slug: str, course_slug: str | None = None) -> str | None:
     return week["primary"] if week else None
 
 
+def _slurp(path: str) -> str | None:
+    """Read a file, or None if it cannot be read.
+
+    An UNREADABLE file is treated exactly like a missing one. Production served
+    a 500 with a stack trace for two weeks because one course file had been
+    rsync'd with mode 0600: `git` tracks only the exec bit, so nothing in the
+    repo, the diff or CI could show it, and the container's non-root user simply
+    could not open it. A wrong file mode is a deployment defect, not a reason to
+    hand a student a traceback — it now 404s like any other absent document, and
+    readiness_check.py probes the linked kinds so the defect is still caught
+    loudly at deploy time rather than silently in class.
+    """
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            return fh.read()
+    except OSError:
+        return None
+
+
 def _title_of(path: str) -> str | None:
     """First `# heading` — the document's own title, not one we invent."""
     if not os.path.isfile(path):
         return None
-    with open(path, encoding="utf-8", errors="replace") as fh:
-        for line in fh:
-            m = re.match(r"^#\s+(.+)", line.strip())
-            if m:
-                return m.group(1).strip()
+    md = _slurp(path)
+    if md is None:
+        return None
+    for line in md.splitlines():
+        m = re.match(r"^#\s+(.+)", line.strip())
+        if m:
+            return m.group(1).strip()
     return None
 
 
@@ -577,8 +650,7 @@ def read(slug: str, kind: str, course_slug: str | None = None) -> str | None:
         p = _slides_path(m.group(1), course_slug) if m else None
         if p is None:
             return None
-        with open(p, encoding="utf-8", errors="replace") as fh:
-            return fh.read()
+        return _slurp(p)
     if kind not in PUBLIC_FILES:
         return None
     root = os.path.realpath(base_root)
@@ -587,8 +659,80 @@ def read(slug: str, kind: str, course_slug: str | None = None) -> str | None:
         return None
     if not os.path.isfile(path):
         return None
-    with open(path, encoding="utf-8", errors="replace") as fh:
-        return fh.read()
+    return _slurp(path)
+
+
+# ── course-root documents ───────────────────────────────────────────────────
+# Documents that live ABOVE the course root (the repo root, next to labs/) and
+# are referenced by worksheets through repo-relative markdown links. Thirteen
+# worksheets link `../../SUBMISSION.md` — the hand-in instructions — and until
+# this existed every one of those links 404'd, because the content plane served
+# week directories and nothing else.
+#
+# An ALLOWLIST keyed by the exact repo-relative path, exactly like PUBLIC_FILES.
+# The value is the URL segment. Nothing here is ever derived from a request:
+# a name reaches the filesystem only after matching this table, so the fact that
+# these paths escape the course root cannot become a traversal primitive.
+# Instructor material never appears here and could not: instructor/ is
+# git-ignored and .dockerignore's allowlist keeps it out of the image entirely.
+COURSE_DOCS = {
+    "SUBMISSION.md": "submission",
+    "ETHICS.md": "ethics",
+    "project/README.md": "project",
+    "project/REPORT-TEMPLATE.md": "project-report",
+    "project/starter-app/README.md": "project-starter-app",
+    "quizzes/quiz1.md": "quiz1",
+    "quizzes/quiz2.md": "quiz2",
+    "quizzes/README.md": "quizzes",
+}
+_DOC_BY_NAME = {v: k for k, v in COURSE_DOCS.items()}
+
+
+def _course_doc_path(name: str, course_slug: str | None = None) -> str | None:
+    """Absolute path of an allowlisted course-root document, or None.
+
+    `name` is matched against the allowlist BEFORE any path join, and the result
+    is containment-checked against the repo root the same way read() checks the
+    course root — belt and braces, since the lookup already makes traversal
+    impossible.
+    """
+    rel = _DOC_BY_NAME.get(name or "")
+    if rel is None:
+        return None
+    c = course(course_slug)
+    if c is None:
+        return None
+    repo_root = os.path.realpath(os.path.dirname(os.path.realpath(c["root"])))
+    p = os.path.realpath(os.path.join(repo_root, rel))
+    if not p.startswith(repo_root + os.sep):
+        return None
+    return p if os.path.isfile(p) else None
+
+
+def list_course_docs(course_slug: str | None = None) -> list[dict]:
+    """The allowlisted course-root documents this course actually ships."""
+    out = []
+    for rel, name in COURSE_DOCS.items():
+        p = _course_doc_path(name, course_slug)
+        if p:
+            out.append({"name": name, "title": _title_of(p) or rel, "rel": rel})
+    return out
+
+
+def render_course_doc(name: str, course_slug: str | None = None) -> dict | None:
+    p = _course_doc_path(name, course_slug)
+    if p is None:
+        return None
+    md = _slurp(p)
+    if md is None:
+        return None
+    c = course(course_slug)
+    title = _title_of(p) or _DOC_BY_NAME[name]
+    body = render(md, title=title,
+                  ctx={"course": c["slug"], "dir": os.path.dirname(p)})
+    return {"name": name, "kind": "guide", "title": title, "html": body,
+            "outline": outline(body),
+            "course": c["slug"], "course_title": c["title"]}
 
 
 # --- rendering -------------------------------------------------------------
@@ -612,7 +756,58 @@ _TABLE_SEP = re.compile(r"^\s*\|?[\s:|-]+\|[\s:|-]*$")
 _SAFE_LINK = re.compile(r"^(https?://|mailto:|/|\#|\./|\.\./)", re.I)
 
 
-def _inline(escaped: str) -> str:
+def _resolve_repo_link(href: str, ctx: dict | None) -> str | None:
+    """Map a repo-relative markdown link onto the URL that serves it, or None.
+
+    Worksheets are written to be read in a git checkout, so they link their
+    siblings the way files do: `../../SUBMISSION.md`, `../week16-capstone/
+    worksheet.md`. Rendered verbatim those become browser-relative URLs that
+    resolve against /learn/... and 404 — which is what 47 of 124 document pages
+    were doing, including the hand-in instructions linked from thirteen
+    worksheets.
+
+    Resolution is by FILESYSTEM IDENTITY, not string munging: the href is joined
+    onto the document's own directory and the result is compared against paths
+    this app already serves. Anything that does not land on a servable document
+    returns None and the caller renders it as plain text, so a link can never be
+    invented for a file the content plane would refuse to serve.
+    """
+    if ctx is None or not href or "://" in href:
+        return None
+    target = html.unescape(href).split("#", 1)[0].split("?", 1)[0]
+    if not target.endswith(".md") or target.startswith("/"):
+        return None
+    c = course(ctx.get("course"))
+    if c is None:
+        return None
+    try:
+        p = os.path.realpath(os.path.join(ctx["dir"], target))
+    except (OSError, ValueError, KeyError):
+        return None
+    if not os.path.isfile(p):
+        return None
+
+    root = os.path.realpath(c["root"])
+    # inside the course root -> a week's own public document
+    if p.startswith(root + os.sep):
+        rel = os.path.relpath(p, root).split(os.sep)
+        if len(rel) == 2:
+            week, fname = rel
+            for k, v in PUBLIC_FILES.items():
+                if v == fname and unit_re(c.get("unit", "week")).match(week):
+                    return f"/learn/{c['slug']}/{week}/{k}"
+        return None
+    # above it -> an allowlisted course-root document
+    repo_root = os.path.realpath(os.path.dirname(root))
+    if p.startswith(repo_root + os.sep):
+        rel = os.path.relpath(p, repo_root).replace(os.sep, "/")
+        name = COURSE_DOCS.get(rel)
+        if name:
+            return f"/learn/{c['slug']}/doc/{name}"
+    return None
+
+
+def _inline(escaped: str, ctx: dict | None = None) -> str:
     """Inline constructs, applied to text that is ALREADY html-escaped.
 
     Order matters: code spans first, so a payload inside backticks (which is how
@@ -620,22 +815,36 @@ def _inline(escaped: str) -> str:
     """
     parts, last = [], 0
     for m in _INLINE_CODE.finditer(escaped):
-        parts.append((_fmt(escaped[last:m.start()]), None))
+        parts.append((_fmt(escaped[last:m.start()], ctx), None))
         parts.append((m.group(1), "code"))
         last = m.end()
-    parts.append((_fmt(escaped[last:]), None))
+    parts.append((_fmt(escaped[last:], ctx), None))
     return "".join(f"<code>{t}</code>" if k else t for t, k in parts)
 
 
-def _fmt(s: str) -> str:
+def _fmt(s: str, ctx: dict | None = None) -> str:
     s = _BOLD.sub(r"<strong>\1</strong>", s)
     s = _ITALIC.sub(r"<em>\1</em>", s)
 
     def link(m):
         text, href = m.group(1), m.group(2)
+        # A repo-relative .md link is rewritten to the URL that serves the same
+        # document. Done BEFORE the scheme test, because the rewritten value is
+        # always a site-absolute path and so always passes it.
+        resolved = _resolve_repo_link(href, ctx)
+        if resolved:
+            href = resolved
         # href is already escaped; unescape only to test the scheme, never to emit.
-        if not _SAFE_LINK.match(html.unescape(href)):
+        elif not _SAFE_LINK.match(html.unescape(href)):
             return f"{text} ({href})"      # shown, not clickable
+        elif ctx and href.endswith(".md") and href.startswith(("./", "../")):
+            # A repo-relative .md that resolution just declined: the file is
+            # absent, or present but not something this plane serves. It used to
+            # render as a link straight to a 404; show the path as text instead,
+            # which is honest about there being nothing to open.
+            # Guarded on `ctx` because without it nothing was ever resolved —
+            # a caller rendering a bare string gets the old behaviour untouched.
+            return f"{text} ({href})"
         # Quotes MUST be escaped here even though the document-wide escape used
         # quote=False. This is the one place content lands inside an attribute,
         # and `[x](https://a"onmouseover="alert(1))` contains no whitespace, so it
@@ -646,12 +855,76 @@ def _fmt(s: str) -> str:
     return _LINK.sub(link, s)
 
 
-def render(md: str) -> str:
-    """Markdown → HTML, with every byte escaped before anything is recognised."""
+_TAGS = re.compile(r"<[^>]+>")
+_NONWORD = re.compile(r"[^a-z0-9]+")
+_H_OUT = re.compile(r'<h([23]) id="([^"]+)">(.*?)</h\1>', re.S)
+
+
+def outline(rendered_html: str) -> list[dict]:
+    """The h2/h3 headings of an already-rendered document, for a table of
+    contents. Scans OUR OWN output — every id and every tag in it was emitted by
+    render() a moment earlier — so this is not HTML parsing of untrusted input.
+    Text is flattened to plain text: it lands in link text, never in markup.
+    """
+    return [{"level": int(lvl), "id": hid,
+             "text": html.unescape(_TAGS.sub("", body)).strip()}
+            for lvl, hid, body in _H_OUT.findall(rendered_html or "")]
+
+
+def _slug_id(text_html: str, used: set) -> str:
+    """A stable, unique #fragment for a heading.
+
+    Headings carried no id at all, so nothing inside a 17 KB worksheet was
+    addressable: no table of contents, no deep link, and _SAFE_LINK's allowance
+    for `#` fragments could never resolve to anything.
+    """
+    base = _NONWORD.sub("-", html.unescape(_TAGS.sub("", text_html)).lower()).strip("-")
+    base = ("s-" + base)[:60].rstrip("-") or "s"
+    out, n = base, 2
+    while out in used:
+        out, n = f"{base}-{n}", n + 1
+    used.add(out)
+    return out
+
+
+_FRONTMATTER = re.compile(r"\A---\r?\n.*?\r?\n---\r?\n", re.S)
+_MD_COMMENT = re.compile(r"<!--.*?-->", re.S)
+
+
+def strip_slide_chrome(md: str) -> str:
+    """Remove Marp frontmatter and speaker notes from a lecture deck.
+
+    Decks are Marp sources: a YAML frontmatter block, then `<!-- ... -->`
+    comments that are the LECTURER'S OWN CUES ("Hook: ...", "Cold-call: ..."),
+    then `---` slide breaks. Served through the generic renderer they came out
+    as student-visible body text — the frontmatter as the opening paragraph and
+    every private teaching note as prose, on all 31 published decks.
+
+    Applied to the SOURCE, before escaping: these are markdown-level constructs,
+    and stripping them here means the escape-then-parse ordering downstream is
+    untouched. Anything not removed here is still escaped as usual, so a deck
+    that omits either construct renders exactly as before.
+    """
+    md = _FRONTMATTER.sub("", md, count=1)
+    return _MD_COMMENT.sub("", md)
+
+
+def render(md: str, title: str | None = None, ctx: dict | None = None) -> str:
+    """Markdown → HTML, with every byte escaped before anything is recognised.
+
+    `title`, when given, suppresses the document's own first heading if it
+    repeats it — the page chrome already prints the title as its <h1>, and every
+    worksheet was announcing itself twice in a row.
+    `ctx` ({"course": slug, "dir": abs dir of the source file}) lets
+    repo-relative markdown links resolve to the URLs that serve them.
+    """
     lines = html.escape(md, quote=False).replace("&#x27;", "'").splitlines()
     out: list[str] = []
     i, n = 0, len(lines)
     list_stack: list[str] = []
+    used_ids: set = set()
+    want_title = (title or "").strip()
+    seen_heading = False
 
     def close_lists():
         while list_stack:
@@ -712,8 +985,21 @@ def render(md: str) -> str:
         h = _HEADING.match(line)
         if h:
             close_lists()
+            raw = h.group(2).strip()
+            # The document's own title, repeated as its first heading, is
+            # dropped: the page chrome already renders it as the <h1> directly
+            # above, so every worksheet opened with the same sentence twice.
+            # Only the FIRST heading is eligible — a later section that happens
+            # to share the title's wording is real content and stays.
+            if (not seen_heading and want_title
+                    and html.unescape(raw).strip() == want_title):
+                seen_heading = True
+                i += 1
+                continue
+            seen_heading = True
             lvl = min(len(h.group(1)) + 1, 6)   # shift down: page owns <h1>
-            out.append(f"<h{lvl}>{_inline(h.group(2).strip())}</h{lvl}>")
+            body = _inline(raw, ctx)
+            out.append(f'<h{lvl} id="{_slug_id(body, used_ids)}">{body}</h{lvl}>')
             i += 1
             continue
 
@@ -724,7 +1010,7 @@ def render(md: str) -> str:
             while i < n and _QUOTE.match(lines[i]):
                 body.append(_QUOTE.match(lines[i]).group(1))
                 i += 1
-            out.append(f"<blockquote><p>{_inline(' '.join(body))}</p></blockquote>")
+            out.append(f"<blockquote><p>{_inline(' '.join(body), ctx)}</p></blockquote>")
             continue
 
         # table: a header row followed by a |---|---| separator
@@ -738,8 +1024,8 @@ def render(md: str) -> str:
             while i < n and "|" in lines[i] and lines[i].strip():
                 rows.append(cells(lines[i]))
                 i += 1
-            th = "".join(f"<th>{_inline(c)}</th>" for c in head)
-            tb = "".join("<tr>" + "".join(f"<td>{_inline(c)}</td>" for c in r) + "</tr>"
+            th = "".join(f"<th>{_inline(c, ctx)}</th>" for c in head)
+            tb = "".join("<tr>" + "".join(f"<td>{_inline(c, ctx)}</td>" for c in r) + "</tr>"
                          for r in rows)
             out.append(f"<table><thead><tr>{th}</tr></thead><tbody>{tb}</tbody></table>")
             continue
@@ -751,7 +1037,7 @@ def render(md: str) -> str:
                 close_lists()
                 list_stack.append(want)
                 out.append(f"<{want}>")
-            out.append(f"<li>{_inline(m.group(1))}</li>")
+            out.append(f"<li>{_inline(m.group(1), ctx)}</li>")
             i += 1
             continue
 
@@ -763,7 +1049,7 @@ def render(md: str) -> str:
                 _QUOTE.match(lines[i]) or lines[i].lstrip().startswith("```")):
             para.append(lines[i].strip())
             i += 1
-        out.append(f"<p>{_inline(' '.join(para))}</p>")
+        out.append(f"<p>{_inline(' '.join(para), ctx)}</p>")
 
     close_lists()
     return "\n".join(out)
@@ -776,9 +1062,17 @@ def render_document(slug: str, kind: str, course_slug: str | None = None) -> dic
     c = course(course_slug)
     if kind == "slides":
         _m = unit_re(c.get("unit", "week")).match(slug)
-        title = (_title_of(_slides_path(_m.group(1), course_slug)) if _m else None) \
-            or f"Slides — {slug}"
+        _p = _slides_path(_m.group(1), course_slug) if _m else None
+        title = (_title_of(_p) if _p else None) or f"Slides — {slug}"
+        # A deck is a Marp source, not prose: drop the frontmatter and the
+        # lecturer's own speaker notes before anything else looks at it.
+        md = strip_slide_chrome(md)
+        src_dir = os.path.dirname(_p) if _p else os.path.realpath(c["root"])
     else:
-        title = _title_of(os.path.join(c["root"], slug, PUBLIC_FILES[kind])) or slug
-    return {"slug": slug, "kind": kind, "title": title, "html": render(md),
+        src = os.path.join(c["root"], slug, PUBLIC_FILES[kind])
+        title = _title_of(src) or slug
+        src_dir = os.path.dirname(os.path.realpath(src))
+    body = render(md, title=title, ctx={"course": c["slug"], "dir": src_dir})
+    return {"slug": slug, "kind": kind, "title": title, "html": body,
+            "outline": outline(body),
             "course": c["slug"], "course_title": c["title"]}

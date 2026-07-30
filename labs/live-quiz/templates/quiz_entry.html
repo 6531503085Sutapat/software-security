@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {#- CSRF is this project's own hidden-field mechanism, verified by
     auth.csrf_ok(); the Django rule below does not apply to a Flask/Jinja2 app. -#}
+{% set section = 'quiz' %}
 {% block title %}Weekly quiz — KOSEN·KMITL{% endblock %}
 {% block main %}
 <div class="lx-ground">
@@ -10,11 +11,11 @@
       <h1 class="lx-h1">Enter your code</h1>
       <p class="lx-lead">Use the code on your slip. It works once, for you only.</p>
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      {% if error %}<div class="lx-err">{{ error }}</div>{% endif %}
+      {% if error %}<div class="lx-err" id="form-error" role="alert">{{ error }}</div>{% endif %}
       <div class="lx-field"><label class="lx-label" for="code">Access code</label>
-        <input class="lx-input" id="code" name="code" autocomplete="off" autocapitalize="characters"
+        <input class="lx-input" id="code" name="code"{% if error %} aria-invalid="true" aria-describedby="form-error"{% endif %} autocomplete="off" autocapitalize="characters"
                spellcheck="false" maxlength="16" required></div>
-      <button class="lx-btn" type="submit">Start ▸</button>
+      <button class="lx-btn" type="submit">Start<span aria-hidden="true"> ▸</span></button>
       <p class="lx-hint">Once you start, you cannot go back to a previous question.</p>
     </form>
   </div>
