@@ -8,8 +8,9 @@
 
   <div class="join-card">
     <h1>{% if one %}{{ courses[0].title }}{% else %}Your courses{% endif %}</h1>
-    <p class="lead">Everything for this course lives here. Nothing below needs an
-      account — the graded parts use the one-time code on your slip.</p>
+    <p class="lead">Everything for {% if one %}this course{% else %}these courses{% endif %}
+      lives here. Nothing below needs an account — the graded parts use the
+      one-time code your teacher hands you on paper, in class.</p>
 
     {# ── Read anything, any time ─────────────────────────────────────────── #}
     <div class="home-sec">
@@ -19,8 +20,14 @@
           <li class="home-item"><a href="/learn/{{ c.slug }}/">
             <b>{% if one %}Course material{% else %}{{ c.title }}{% endif %}</b>
             <span class="need free">open</span>
-            <span class="what">{{ c.week_count }} week{{ '' if c.week_count == 1 else 's' }} —
-              worksheets, lab guides, slides and exam papers</span></a></li>
+            {# unit_label, not a hardcoded "week": the cloud course is organised in
+               LESSONS, and its numbering is irregular (1-3, 7b). Saying "10 weeks"
+               to a student whose syllabus says "Lesson 4" is a small lie that makes
+               them doubt they are in the right place.
+               And not "19 weeks — worksheets, ...": only 13 of 19 carry a worksheet,
+               the rest are exam papers and CTF briefs. #}
+            <span class="what">{{ c.week_count }} {{ c.unit_label|lower }}{{ '' if c.week_count == 1 else 's' }}
+              — every document, from worksheets to the exam papers</span></a></li>
         {% endfor %}
         <li class="home-item"><a href="/sim">
           <b>Interactive simulations</b>
