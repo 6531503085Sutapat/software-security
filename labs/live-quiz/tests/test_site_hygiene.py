@@ -245,3 +245,28 @@ def test_slides_do_not_leak_frontmatter_or_speaker_notes():
                 f"{w['slug']} leaks a speaker note"
             checked += 1
     assert checked, "no decks found — this test would pass vacuously"
+
+
+# ── the site must not publish URLs a client can choose ─────────────────────
+
+def test_self_referential_urls_ignore_a_forged_host_header(monkeypatch):
+    """The sitemap's <loc>, the canonical link and og:url are absolute URLs the
+    site publishes ABOUT ITSELF. Derived from request.url_root they come from
+    the Host header, so a forged one makes this app hand a crawler, a
+    link-preview fetcher or a shared cache URLs on someone else's domain.
+    """
+    import app as appmod
+    monkeypatch.setattr(appmod, "SITE_ORIGIN", "https://learn.example")
+    flask_app.config["TESTING"] = True
+    c = flask_app.test_client()
+
+    sm = c.get("/sitemap.xml", headers={"Host": "evil.example"}).data.decode()
+    assert "evil.example" not in sm
+    assert "<loc>https://learn.example/" in sm
+
+    page = c.get("/learn", headers={"Host": "evil.example"}).data.decode()
+    assert "evil.example" not in page
+    assert 'rel="canonical" href="https://learn.example/learn"' in page
+
+    rb = c.get("/robots.txt", headers={"Host": "evil.example"}).data.decode()
+    assert "evil.example" not in rb

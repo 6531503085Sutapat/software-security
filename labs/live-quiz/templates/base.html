@@ -70,12 +70,15 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="{{ self.title() | trim }}">
 <meta property="og:description" content="{{ _desc }}">
-<meta property="og:url" content="{{ request.base_url }}">
-<meta property="og:image" content="{{ request.url_root.rstrip('/') }}/static/og-card.png">
+<meta property="og:url" content="{{ site_origin }}{{ request.path }}">
+<meta property="og:image" content="{{ site_origin }}/static/og-card.png">
 <meta name="twitter:card" content="summary_large_image">
 {#- One canonical form per document. /learn/x and /learn/x/ both answer 200,
-    so without this they are two URLs for one page to every crawler. -#}
-<link rel="canonical" href="{{ request.base_url }}">
+    so without this they are two URLs for one page to every crawler.
+    Built from site_origin(), NOT request.base_url: the latter is derived from
+    the client's Host header, so a forged one would make this page declare a
+    canonical URL on someone else's domain. -#}
+<link rel="canonical" href="{{ site_origin }}{{ request.path }}">
 <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
 <link rel="alternate icon" href="/static/favicon.png" sizes="32x32">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
