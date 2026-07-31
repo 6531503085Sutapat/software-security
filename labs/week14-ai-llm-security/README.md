@@ -5,7 +5,7 @@
 ## ✅ This week — what to do
 1. **Before class** — Docker Desktop working (Week 1 *Lab 0*); skim last week's recap.
 2. **Lecture (120 min)** — weekly quiz first (~10 min), then the lecture. Slides: `slides/week14.md`.
-3. **Lab (180 min)** — play this week's game, then complete **Worksheet 14** (`worksheet.md`, Parts 1–4, incl. *Audit the AI* + *EiPE/Prompt*). Kickoff: `docker compose up → :6000 (insecure) / :6001 (guarded)`.
+3. **Lab (180 min)** — play this week's game, then complete **Worksheet 14** (`worksheet.md`, Parts 1–4, incl. *Audit the AI* + *EiPE/Prompt*). Kickoff: `docker compose up → :8082 (insecure) / :8083 (guarded)`.
 4. **Submit** — worksheet PDF → `learn.zcr.ai/submit` · code → GitHub · weekly quiz → `learn.zcr.ai/quiz`. (How: [SUBMISSION.md](../../SUBMISSION.md).)
 5. **Project** — apply this week's lesson to your [NoteVault project](../../project/README.md) where it fits.
 
