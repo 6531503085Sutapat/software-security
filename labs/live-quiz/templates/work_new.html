@@ -33,7 +33,7 @@
     {% for r in rubric %}
       <div class="field">
         <input name="criterion" value="{{ r.criterion }}">
-        <input name="max" type="number" step="1" min="1" value="{{ r.max }}" style="max-width:6rem">
+        <input class="in-narrow" name="max" type="number" step="1" min="1" value="{{ r.max }}">
       </div>
     {% endfor %}
     <button class="btn blue" type="submit">Create ▸</button>

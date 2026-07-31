@@ -9,11 +9,16 @@ function esc(s) {
 }
 
 // Answer identity by option index: color + shape + spoken name (never color alone).
+// `key` is also the CSS class that carries the colour. It used to be applied as
+// style="--o:var(--a-red)" straight into innerHTML, which the app-plane CSP
+// (style-src 'self', no 'unsafe-inline') drops on the floor — the projector
+// showed four uncoloured shapes and every phone four grey tiles. Class-driven
+// now, so the identity survives the policy; see `--o` in style.css.
 const OPT_META = [
-  { key: "red",    varName: "--a-red",    shape: "s-tri", label: "Triangle · Red" },
-  { key: "blue",   varName: "--a-blue",   shape: "s-dia", label: "Diamond · Blue" },
-  { key: "yellow", varName: "--a-yellow", shape: "s-cir", label: "Circle · Yellow" },
-  { key: "green",  varName: "--a-green",  shape: "s-sq",  label: "Square · Green" },
+  { key: "red",    shape: "s-tri", label: "Triangle · Red" },
+  { key: "blue",   shape: "s-dia", label: "Diamond · Blue" },
+  { key: "yellow", shape: "s-cir", label: "Circle · Yellow" },
+  { key: "green",  shape: "s-sq",  label: "Square · Green" },
 ];
 
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -107,7 +112,7 @@ function initHost(pin) {
     $("answers").innerHTML = data.options.map((opt, i) => {
       const m = OPT_META[i];
       return `
-        <div class="opt ${m.key}" style="--o:var(${m.varName})">
+        <div class="opt ${m.key}">
           <div class="band"><svg class="glyph" aria-hidden="true"><use href="#${m.shape}"/></svg></div>
           <div class="body"><div class="otag">${m.label}</div><div class="otxt">${esc(opt)}</div></div>
           <div class="ghost" aria-hidden="true">${"ABCD"[i]}</div>
@@ -135,7 +140,7 @@ function initHost(pin) {
     if (data.correct != null && q.options[data.correct] != null) {
       const m = OPT_META[data.correct];
       $("reveal").innerHTML = `
-        <svg class="rglyph" style="--o:var(${m.varName})" aria-hidden="true"><use href="#${m.shape}"/></svg>
+        <svg class="rglyph ${m.key}" aria-hidden="true"><use href="#${m.shape}"/></svg>
         <div class="rb-txt">
           <div class="rb-k">Correct answer · Question ${q.index + 1} / ${q.total}</div>
           <div class="rb-a">${esc(q.options[data.correct])}</div>
@@ -148,13 +153,20 @@ function initHost(pin) {
       const m = OPT_META[i];
       const isCorrect = i === data.correct;
       return `
-        <div class="bar ${m.key}${isCorrect ? " correct" : ""}" style="--o:var(${m.varName})">
+        <div class="bar ${m.key}${isCorrect ? " correct" : ""}">
           <svg class="bglyph" aria-hidden="true"><use href="#${m.shape}"/></svg>
           <div class="name">${esc(q.options[i] ?? "")}</div>
-          <div class="track"><div class="fill" style="--w:${Math.round((count / max) * 100)}%"></div></div>
+          <div class="track"><div class="fill" data-pct="${Math.round((count / max) * 100)}"></div></div>
           <div class="end">${isCorrect ? `<span class="ctag"><svg class="ck"><use href="#s-ck"/></svg>Correct</span>` : ""}<span class="cnt">${count}</span></div>
         </div>`;
     }).join("");
+    // Bar widths through the CSSOM, not a style attribute. `style-src 'self'`
+    // without 'unsafe-inline' drops inline style attributes, and a distribution
+    // chart whose every bar is 0% wide is the whole point of the chart gone.
+    // Assigning element.style is not covered by style-src, so it survives.
+    $("bars").querySelectorAll(".fill").forEach((el) => {
+      el.style.setProperty("--w", `${el.dataset.pct}%`);
+    });
 
     $("board").innerHTML = data.leaderboard.map((p, i) => `
       <div class="lrow${i === 0 ? " first" : ""}">
@@ -214,3 +226,26 @@ function initHost(pin) {
     setTimeout(() => layer.remove(), 6500);
   }
 }
+
+// ---- start-up -------------------------------------------------------------
+// The PIN arrives on <body data-pin>, not as an inline `initHost(...)` call.
+// The app-plane CSP is `script-src 'self'` with no 'unsafe-inline', so an
+// inline call is silently dropped by the browser: no exception, no console
+// error, just a projector screen that never joins its socket room. Reading the
+// value from the DOM keeps the only executable code in a file the policy
+// actually allows.
+//
+// This tag sits at the end of <body>, so the element exists by now; the
+// readyState guard is there so moving the tag into <head> cannot resurrect the
+// same class of silent failure.
+(function boot() {
+  const start = () => {
+    const pin = document.body.dataset.pin;
+    if (pin) initHost(pin);
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start);
+  } else {
+    start();
+  }
+})();

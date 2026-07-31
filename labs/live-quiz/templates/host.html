@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Live Quiz — Host · KOSEN·KMITL Software Security</title>
   <link rel="stylesheet" href="/static/style.css?v={{ asset_v }}">
-  <script src="/static/socket.io.min.js"></script>
+  <script src="/static/socket.io.min.js?v={{ asset_v }}"></script>
 </head>
-<body>
+<body data-pin="{{ created_pin }}">
   <!-- shape glyphs: answers are always coded by COLOR + SHAPE + TEXT -->
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <svg width="0" height="0" class="glyph-defs" aria-hidden="true">
     <symbol id="s-tri" viewBox="0 0 100 100"><path d="M50 12 L91 84 Q93 88 88 88 L12 88 Q7 88 9 84 Z"/></symbol>
     <symbol id="s-dia" viewBox="0 0 100 100"><path d="M50 8 L92 50 L50 92 L8 50 Z"/></symbol>
     <symbol id="s-cir" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/></symbol>
@@ -88,8 +88,14 @@
       <button class="btn" id="next-btn" disabled>Start game ▸</button>
     </footer>
 
-    <script src="/static/host.js"></script>
-    <script>initHost({{ created_pin | tojson }});</script>
+    {#- host.js reads the PIN off <body data-pin>. It used to arrive as an
+        inline `initHost(...)` call, which the app-plane CSP (script-src 'self',
+        no 'unsafe-inline') silently made inert: the script never ran, so the
+        projector never joined its own socket room and the whole screen was
+        dead — lobby stuck at 0, Start game permanently disabled. Nothing threw,
+        nothing logged, and 353 tests stayed green, because a blocked inline
+        script is a policy decision, not an error. -#}
+    <script src="/static/host.js?v={{ asset_v }}"></script>
   </div>
 </body>
 </html>

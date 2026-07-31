@@ -9,11 +9,15 @@ function esc(s) {
   }[c]));
 }
 
+// `key` doubles as the CSS class that carries the colour. It used to be applied
+// as style="--o:var(--a-red)" straight into innerHTML, which the app-plane CSP
+// (style-src 'self', no 'unsafe-inline') drops on the floor — every phone showed
+// four uncoloured tiles. Class-driven now; see `--o` in style.css.
 const OPT_META = [
-  { key: "red",    varName: "--a-red",    shape: "s-tri", label: "Triangle · Red" },
-  { key: "blue",   varName: "--a-blue",   shape: "s-dia", label: "Diamond · Blue" },
-  { key: "yellow", varName: "--a-yellow", shape: "s-cir", label: "Circle · Yellow" },
-  { key: "green",  varName: "--a-green",  shape: "s-sq",  label: "Square · Green" },
+  { key: "red",    shape: "s-tri", label: "Triangle · Red" },
+  { key: "blue",   shape: "s-dia", label: "Diamond · Blue" },
+  { key: "yellow", shape: "s-cir", label: "Circle · Yellow" },
+  { key: "green",  shape: "s-sq",  label: "Square · Green" },
 ];
 
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -112,7 +116,7 @@ socket.on("question:show", (data) => {
   $("p-tiles").innerHTML = data.options.map((opt, i) => {
     const m = OPT_META[i];
     return `
-      <button class="ptile ${m.key}" style="--o:var(${m.varName})" data-choice="${i}"
+      <button class="ptile ${m.key}" data-choice="${i}"
               aria-label="${esc(opt)} — ${m.label}">
         <svg class="pglyph" aria-hidden="true"><use href="#${m.shape}"/></svg>
         <span class="pl">${esc(opt)}</span>
