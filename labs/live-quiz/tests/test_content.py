@@ -11,6 +11,7 @@ So the payload tests below use the REAL strings from the REAL file, not
 representative ones.
 """
 
+import html
 import os
 import re
 import sys
@@ -452,3 +453,101 @@ def test_an_unresolvable_relative_link_is_text_whatever_its_extension():
                 "[ci.yml](../../.github/workflows/security-ci.yml)"):
         out = C.render(src, ctx=ctx)
         assert "<a " not in out, f"{src} rendered a link to something unservable"
+
+
+# ── emphasis that wraps a code span ────────────────────────────────────────
+
+def test_bold_that_wraps_a_code_span_becomes_bold():
+    """`**`alg:none`**` rendered as a literal `**` on both sides with the words
+    between them bolded instead. Code spans are extracted before emphasis runs
+    — deliberately, so a payload in backticks is never scanned — and that split
+    put the opening `**` in one segment and the closing `**` in another, so they
+    could never pair.
+
+    Live on the worksheets for weeks 1-6, 10, 14 and 15, including the mandatory
+    evidence rule that decides whether a student's screenshots are accepted.
+    """
+    out = C._inline(html.escape("the **`alg:none`** attack", quote=False))
+    assert out == "the <strong><code>alg:none</code></strong> attack"
+
+
+def test_bold_spanning_two_code_spans_bolds_the_whole_phrase():
+    """The worse shape: emphasis landed on the connecting word instead. This
+    rendered as `**<code>exp</code><strong> and </strong><code>aud</code>**` —
+    asterisks visible AND the wrong words bold."""
+    out = C._inline(html.escape("the **`exp` and `aud`** claims", quote=False))
+    assert out == "the <strong><code>exp</code> and <code>aud</code></strong> claims"
+
+
+def test_italic_wrapping_a_code_span_still_works():
+    out = C._inline(html.escape("see *`worksheet.md`* first", quote=False))
+    assert out == "see <em><code>worksheet.md</code></em> first"
+
+
+def test_a_payload_in_backticks_is_still_never_scanned_for_emphasis():
+    """The property the code-first ordering exists to protect, retested against
+    the new machinery: markdown INSIDE backticks stays literal."""
+    out = C._inline(html.escape("run `a ** b ** c` now", quote=False))
+    assert out == "run <code>a ** b ** c</code> now"
+    assert "<strong>" not in out
+
+
+def test_a_link_written_inside_backticks_is_still_not_linkified():
+    out = C._inline(html.escape("`[x](javascript:alert(1))`", quote=False))
+    assert "<a " not in out and "javascript" in out
+
+
+# ── a cross-week link written as a folder ──────────────────────────────────
+
+def test_a_folder_style_cross_week_link_resolves_to_that_unit():
+    """Week 7's revision list links its six covered weeks as `../weekNN-slug/`.
+    Those resolved against /learn/... to a trailing-slash URL that hard-404s —
+    all six dead on the page students use to revise for the midterm, plus the
+    'Pairs with' pointers on weeks 8, 9 and 17.
+
+    Resolution stays by filesystem identity: the href must land on a real unit
+    directory of this course, or it degrades to text like any other.
+    """
+    slug = C.COURSES[0]["slug"]
+    weeks = C.list_weeks(slug)
+    if len(weeks) < 2:
+        pytest.skip("need two units")
+    here, target = weeks[1]["slug"], weeks[0]["slug"]
+    ctx = {"course": slug, "dir": os.path.join(C.COURSES[0]["root"], here)}
+    out = C._inline(html.escape(f"[intro](../{target}/)", quote=False), ctx)
+    assert f'href="/learn/{slug}/{target}"' in out, out
+
+
+def test_a_folder_link_to_something_that_is_not_a_unit_degrades_to_text():
+    slug = C.COURSES[0]["slug"]
+    weeks = C.list_weeks(slug)
+    ctx = {"course": slug, "dir": os.path.join(C.COURSES[0]["root"], weeks[0]["slug"])}
+    out = C._inline(html.escape("[nope](../no-such-unit-here/)", quote=False), ctx)
+    assert "<a " not in out
+
+
+def test_a_document_cannot_forge_a_code_sentinel():
+    """`_inline` lifts code spans out behind NUL-delimited sentinels while the
+    emphasis pass runs. A source file containing that byte sequence itself would
+    otherwise reach the substitution step and pull an unrelated code span into
+    its place — content injection by a document, not by a user, but the renderer
+    is what stands between a worksheet and the page either way.
+
+    Proven by mutation before the guard existed: with the strip removed,
+    "\\x000\\x00 and `real`" rendered the `real` code span TWICE, once where the
+    forged sentinel sat.
+    """
+    out = C._inline(html.escape("\x000\x00 and `real`", quote=False))
+    assert out.count("<code>real</code>") == 1, out
+
+
+def test_a_folder_link_cannot_leave_this_course():
+    """Folder-style links resolve only to a unit of the course the document
+    belongs to. A path that climbs out must degrade to text, never resolve
+    against another course or the repo above."""
+    slug = C.COURSES[0]["slug"]
+    weeks = C.list_weeks(slug)
+    ctx = {"course": slug, "dir": os.path.join(C.COURSES[0]["root"], weeks[0]["slug"])}
+    for escape in ("../../", "../../../", "../../instructor/", "../.."):
+        out = C._inline(html.escape(f"[out]({escape})", quote=False), ctx)
+        assert "<a " not in out, f"{escape} resolved: {out}"

@@ -802,7 +802,15 @@ def _resolve_repo_link(href: str, ctx: dict | None) -> str | None:
     if ctx is None or not href or "://" in href:
         return None
     target = html.unescape(href).split("#", 1)[0].split("?", 1)[0]
-    if not target.endswith(".md") or target.startswith("/"):
+    if target.startswith("/"):
+        return None
+    # A worksheet links a sibling week the way a directory listing does —
+    # `../week01-threat-modeling/`. Rendered verbatim that becomes a
+    # trailing-slash URL which hard-404s, and week 7's revision list is six of
+    # them: the study map for the midterm, every entry dead. Weeks 8, 9 and 17
+    # carry the same shape in their "Pairs with" line.
+    is_dir_link = target.endswith("/") or (target and "." not in os.path.basename(target))
+    if not target.endswith(".md") and not is_dir_link:
         return None
     c = course(ctx.get("course"))
     if c is None:
@@ -811,10 +819,20 @@ def _resolve_repo_link(href: str, ctx: dict | None) -> str | None:
         p = os.path.realpath(os.path.join(ctx["dir"], target))
     except (OSError, ValueError, KeyError):
         return None
-    if not os.path.isfile(p):
-        return None
 
     root = os.path.realpath(c["root"])
+    if is_dir_link and not target.endswith(".md"):
+        # Same rule as everything else here: it resolves only if it lands on a
+        # real unit directory OF THIS COURSE that the app actually publishes.
+        if not os.path.isdir(p) or not p.startswith(root + os.sep):
+            return None
+        rel = os.path.relpath(p, root).split(os.sep)
+        if len(rel) != 1 or not unit_re(c.get("unit", "week")).match(rel[0]):
+            return None
+        return (f"/learn/{c['slug']}/{rel[0]}"
+                if primary_kind(rel[0], c["slug"]) else None)
+    if not os.path.isfile(p):
+        return None
     # inside the course root -> a week's own public document
     if p.startswith(root + os.sep):
         rel = os.path.relpath(p, root).split(os.sep)
@@ -851,17 +869,38 @@ def _inline(escaped: str, ctx: dict | None = None) -> str:
     link around it is built by the same `_build_link` every other link goes
     through — same scheme check, same repo-link resolution, same quoting.
     """
-    parts, last = [], 0
-    for m in _CODE_OR_CODE_LINK.finditer(escaped):
-        parts.append((_fmt(escaped[last:m.start()], ctx), None))
-        if m.group("href") is not None:                     # [`label`](href)
-            body = f"<code>{m.group('label')}</code>"
-            parts.append((_build_link(body, m.group("href"), ctx), None))
+    escaped = escaped.replace("\x00", "")     # see the sentinel note below
+
+    # Each code span (and code-labelled link) is lifted out and replaced by a
+    # NUL-delimited sentinel, `_fmt` runs over what is left, and the finished
+    # HTML is put back.
+    #
+    # The lifting is what protects code content — `_fmt` never sees a backtick's
+    # contents, so a payload written in backticks is still never scanned for
+    # emphasis or links. What changed is that `_fmt` now sees ONE string instead
+    # of the fragments between code spans, and that is the whole fix: emphasis
+    # around a code span used to have its opening `**` in one fragment and its
+    # closing `**` in another, so the two could never pair and both leaked into
+    # the page as literal asterisks. ``**`exp` and `aud`**`` was the ugliest
+    # case — the stray markers were visible AND `<strong>` landed on the word
+    # "and" instead of on the claims.
+    #
+    # NUL is the sentinel because the input is already HTML-escaped, so it holds
+    # no markup, and a NUL cannot survive into rendered prose meaningfully. Any
+    # NUL already in the source is stripped above, so a document cannot forge a
+    # sentinel and reach the substitution.
+    holes: list[str] = []
+
+    def _stash(m):
+        if m.group("href") is not None:                      # [`label`](href)
+            holes.append(_build_link(f"<code>{m.group('label')}</code>",
+                                     m.group("href"), ctx))
         else:
-            parts.append((m.group("code"), "code"))
-        last = m.end()
-    parts.append((_fmt(escaped[last:], ctx), None))
-    return "".join(f"<code>{t}</code>" if k else t for t, k in parts)
+            holes.append(f"<code>{m.group('code')}</code>")
+        return f"\x00{len(holes) - 1}\x00"
+
+    formatted = _fmt(_CODE_OR_CODE_LINK.sub(_stash, escaped), ctx)
+    return re.sub(r"\x00(\d+)\x00", lambda m: holes[int(m.group(1))], formatted)
 
 
 def _build_link(text: str, href: str, ctx: dict | None) -> str:
