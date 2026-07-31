@@ -551,3 +551,36 @@ def test_a_folder_link_cannot_leave_this_course():
     for escape in ("../../", "../../../", "../../instructor/", "../.."):
         out = C._inline(html.escape(f"[out]({escape})", quote=False), ctx)
         assert "<a " not in out, f"{escape} resolved: {out}"
+
+
+def test_bold_containing_italic_renders_as_both():
+    """`_BOLD`'s content class was `[^*]+`, so any emphasis nested inside it
+    stopped the match dead and both markers reached the page. Live on 34 lines,
+    including week 2's `**Q2. Broken hashes — and *where* it matters.**`, which
+    is a graded question's own heading."""
+    out = C._inline(html.escape("**Q2. and *where* it matters.**", quote=False))
+    assert out == "<strong>Q2. and <em>where</em> it matters.</strong>", out
+
+
+def test_a_soft_wrapped_list_item_stays_one_item():
+    """Paragraphs already join their soft-wrapped lines; list items did not.
+    A bullet whose text wrapped onto the next line was cut in half — the `<li>`
+    closed early, the list closed, and the remainder became a new paragraph.
+    Any emphasis straddling the wrap lost its pair and showed as literal
+    asterisks, which is what put `**` on 30-odd published pages."""
+    src = ("- Explain why NACLs evaluate rules **in ascending order and\n"
+           "  stop at the first match** — and why that matters.\n")
+    out = C.render(src)
+    assert out.count("<li>") == 1, out
+    assert "<strong>in ascending order and stop at the first match</strong>" in out, out
+    assert "**" not in out
+
+
+def test_a_new_bullet_still_starts_a_new_item():
+    out = C.render("- first\n- second\n")
+    assert out.count("<li>") == 2, out
+
+
+def test_a_blank_line_still_ends_the_list():
+    out = C.render("- only item\n\nA new paragraph.\n")
+    assert out.count("<li>") == 1 and "<p>A new paragraph.</p>" in out, out

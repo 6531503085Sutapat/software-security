@@ -765,7 +765,13 @@ _INLINE_CODE = re.compile(r"`([^`]+)`")
 _CODE_OR_CODE_LINK = re.compile(
     r"\[`(?P<label>[^`]+)`\]\((?P<href>[^)\s]+)\)"
     r"|`(?P<code>[^`]+)`")
-_BOLD = re.compile(r"\*\*([^*]+)\*\*")
+# The content class allows a LONE `*` so bold can contain italic — it was
+# `[^*]+`, which stopped dead on any nested emphasis and left both markers on
+# the page. `**Q2. Broken hashes — and *where* it matters.**` is a graded
+# question's own heading, and it rendered with the asterisks showing. Non-greedy
+# so the first `**` still closes the run, and `\*(?!\*)` keeps `**` itself out
+# of the content, so adjacent bold runs cannot swallow each other.
+_BOLD = re.compile(r"\*\*((?:[^*]|\*(?!\*))+?)\*\*")
 _ITALIC = re.compile(r"(?<![*\w])\*([^*\n]+)\*(?!\*)")
 _LINK = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)")
 _HEADING = re.compile(r"^(#{1,6})\s+(.*)$")
@@ -1126,8 +1132,23 @@ def render(md: str, title: str | None = None, ctx: dict | None = None) -> str:
                 close_lists()
                 list_stack.append(want)
                 out.append(f"<{want}>")
-            out.append(f"<li>{_inline(m.group(1), ctx)}</li>")
+            # Absorb the item's soft-wrapped continuation lines, the same way
+            # the paragraph branch below does. Without this a bullet whose text
+            # wrapped was cut in half: the <li> closed early, the list closed,
+            # and the remainder became a paragraph — so any emphasis straddling
+            # the wrap lost its pair and showed as literal asterisks. That is
+            # what put stray `**` on thirty-odd published pages, and it read as
+            # a broken sentence in the middle of a lab instruction.
+            item = [m.group(1)]
             i += 1
+            while i < n and lines[i].strip() and not (
+                    _HEADING.match(lines[i]) or _ULI.match(lines[i]) or
+                    _OLI.match(lines[i]) or _RULE.match(lines[i]) or
+                    _QUOTE.match(lines[i]) or _TABLE_SEP.match(lines[i]) or
+                    lines[i].lstrip().startswith("```")):
+                item.append(lines[i].strip())
+                i += 1
+            out.append(f"<li>{_inline(' '.join(item), ctx)}</li>")
             continue
 
         close_lists()
