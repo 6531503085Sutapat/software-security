@@ -23,7 +23,7 @@
       <li><a href="/work/file/{{ f.id }}">{{ f.display_name }}</a>
         <span class="sub">{{ (f.size_bytes / 1024) | round | int }} KB</span>
         {% if can_upload %}
-        <form method="post" action="/submit/work" style="display:inline"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+        <form class="form-inline" method="post" action="/submit/work"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <input type="hidden" name="action" value="delete">
           <input type="hidden" name="file_id" value="{{ f.id }}">
