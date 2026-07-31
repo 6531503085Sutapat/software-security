@@ -42,8 +42,9 @@ cd labs/week13-cloud-container
 # Option A — the provided wrapper (trivy config over the Dockerfiles; IAM JSON is reviewed manually, see Task 2):
 bash scan.sh
 
-# Option B — run Trivy directly:
-docker run --rm -v "$PWD:/src" aquasec/trivy:latest config --severity HIGH,CRITICAL /src
+# Option B — run Trivy directly (MEDIUM is in the filter on purpose: one of the
+# three rules Task 1 asks you to cite is rated MEDIUM, and HIGH,CRITICAL hides it):
+docker run --rm -v "$PWD:/src" aquasec/trivy:latest config --severity MEDIUM,HIGH,CRITICAL /src
 
 # (Optional) build + CVE-scan the hardened image:
 docker build -f Dockerfile.hardened -t week13-hardened:lab .
