@@ -9,7 +9,7 @@ Flaws (OWASP Top 10 for LLM Applications 2025):
   LLM02 Sensitive Info Disclosure — the secret flag lives in the prompt and leaks.
   LLM05 Improper Output Handling  — model output is rendered into HTML UNESCAPED (XSS).
 
-Run:  flask --app vulnerable_chatbot run --port 6000   (or use docker-compose.yml)
+Run:  flask --app vulnerable_chatbot run --port 8082   (or use docker-compose.yml)
 """
 import os
 from flask import Flask, request
@@ -77,4 +77,4 @@ def chat():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=6000)
+    app.run(host="0.0.0.0", port=8082)
