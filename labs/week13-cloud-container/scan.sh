@@ -14,14 +14,20 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 IMAGE="${1:-week13-hardened:lab}"
 
 echo "==> [1/2] trivy config — IaC / Dockerfile / IAM misconfiguration scan"
-# Expected output: many findings against Dockerfile.insecure (root user,
-# latest tag, secrets in ENV, 777 perms). Dockerfile.hardened should be
-# clean (or near-clean). Trivy's config scanner does not parse standalone
-# AWS IAM policy JSON, so iam-policy-insecure.json / iam-policy-leastpriv.json
-# are NOT scanned here — review those manually (see worksheet Task 2).
-# Use --severity to focus the class discussion.
+# Expected output: findings against Dockerfile.insecure (latest tag, root user,
+# secrets in ENV). Dockerfile.hardened is clean. Trivy's config scanner does not
+# parse standalone AWS IAM policy JSON, so iam-policy-insecure.json /
+# iam-policy-leastpriv.json are NOT scanned here — review those manually (see
+# worksheet Task 2).
+#
+# MEDIUM is in the filter on purpose. `:latest` is DS-0001 and Trivy rates it
+# MEDIUM, so the previous HIGH,CRITICAL filter dropped it silently — and Task 1
+# grades a table that has to cite that rule and its severity. The one output
+# students are told to run has to contain every finding they are marked on.
+# LOW stays out: DS-0026 (no HEALTHCHECK) fires on both files and maps to none
+# of the six planted defects, so it is noise in this lab.
 docker run --rm -v "$HERE:/src" aquasec/trivy:latest \
-  config --severity HIGH,CRITICAL /src || true
+  config --severity MEDIUM,HIGH,CRITICAL /src || true
 
 echo
 echo "==> [2/2] trivy image — CVE scan of the hardened image (optional)"
