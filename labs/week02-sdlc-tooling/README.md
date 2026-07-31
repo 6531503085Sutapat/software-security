@@ -20,12 +20,23 @@
 ## 🏁 Signature game — "Bug Triage Race"
 Teams race to scan a flawed repo and triage accurately. Score = true positives − misclassified. Live scoreboard.
 Target: an intentionally insecure repo (provided).
+Run these from `labs/week02-sdlc-tooling`, or just `bash scan.sh`, which runs
+both against the same target.
 ```bash
 # SAST
-docker run --rm -v "$PWD:/src" semgrep/semgrep semgrep --config p/default /src
-# Secret scanning
-docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect -s /repo -v
+docker run --rm -v "$PWD/vulnerable-repo:/src" semgrep/semgrep semgrep --config p/default /src
+# Secret scanning — --no-git is required, and the path must be vulnerable-repo/
+docker run --rm -v "$PWD/vulnerable-repo:/repo" zricethezav/gitleaks:latest detect --no-git -s /repo -v
 ```
+> **Why `--no-git`.** Without it `gitleaks detect` runs in git mode and walks
+> commit history, and `vulnerable-repo/` is a plain directory with no `.git` —
+> so it aborts with *"not a git repository"*, reports **`no leaks found`**, and
+> you get zero rows for the triage table. Pointing it at the repo root instead
+> is no better: the root `.gitleaks.toml` allowlists this lab's directory on
+> purpose, so the two planted secrets are suppressed there by design.
+> Run as written above you get **2 findings** — `AWS_SECRET_ACCESS_KEY` and
+> `DB_PASSWORD` in `app.py`, both rule `generic-api-key` — which are the two
+> worksheet Task 2 asks you to identify.
 1. Run both tools; export findings.
 2. Categorize each finding by CWE and severity.
 3. Mark 3 true positives and 1 likely false positive; justify.
