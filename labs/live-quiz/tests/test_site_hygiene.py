@@ -563,3 +563,68 @@ def test_a_command_never_compiles_a_file_the_week_does_not_ship():
                                          f"which that week does not ship")
     assert not offenders, ("a command tells students to build a file the week does "
                            "not ship: " + "; ".join(sorted(set(offenders))))
+
+
+# ── a step number a student reads must be the number the author wrote ──────
+
+def _authored_item_numbers(text):
+    """The number on every line the renderer will treat as an ordered item,
+    read the same way it reads them: its own pattern, fenced code skipped."""
+    nums, fenced = [], False
+    for line in text.splitlines():
+        if re.match(r"^\s*```+", line):
+            fenced = not fenced
+            continue
+        if fenced or C._ULI.match(line):
+            continue
+        if C._OLI.match(line):
+            nums.append(int(re.match(r"^\s*(\d+)", line).group(1)))
+    return nums
+
+
+def _rendered_item_numbers(html):
+    nums = []
+    for m in re.finditer(r'<ol(?: start="(\d+)")?>(.*?)</ol>', html, re.S):
+        first = int(m.group(1) or 1)
+        nums += list(range(first, first + m.group(2).count("<li>")))
+    return nums
+
+
+def test_every_lab_page_renders_the_step_numbers_its_author_wrote():
+    """A worksheet's own cross-references are only as good as its numbering.
+
+    This renderer has no block nesting, so a code block indented under step 1
+    closed the list and step 2 opened a fresh one at 1. Four documents in the
+    cryptography course rendered their lab steps as 1 · 1,2 · 1 — two different
+    things both labelled step 1 and no step 3 — while `week14-authentication`'s
+    Submit line asks for "your one-line note from step 1, and the two `grep -c`
+    outputs from step 3". The markdown said 1,2,3,4 and always had.
+
+    HONEST SCOPE: this walks the labs of THIS repo only. The four documents that
+    were actually broken live in the cryptography repo, so on a bare checkout
+    this test proves the renderer does not break the software-security
+    worksheets — not that it fixed the ones it was written for. `test_content.py`
+    carries the reproduction. Run it where the other course repos are checked
+    out and it covers them too.
+
+    Documents that number every item `1.` and let the renderer count are skipped:
+    there is no authored sequence to disagree with.
+    """
+    offenders = []
+    for path in _lab_docs():
+        text = _slurp_text(path)
+        if text is None:
+            continue
+        authored = _authored_item_numbers(text)
+        if not authored or set(authored) == {1}:
+            continue
+        shown = _rendered_item_numbers(C.render(text))
+        if authored != shown:
+            i = next((k for k in range(min(len(authored), len(shown)))
+                      if authored[k] != shown[k]), 0)
+            offenders.append(
+                f"{os.path.relpath(path, _LABS_ROOT)}: item #{i + 1} onward reads "
+                f"{shown[i:i + 4]}, the author wrote {authored[i:i + 4]}")
+    assert not offenders, (
+        "these pages renumber their own steps, so any 'see step N' in them points "
+        "at the wrong thing: " + "; ".join(sorted(offenders)))

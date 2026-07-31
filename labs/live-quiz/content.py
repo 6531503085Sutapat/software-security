@@ -1017,13 +1017,48 @@ def render(md: str, title: str | None = None, ctx: dict | None = None) -> str:
     out: list[str] = []
     i, n = 0, len(lines)
     list_stack: list[str] = []
+    # How far the numbering of an ordered list had got, and whether what closed
+    # it was an interruption the list survives.
+    #
+    # This renderer has no block nesting: a fenced code block indented under
+    # "1." is not part of the item, it closes the list, and the next step opened
+    # a brand-new <ol> starting at 1 again. Week 14's four lab steps therefore
+    # rendered as 1 · 1,2 · 1 — two different things both labelled step 1, and
+    # no step 3 — while the same worksheet's Submit line asks for "your one-line
+    # note from step 1, and the two `grep -c` outputs from step 3". The markdown
+    # was written 1,2,3,4 and was never wrong; only the count was lost.
+    ol_items = 0           # items emitted by the ordered list still in play
+    ol_broken = False      # what closed it was a blank line or a code block
     used_ids: set = set()
     want_title = (title or "").strip()
     seen_heading = False
 
-    def close_lists():
+    def close_lists(soft=False):
+        """`soft` marks an interruption the numbering survives: a blank line, or
+        INDENTED content, which in markdown belongs to the list item above it.
+        Indentation is the whole test, and it is what the worksheets actually
+        use — step 1's command block, the paragraph explaining its output and
+        the sub-bullets listing what to capture are all indented under the step.
+        Unindented content at column 0 is a new block that ends the list, so
+        `ol_broken` is cleared and the next list starts at 1.
+
+        The clear happens even when the stack is already empty, because by the
+        time a paragraph is reached the blank line above it has usually closed
+        the list; the paragraph is the thing that says the list is over.
+
+        This mirrors CommonMark, where `1. a` / blank / `2. b` is one loose list
+        but `1. a` / blank / prose-at-column-0 / `1. b` is two."""
+        nonlocal ol_broken
         while list_stack:
-            out.append(f"</{list_stack.pop()}>")
+            kind = list_stack.pop()
+            out.append(f"</{kind}>")
+            if kind == "ol":
+                ol_broken = soft
+        if not soft:
+            ol_broken = False
+
+    def indented(s: str) -> bool:
+        return s[:1].isspace()
 
     while i < n:
         line = lines[i]
@@ -1031,7 +1066,7 @@ def render(md: str, title: str | None = None, ctx: dict | None = None) -> str:
         # fenced code — emitted verbatim (already escaped), never re-scanned
         fence = re.match(r"^\s*```+\s*([A-Za-z0-9_+-]*)\s*$", line)
         if fence:
-            close_lists()
+            close_lists(soft=indented(line))
             lang = fence.group(1)
             body, i = [], i + 1
             while i < n and not re.match(r"^\s*```+\s*$", lines[i]):
@@ -1067,7 +1102,7 @@ def render(md: str, title: str | None = None, ctx: dict | None = None) -> str:
             continue
 
         if not line.strip():
-            close_lists()
+            close_lists(soft=True)
             i += 1
             continue
 
@@ -1129,9 +1164,26 @@ def render(md: str, title: str | None = None, ctx: dict | None = None) -> str:
         if m:
             want = "ul" if _ULI.match(line) else "ol"
             if not list_stack or list_stack[-1] != want:
-                close_lists()
+                # Read the resume state BEFORE closing: close_lists() clears it,
+                # and on the resume path the list is already closed (the blank
+                # line above the code block did it), so the call here is the
+                # no-op that would otherwise throw the count away.
+                resuming = want == "ol" and ol_broken and ol_items > 0
+                close_lists(soft=indented(line))
                 list_stack.append(want)
-                out.append(f"<{want}>")
+                if resuming:
+                    out.append(f'<ol start="{ol_items + 1}">')
+                else:
+                    if want == "ol":
+                        ol_items = 0
+                    out.append(f"<{want}>")
+                # A <ul> nested under an ordered step (the "capture all of:"
+                # bullets in week 14) must not clear the outer count — only an
+                # <ol> actually re-opening does.
+                if want == "ol":
+                    ol_broken = False
+            if want == "ol":
+                ol_items += 1
             # Absorb the item's soft-wrapped continuation lines, the same way
             # the paragraph branch below does. Without this a bullet whose text
             # wrapped was cut in half: the <li> closed early, the list closed,
@@ -1151,7 +1203,7 @@ def render(md: str, title: str | None = None, ctx: dict | None = None) -> str:
             out.append(f"<li>{_inline(' '.join(item), ctx)}</li>")
             continue
 
-        close_lists()
+        close_lists(soft=indented(line))
         para = []
         while i < n and lines[i].strip() and not (
                 _HEADING.match(lines[i]) or _ULI.match(lines[i]) or
