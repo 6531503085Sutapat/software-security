@@ -72,7 +72,12 @@ Targets: `vulnerable_crypto.py` (the misuses), `hashes.txt` (four unsalted MD5s)
 
 ## Evidence & Integrity (required)
 
-- **Identity proof:** every screenshot/diagram must show your **`whoami` / login email / student ID** and a **timestamp**. Generic or borrowed evidence is not accepted.
+- **Identity proof:** every screenshot/diagram must show a terminal running `printf '%s | %s | ' "$(whoami)" '<YOUR-STUDENT-ID>'; date '+%F %T %Z'` **in the
+  same image as the evidence**. When the evidence is a browser page, a DevTools panel or a
+  rendered response, put that terminal **beside the browser and capture the whole screen** — a
+  cropped window carries nothing that identifies you, and the lab's own output is
+  byte-identical for the whole cohort *by design*, so the stamp is the only thing that makes
+  the shot yours. Generic or borrowed evidence is not accepted.
 - **Personalized flag (if this lab issues one):** ____________________
   *Flags are unique per student — submitting another student's flag is a violation. See [SUBMISSION.md](../../SUBMISSION.md).*
 - **Explain in your own words** *(graded on your reasoning, not copied text):*
