@@ -584,3 +584,94 @@ def test_a_new_bullet_still_starts_a_new_item():
 def test_a_blank_line_still_ends_the_list():
     out = C.render("- only item\n\nA new paragraph.\n")
     assert out.count("<li>") == 1 and "<p>A new paragraph.</p>" in out, out
+
+
+def test_a_numbered_list_resumes_its_count_after_a_code_block():
+    """Week 14's lab steps are written 1,2,3,4 with an indented code block under
+    each. The renderer closed the list at every fence and opened a fresh one, so
+    a student read 1 · 1,2 · 1 — two different things both labelled step 1, and
+    no step 3 at all. The Submit line says "your one-line note from step 1, and
+    the two grep -c outputs from step 3", so the references pointed at nothing.
+    Week 13's worksheet has the same shape.
+
+    The source markdown is correct; only the numbering was lost. Resuming the
+    count keeps every step number equal to what the author wrote.
+    """
+    src = ("1. Run vulnerable mode:\n"
+           "   ```bash\n   docker compose up\n   ```\n"
+           "2. Tear down.\n"
+           "3. Run fixed mode:\n"
+           "   ```bash\n   docker compose down\n   ```\n"
+           "4. Tear down again.\n")
+    out = C.render(src)
+    starts = re.findall(r'<ol(?: start="(\d+)")?>', out)
+    assert out.count("<li>") == 4, out
+    # first list starts at 1 (no attribute), each later one resumes
+    assert starts[0] in (None, "", "1"), starts
+    assert [s for s in starts[1:]] == ["2", "4"], starts
+
+
+def test_an_unordered_list_needs_no_start_attribute():
+    out = C.render("- a\n  ```bash\n  x\n  ```\n- b\n")
+    assert "start=" not in out, out
+
+
+def test_a_fresh_numbered_list_after_a_paragraph_restarts_at_one():
+    """Only an interrupted list resumes. A genuinely new list after prose must
+    begin at 1 again, or every later list on the page inherits a wrong offset."""
+    out = C.render("1. first\n2. second\n\nSome prose.\n\n1. new list\n")
+    assert out.count("<ol>") == 2 and "start=" not in out, out
+
+
+def test_the_real_worksheet_step_shape_keeps_its_numbers():
+    """The exact structure `security-cryptography/week14-authentication` uses,
+    which is where this was found: a step, an indented command block, indented
+    prose about the output, indented sub-bullets listing what to capture, then
+    the next step. All four kinds of indented content belong to the step above
+    them, and none of them may reset the count.
+
+    Trimmed but structurally identical to the source; weeks 5, 12 and 13 of the
+    same course are the same shape.
+    """
+    src = (
+        "1. Run **vulnerable mode**:\n"
+        "   ```bash\n"
+        "   docker compose -f docker-compose.vulnerable.yml up\n"
+        "   ```\n"
+        "   Capture the full log output. Your required evidence line is:\n"
+        "   ```\n"
+        "   SERVER SAW PASSWORD: correct-horse-battery\n"
+        "   ```\n"
+        "   plus `LOGIN OK` from the client.\n"
+        "2. Tear down: `docker compose -f docker-compose.vulnerable.yml down`.\n"
+        "3. Run **fixed mode**:\n"
+        "   ```bash\n"
+        "   docker compose -f docker-compose.fixed.yml up\n"
+        "   ```\n"
+        "   Capture the full log output. Your required evidence is **all** of:\n"
+        "   - a `SERVER SAW: nonce=... proof=...` line,\n"
+        "   - `LOGIN OK` from the client, and\n"
+        "   - the **absence** of any `SERVER SAW PASSWORD` line.\n"
+        "   Confirm the absence explicitly:\n"
+        "   ```bash\n"
+        "   docker compose -f docker-compose.fixed.yml logs | grep -c 'correct-horse'\n"
+        "   ```\n"
+        "4. Tear down: `docker compose -f docker-compose.fixed.yml down`.\n")
+    numbers = []
+    for m in re.finditer(r'<ol(?: start="(\d+)")?>(.*?)</ol>', C.render(src), re.S):
+        first = int(m.group(1) or 1)
+        numbers += list(range(first, first + m.group(2).count("<li>")))
+    assert numbers == [1, 2, 3, 4], numbers
+
+
+def test_the_running_count_resets_for_each_new_list_not_just_the_open_tag():
+    """The count a resume reads has to be cleared when a list genuinely ends,
+    not only when the <ol> is re-opened. A worksheet is a long page: Part 1's
+    four steps precede Part 2's, and if the earlier tally survives, Part 2's
+    first code block resumes it — Part 2 step 2 renders as step 6. Rendering
+    `<ol>` correctly for the fresh list hides that, because the damage only
+    shows at the NEXT interruption."""
+    out = C.render("1. one\n2. two\n\nA paragraph ends Part 1.\n\n"
+                   "1. fresh\n   ```bash\n   x\n   ```\n2. second of the fresh list\n")
+    starts = re.findall(r'<ol(?: start="(\d+)")?>', out)
+    assert starts == ["", "", "2"], starts
