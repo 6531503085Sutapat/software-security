@@ -449,3 +449,117 @@ def test_no_graded_flag_value_is_printed_on_a_reading_page():
                         offenders.append(f"{os.path.relpath(path)} prints {var}'s value")
     assert not offenders, (
         "a graded flag is printed on a page students read: " + "; ".join(sorted(set(offenders))))
+
+
+# ── instructor material must not drift from the lab it grades ──────────────
+
+# `instructor/` is git-ignored: it exists on the professor's disk and in no
+# clone, so no diff, no PR and no CI job can ever show it going stale. That is
+# precisely why a worksheet fix can leave its answer key behind, and a stale key
+# marks a correct answer wrong.
+#
+# These tests are the only thing that looks. They SKIP when instructor/ is
+# absent — which is every CI run — and do real work on the machine that actually
+# has it. A test that silently passes because the thing it checks is missing
+# would be worse than no test, so the skip is explicit and says so.
+_INSTRUCTOR = os.path.normpath(os.path.join(_LABS_ROOT, "..", "instructor"))
+
+_needs_instructor = pytest.mark.skipif(
+    not os.path.isdir(_INSTRUCTOR),
+    reason="instructor/ is git-ignored and absent here (expected in CI); "
+           "run this on the machine that holds the answer keys")
+
+
+def _instructor_docs():
+    for dirpath, _dirs, names in os.walk(_INSTRUCTOR):
+        for n in names:
+            if n.endswith((".md", ".py", ".yml", ".yaml")):
+                yield os.path.join(dirpath, n)
+
+
+def _published_ports():
+    """Every port a lab legitimately mentions, per week — BOTH sides of each
+    `host:container` mapping. The container side counts: `8080:5000` makes 5000
+    a real thing for a key to name, and flagging it would train the reader to
+    ignore this test."""
+    out = {}
+    for dirpath, _dirs, names in os.walk(_LABS_ROOT):
+        week = os.path.basename(dirpath)
+        for n in names:
+            if not (n.startswith("docker-compose") and n.endswith((".yml", ".yaml"))):
+                continue
+            text = _slurp_text(os.path.join(dirpath, n))
+            if not text:
+                continue
+            for a, b in re.findall(r'["\']?(\d{2,5}):(\d{2,5})["\']?', text):
+                out.setdefault(week, set()).update((int(a), int(b)))
+    return out
+
+
+# 1990-2099 written as a bare number is a year, not a port. `week04-injection`
+# sits one comma away from "2026" in half the exam bank.
+_YEARISH = re.compile(r"^(?:19|20)\d{2}$")
+
+
+@_needs_instructor
+def test_instructor_material_cites_no_retired_lab_port():
+    """Week 14 moved off :6000 (every browser refuses it). The exam item bank
+    and the challenge-image catalogue still said 6000 — and those are what the
+    final CTF is built from, so students would have been handed a port nothing
+    listens on. Found by grep, not by any gate, which is the whole point.
+    """
+    live = _published_ports()
+    stale = []
+    for path in _instructor_docs():
+        text = _slurp_text(path)
+        if not text:
+            continue
+        for week, port in re.findall(r"(week\d{2}[a-z]?[\w-]*)[^\n]{0,80}?[:\s](\d{4,5})\b", text):
+            # Keys cite the short form (`week14`); the directory is
+            # `week14-ai-llm-security`. Resolve by prefix or the lookup silently
+            # returns None and the test passes without checking anything — which
+            # is exactly what it did until a mutation caught it.
+            ports = live.get(week) or next(
+                (v for k, v in live.items() if k.startswith(week)), None)
+            if ports and not _YEARISH.match(port) and int(port) not in ports:
+                stale.append(f"{os.path.relpath(path, _INSTRUCTOR)} cites {week} :{port}, "
+                             f"lab publishes {sorted(ports)}")
+    assert not stale, "instructor material cites a port the lab no longer uses: " + "; ".join(sorted(set(stale)))
+
+
+def test_a_command_never_compiles_a_file_the_week_does_not_ship():
+    """Week 11 told students to run `clang … harness.c`; it ships
+    `fuzz_harness.c`, and its own kickoff line two paragraphs up already said so.
+
+    Two refinements, both forced by evidence rather than taste:
+
+    * PER WEEK, not global. `harness.c` genuinely exists — in week 2 — so a
+      "does this filename appear anywhere under labs/" check cannot see the bug.
+      I wrote that weaker version first and a mutation proved it blind.
+    * COMMANDS ONLY. Restricting it to fenced code blocks is what separates a
+      broken instruction from a legitimate cross-reference: week 17 is a review
+      of weeks 10-16 and cites week 11's `safe.rs` in prose, which is correct.
+      A command, by contrast, runs in the week's own directory.
+    """
+    offenders = []
+    for entry in sorted(os.listdir(_LABS_ROOT)):
+        week_dir = os.path.join(_LABS_ROOT, entry)
+        # Only real units. `toolbox/` is the shared container students run the
+        # labs INSIDE, so its README demonstrating week 11's command is correct,
+        # not a defect; `live-quiz/` is the platform itself.
+        if not os.path.isdir(week_dir) or not re.match(r"(week|lesson)\d{2}", entry):
+            continue
+        ships = set(os.listdir(week_dir))
+        for name in os.listdir(week_dir):
+            if not name.endswith(".md"):
+                continue
+            text = _slurp_text(os.path.join(week_dir, name))
+            if not text:
+                continue
+            for block in re.findall(r"```[a-z]*\n(.*?)```", text, re.S):
+                for cited in set(re.findall(r"(?<![\w/.])([A-Za-z0-9_-]+\.(?:c|rs))\b", block)):
+                    if cited not in ships:
+                        offenders.append(f"{entry}/{name} runs a command on {cited}, "
+                                         f"which that week does not ship")
+    assert not offenders, ("a command tells students to build a file the week does "
+                           "not ship: " + "; ".join(sorted(set(offenders))))
