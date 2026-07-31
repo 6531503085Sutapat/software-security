@@ -5,13 +5,13 @@ services:
     volumes:
       - ./:/lab
     ports:
-      - "6000:6000"
+      - "8082:8082"
     # Per-student flags: python3 ../../instructor/seed_flags.py env <STUDENT_ID> > .env
     environment:
       - FLAG_PROMPTINJ
     command: >
       bash -c "pip install --no-cache-dir flask &&
-               echo '--- INSECURE chatbot on :6000 — open http://localhost:6000 — see attack.md ---' &&
+               echo '--- INSECURE chatbot on :8082 — open http://localhost:8082 — see attack.md ---' &&
                python vulnerable_chatbot.py"
 
   guarded-chatbot:
@@ -20,11 +20,11 @@ services:
     volumes:
       - ./:/lab
     ports:
-      - "6001:6001"
+      - "8083:8083"
     # Per-student flags: python3 ../../instructor/seed_flags.py env <STUDENT_ID> > .env
     environment:
       - FLAG_PROMPTINJ
     command: >
       bash -c "pip install --no-cache-dir flask &&
-               echo '--- GUARDED chatbot on :6001 — open http://localhost:6001 ---' &&
+               echo '--- GUARDED chatbot on :8083 — open http://localhost:8083 ---' &&
                python guarded_chatbot.py"
