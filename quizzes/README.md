@@ -31,7 +31,7 @@ Answer keys are kept **out of the public repo** in the git-ignored `instructor/`
 (`instructor/quizzes/` and `instructor/quizzes/weekly/`) — never distribute to students.
 Exam keys live in `instructor/exams/`.
 
-Build any of these as a Google Form with `instructor/make_quiz_forms.gs`.
+Students sit these on the platform: **`learn.zcr.ai/quiz`**, using the one-time code handed out in class.
 
 > Worksheets (the longer, graded hands-on lab sheets) live with each lab in
 > `labs/weekNN…/worksheet.md`. Template: [worksheets/TEMPLATE.md](../worksheets/TEMPLATE.md).
