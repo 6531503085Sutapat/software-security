@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 836" role="img" aria-label="The same Week 13 app shipped twice, as two stacked container images side by side, with a label rail between them naming the concern and the CWE. The left stack is Dockerfile.insecure, the right stack is Dockerfile.hardened. Six image layers are compared. One, base image tag, CWE-1104 and CWE-16: insecure uses FROM python colon latest, a mutable tag, and Trivy config flags it as DS-0001; hardened uses FROM python 3.11-slim pinned by an at sha256 digest in a multi-stage build whose build stage is thrown away, so the same bytes come out of every rebuild. Two, baked-in secret, CWE-798 and CWE-200: insecure sets ENV API_TOKEN equals sk_live_supersecret, which docker history prints back, and Trivy flags it as DS-0031; hardened has no ENV secret in any layer, AWS_SECRET_ACCESS_KEY is gone too, and the value is injected at runtime instead. Three, runtime user, CWE-250: insecure has no USER directive so the container runs as uid 0, meaning remote code execution or a container escape starts as root, and Trivy flags it as DS-0002; hardened sets USER 65532 colon 65532, the distroless nonroot user, so an escape lands unprivileged. Four, build context, CWE-538: insecure runs COPY dot dot, dragging .git, .env, keys and CI files into the image, and there is no Trivy rule for it, you find it only by reading the file; hardened copies only app.py plus a .dockerignore. Five, directory permissions, CWE-732: insecure runs chmod -R 777 on slash app so any process in the container can rewrite the code, and again there is no Trivy rule; hardened keeps default permissions that are not world-writable and adds the runtime flags --read-only and --cap-drop ALL. Six, dependency install, CWE-1104: insecure runs pip install -r requirements.txt unpinned, as root, with no --no-cache-dir, and there is no Trivy rule; hardened builds a venv in a discarded build stage and copies it into a distroless runtime that ships neither pip nor a shell. Below the two images, the same argument one layer up in the cloud control plane: iam-policy-insecure.json grants Action star on Resource star with no Condition, which equals full AWS admin and which trivy config does not flag because it does not parse bare IAM JSON; iam-policy-leastpriv.json allows only s3:GetObject on arn:aws:s3:::lab-app-bucket/app/star plus a Condition on s3:prefix equals app slash star, that is one action, one prefix, one condition. The conclusion: trivy config flags three rows only, DS-0001 the unpinned tag, DS-0002 the root user and DS-0031 the secret in ENV. COPY dot dot, chmod 777, the unpinned pip install and the IAM JSON have no rule at all. Task 1 grades exactly that split: cite the rule ID where one exists, or write manual review, no Trivy rule.">
+<title>Same app shipped twice — and the scanner only sees three of the seven defects</title>
+<style>
+svg { font-family: system-ui, sans-serif; }
+.bg      { fill: #ffffff; }
+.h1      { fill: #111827; font-size: 16px; font-weight: 700; }
+.h2      { fill: #6b7280; font-size: 11.5px; }
+.leg     { fill: #4b5563; font-size: 11px; }
+
+.frameA  { fill: #fffaf7; stroke: #E35205; stroke-width: 1.6; }
+.frameB  { fill: #f7fbfe; stroke: #017BC4; stroke-width: 1.6; }
+.bandA   { fill: #fdece5; }
+.bandB   { fill: #e8f3fb; }
+.capA    { fill: #a03c05; font-size: 13px; font-weight: 700; }
+.capB    { fill: #01609a; font-size: 13px; font-weight: 700; }
+.capf    { fill: #6b7280; font-size: 11px; }
+
+.code    { fill: #111827; font-size: 11.5px; }
+.sub     { fill: #6b7280; font-size: 11px; }
+.note    { fill: #01609a; font-size: 11px; }
+.concern { fill: #111827; font-size: 11.5px; font-weight: 700; }
+.cwe     { fill: #6b7280; font-size: 11px; }
+.rule    { stroke: #e5e7eb; stroke-width: 1; }
+.hrule   { stroke: #cbd5e1; stroke-width: 1; }
+
+.pillA   { fill: #fdece5; stroke: #E35205; stroke-width: 1.6; }
+.pillAt  { fill: #9a3803; font-size: 11px; font-weight: 700; }
+.pillB   { fill: none; stroke: #9ca3af; stroke-width: 1.2; stroke-dasharray: 4 3; }
+.pillBt  { fill: #4b5563; font-size: 11px; font-weight: 700; }
+
+.sect    { fill: #6b7280; font-size: 11.5px; font-weight: 700; }
+.punch   { fill: #E35205; font-size: 12.5px; font-weight: 700; }
+.punch2  { fill: #111827; font-size: 11.5px; }
+
+@media (prefers-color-scheme: dark) {
+  .bg      { fill: #0f1419; }
+  .h1      { fill: #e5e7eb; }
+  .h2      { fill: #9aa3ad; }
+  .leg     { fill: #9aa3ad; }
+  .frameA  { fill: #1d1410; stroke: #ff7a3d; }
+  .frameB  { fill: #101d27; stroke: #4aa3dd; }
+  .bandA   { fill: #3a1c10; }
+  .bandB   { fill: #10293c; }
+  .capA    { fill: #ff9f6e; }
+  .capB    { fill: #4aa3dd; }
+  .capf    { fill: #9aa3ad; }
+  .code    { fill: #e5e7eb; }
+  .sub     { fill: #9aa3ad; }
+  .note    { fill: #4aa3dd; }
+  .concern { fill: #e5e7eb; }
+  .cwe     { fill: #9aa3ad; }
+  .rule    { stroke: #2c3742; }
+  .hrule   { stroke: #3b4756; }
+  .pillA   { fill: #3a1c10; stroke: #ff7a3d; }
+  .pillAt  { fill: #ff9f6e; }
+  .pillB   { stroke: #6b7684; }
+  .pillBt  { fill: #9aa3ad; }
+  .sect    { fill: #9aa3ad; }
+  .punch   { fill: #ff7a3d; }
+  .punch2  { fill: #e5e7eb; }
+}
+</style>
+
+<rect class="bg" x="0" y="0" width="720" height="836"/>
+
+<text class="h1" x="24" y="30">Same app, shipped twice — the scanner sees only three rows</text>
+<text class="h2" x="24" y="49">OWASP 2025 A02 Security Misconfiguration · trivy config --severity MEDIUM,HIGH,CRITICAL</text>
+
+<!-- legend: fill vs dashed outline, each also carries a word -->
+<rect class="pillA" x="24" y="55" width="14" height="14" rx="4"/>
+<text class="leg" x="44" y="66">flagged by trivy config</text>
+<rect class="pillB" x="204" y="55" width="14" height="14" rx="4"/>
+<text class="leg" x="224" y="66">found only by reading the file</text>
+
+<!-- ============ the two stacked images ============ -->
+<rect class="frameA" x="24" y="84" width="260" height="482" rx="10"/>
+<rect class="frameB" x="436" y="84" width="260" height="482" rx="10"/>
+<path class="bandA" d="M24,94 a10,10 0 0 1 10,-10 h240 a10,10 0 0 1 10,10 v28 h-260 z"/>
+<path class="bandB" d="M436,94 a10,10 0 0 1 10,-10 h240 a10,10 0 0 1 10,10 v28 h-260 z"/>
+<text class="capA" x="36" y="102">INSECURE IMAGE</text>
+<text class="capf" x="36" y="117">Dockerfile.insecure</text>
+<text class="capB" x="448" y="102">HARDENED IMAGE</text>
+<text class="capf" x="448" y="117">Dockerfile.hardened</text>
+
+<!-- layer separators, drawn inside each stack only -->
+<line class="rule" x1="24" y1="195" x2="284" y2="195"/><line class="rule" x1="436" y1="195" x2="696" y2="195"/>
+<line class="rule" x1="24" y1="269" x2="284" y2="269"/><line class="rule" x1="436" y1="269" x2="696" y2="269"/>
+<line class="rule" x1="24" y1="343" x2="284" y2="343"/><line class="rule" x1="436" y1="343" x2="696" y2="343"/>
+<line class="rule" x1="24" y1="417" x2="284" y2="417"/><line class="rule" x1="436" y1="417" x2="696" y2="417"/>
+<line class="rule" x1="24" y1="491" x2="284" y2="491"/><line class="rule" x1="436" y1="491" x2="696" y2="491"/>
+
+<!-- row 1 : base image tag -->
+<text class="concern" x="292" y="144">Base image tag</text>
+<text class="cwe"     x="292" y="161">CWE-1104 · CWE-16</text>
+<text class="code" x="36"  y="140">FROM python:latest</text>
+<text class="sub"  x="36"  y="156">mutable tag — rebuild ≠ same image</text>
+<rect class="pillA" x="36" y="164" width="176" height="21" rx="6"/>
+<text class="pillAt" x="48" y="179">SCANNER · Trivy DS-0001</text>
+<text class="code" x="448" y="140">FROM python:3.11-slim@sha256:cdbd05…</text>
+<text class="sub"  x="448" y="156">multi-stage: build stage is discarded</text>
+<text class="note" x="448" y="179">digest pin — same bytes every rebuild</text>
+
+<!-- row 2 : baked-in secret -->
+<text class="concern" x="292" y="218">Baked-in secret</text>
+<text class="cwe"     x="292" y="235">CWE-798 · CWE-200</text>
+<text class="code" x="36"  y="214">ENV API_TOKEN=sk_live_supersecret_…</text>
+<text class="sub"  x="36"  y="230">docker history prints it back</text>
+<rect class="pillA" x="36" y="238" width="176" height="21" rx="6"/>
+<text class="pillAt" x="48" y="253">SCANNER · Trivy DS-0031</text>
+<text class="code" x="448" y="214">no ENV secret in any layer</text>
+<text class="sub"  x="448" y="230">AWS_SECRET_ACCESS_KEY gone too</text>
+<text class="note" x="448" y="253">injected at runtime, never baked in</text>
+
+<!-- row 3 : runtime user -->
+<text class="concern" x="292" y="292">Runtime user</text>
+<text class="cwe"     x="292" y="309">CWE-250</text>
+<text class="code" x="36"  y="288">no USER — runs as root</text>
+<text class="sub"  x="36"  y="304">uid 0: RCE or escape starts as root</text>
+<rect class="pillA" x="36" y="312" width="176" height="21" rx="6"/>
+<text class="pillAt" x="48" y="327">SCANNER · Trivy DS-0002</text>
+<text class="code" x="448" y="288">USER 65532:65532</text>
+<text class="sub"  x="448" y="304">the distroless "nonroot" uid</text>
+<text class="note" x="448" y="327">an escape lands unprivileged</text>
+
+<!-- row 4 : build context -->
+<text class="concern" x="292" y="366">Build context</text>
+<text class="cwe"     x="292" y="383">CWE-538</text>
+<text class="code" x="36"  y="362">COPY . .</text>
+<text class="sub"  x="36"  y="378">.git, .env, keys, CI files ride along</text>
+<rect class="pillB" x="36" y="386" width="214" height="21" rx="6"/>
+<text class="pillBt" x="48" y="401">READ THE FILE · no Trivy rule</text>
+<text class="code" x="448" y="362">COPY app.py .</text>
+<text class="sub"  x="448" y="378">plus a .dockerignore</text>
+<text class="note" x="448" y="401">only the file the app actually needs</text>
+
+<!-- row 5 : directory permissions -->
+<text class="concern" x="292" y="440">Directory perms</text>
+<text class="cwe"     x="292" y="457">CWE-732</text>
+<text class="code" x="36"  y="436">RUN chmod -R 777 /app</text>
+<text class="sub"  x="36"  y="452">any process can rewrite the code</text>
+<rect class="pillB" x="36" y="460" width="214" height="21" rx="6"/>
+<text class="pillBt" x="48" y="475">READ THE FILE · no Trivy rule</text>
+<text class="code" x="448" y="436">default perms, not world-writable</text>
+<text class="sub"  x="448" y="452">run: --read-only --cap-drop ALL</text>
+<text class="note" x="448" y="475">nothing inside can rewrite app.py</text>
+
+<!-- row 6 : dependency install -->
+<text class="concern" x="292" y="514">Dependency install</text>
+<text class="cwe"     x="292" y="531">CWE-1104</text>
+<text class="code" x="36"  y="510">RUN pip install -r requirements.txt</text>
+<text class="sub"  x="36"  y="526">unpinned, as root, no --no-cache-dir</text>
+<rect class="pillB" x="36" y="534" width="214" height="21" rx="6"/>
+<text class="pillBt" x="48" y="549">READ THE FILE · no Trivy rule</text>
+<text class="code" x="448" y="510">venv built in a stage, then copied</text>
+<text class="sub"  x="448" y="526">distroless runtime: no pip, no shell</text>
+<text class="note" x="448" y="549">nothing left to call after an RCE</text>
+
+<!-- ============ same argument, one layer up ============ -->
+<line class="hrule" x1="24" y1="588" x2="696" y2="588"/>
+<text class="sect" x="24" y="606">Same argument one layer up — the IAM policy the container assumes</text>
+
+<rect class="frameA" x="24" y="618" width="260" height="112" rx="10"/>
+<rect class="frameB" x="436" y="618" width="260" height="112" rx="10"/>
+<text class="concern" x="292" y="657">IAM policy</text>
+<text class="cwe"     x="292" y="674">CWE-269 · CWE-732</text>
+<text class="cwe"     x="292" y="691">= full AWS admin</text>
+
+<text class="capA" x="36" y="638">iam-policy-insecure.json</text>
+<text class="code" x="36" y="657">"Action": "*"</text>
+<text class="code" x="36" y="674">"Resource": "*"</text>
+<text class="sub"  x="36" y="691">no Condition — nothing narrows it</text>
+<rect class="pillB" x="36" y="699" width="214" height="21" rx="6"/>
+<text class="pillBt" x="48" y="714">READ THE FILE · no Trivy rule</text>
+
+<text class="capB" x="448" y="638">iam-policy-leastpriv.json</text>
+<text class="code" x="448" y="657">"Action": ["s3:GetObject"]</text>
+<text class="code" x="448" y="674">on arn:aws:s3:::lab-app-bucket/app/*</text>
+<text class="sub"  x="448" y="691">+ Condition s3:prefix = app/*</text>
+<text class="note" x="448" y="714">one action, one prefix, one condition</text>
+
+<!-- ============ punchline ============ -->
+<line class="hrule" x1="24" y1="752" x2="696" y2="752"/>
+<text class="punch"  x="24" y="774">trivy config flags 3 rows. The other 4 you find by reading.</text>
+<text class="punch2" x="24" y="793">DS-0001 the tag · DS-0002 the root user · DS-0031 the ENV secret.</text>
+<text class="punch2" x="24" y="811">COPY . . , chmod 777, pip and the IAM JSON have no rule at all.</text>
+<text class="punch2" x="24" y="829">Task 1 grades that split: the rule ID, or "manual review".</text>
+</svg>

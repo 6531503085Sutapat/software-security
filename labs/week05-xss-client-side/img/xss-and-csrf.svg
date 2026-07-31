@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 706" role="img"
+     aria-label="Two stacked panels comparing stored cross-site scripting with cross-site request forgery, using the same three actors: attacker, Flask server at localhost:8080, and the logged-in victim browser. Top panel, stored XSS, CWE-79, moves attacker to server to victim. Step 1: the attacker POSTs to /comments a body containing script tags calling alert of document.cookie. Step 2: the victim loads /comments and the stored HTML is served back raw. Step 3: the script therefore runs in the victim's origin, not the attacker's, and because the cookie has no HttpOnly flag, CWE-1004, document.cookie leaks session=abc123. The fix is output encoding, escape on /hello and Jinja autoescape on /comments, plus an HttpOnly cookie. SameSite does nothing against this, because the payload is already same-origin. Bottom panel, CSRF, CWE-352, moves the opposite way, victim to attacker page to server, and injects no script at all. Step 1: the already logged-in victim visits the attacker's csrf.html page. Step 2: that page auto-submits a form to POST /comments and the victim's own browser attaches the session=abc123 cookie by itself. Step 3: the server therefore sees a normal authenticated request and cannot tell the victim never meant to send it. The fix is SameSite=Strict, which stops the browser attaching the cookie, plus a CSRF token the server actually checks on POST. HttpOnly does nothing against this, because no script reads the cookie. Footnote: in this lab fixed_app.py adds encoding, CSP and HttpOnly so the XSS dies, but the CSRF still works because /comments checks no token on POST.">
+  <title>Stored XSS and CSRF: same browser, same cookie, opposite directions</title>
+  <style>
+    text        { font-family: system-ui, sans-serif }
+    .t          { font-size: 14.5px; font-weight: 700; fill: #16191d }
+    .panel      { fill: #fffdf9; stroke: #ddd6c9; stroke-width: 1.2 }
+    .ph         { font-size: 13px; font-weight: 700; fill: #E35205 }
+    .dir        { font-size: 11.5px; font-weight: 600; fill: #6b7280; text-anchor: end }
+    .psub       { font-size: 11.5px; fill: #6b7280 }
+    .box        { fill: #ffffff; stroke: #017BC4; stroke-width: 1.5 }
+    .bl         { font-size: 12px; font-weight: 700; fill: #16191d; text-anchor: middle }
+    .bs         { font-size: 11px; fill: #6b7280; text-anchor: middle }
+    .life       { stroke: #c9c3b7; stroke-width: 1; stroke-dasharray: 4 4 }
+    .flow       { stroke: #E35205; stroke-width: 2; fill: none; marker-end: url(#ah) }
+    .ahd        { fill: #E35205 }
+    .step       { font-size: 11.5px; font-weight: 600; fill: #16191d; text-anchor: middle }
+    .steps      { font-size: 11px; fill: #6b7280; text-anchor: middle }
+    .mask       { fill: #fffdf9; stroke: none }
+    .chip       { fill: #fdeee4; stroke: #eec3a6; stroke-width: 1 }
+    .code       { font-size: 11px; font-weight: 700; fill: #b8420a; text-anchor: middle }
+    .out        { fill: #fff5ee; stroke: #E35205; stroke-width: 1.4 }
+    .outl       { font-size: 12px; font-weight: 700; fill: #16191d }
+    .outs       { font-size: 11.5px; font-weight: 600; fill: #b8420a }
+    .fix        { fill: #eff6fc; stroke: #017BC4; stroke-width: 1.4 }
+    .fixl       { font-size: 11px; font-weight: 600; fill: #0a5580 }
+    .dead       { fill: none; stroke: #9ca3af; stroke-width: 1.2; stroke-dasharray: 5 4 }
+    .deadl      { font-size: 11px; font-weight: 600; fill: #6b7280 }
+    .xm         { stroke: #E35205; stroke-width: 2.4; stroke-linecap: round }
+    .note       { font-size: 11.5px; fill: #16191d }
+    .dot        { fill: #E35205 }
+    @media (prefers-color-scheme: dark) {
+      .t        { fill: #e6e8ea }
+      .panel    { fill: #14181d; stroke: #3a4149 }
+      .ph       { fill: #ff7a3d }
+      .dir      { fill: #9aa3ad }
+      .psub     { fill: #9aa3ad }
+      .box      { fill: #1b2128; stroke: #4aa3dd }
+      .bl       { fill: #e6e8ea }
+      .bs       { fill: #9aa3ad }
+      .life     { stroke: #4a515a }
+      .flow     { stroke: #ff7a3d }
+      .ahd      { fill: #ff7a3d }
+      .step     { fill: #e6e8ea }
+      .steps    { fill: #9aa3ad }
+      .mask     { fill: #14181d }
+      .chip     { fill: #33231a; stroke: #7a4526 }
+      .code     { fill: #ffa77a }
+      .out      { fill: #2a1c14; stroke: #ff7a3d }
+      .outl     { fill: #e6e8ea }
+      .outs     { fill: #ffa77a }
+      .fix      { fill: #15222c; stroke: #4aa3dd }
+      .fixl     { fill: #8ec7ea }
+      .dead     { stroke: #6b7480 }
+      .deadl    { fill: #9aa3ad }
+      .xm       { stroke: #ff7a3d }
+      .note     { fill: #e6e8ea }
+      .dot      { fill: #ff7a3d }
+    }
+  </style>
+  <defs>
+    <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7"
+            orient="auto"><path class="ahd" d="M0 0 L8 4 L0 8 z"/></marker>
+  </defs>
+
+  <text class="t" x="24" y="30">Same browser, same cookie, opposite directions</text>
+
+  <!-- ============ PANEL 1: STORED XSS ============ -->
+  <rect class="panel" x="16" y="44" width="688" height="292" rx="10"/>
+  <text class="ph"   x="32"  y="68">1.  STORED XSS (cross-site scripting)  ·  CWE-79</text>
+  <text class="dir"  x="688" y="68">attacker &#8594; server &#8594; victim</text>
+  <text class="psub" x="32"  y="86">Written once by the attacker, run in every visitor's browser.</text>
+
+  <rect class="box" x="40"  y="98" width="140" height="36" rx="6"/>
+  <text class="bl"  x="110" y="115">ATTACKER</text>
+  <text class="bs"  x="110" y="129">any browser</text>
+  <rect class="box" x="270" y="98" width="180" height="36" rx="6"/>
+  <text class="bl"  x="360" y="115">FLASK SERVER</text>
+  <text class="bs"  x="360" y="129">localhost:8080</text>
+  <rect class="box" x="540" y="98" width="140" height="36" rx="6"/>
+  <text class="bl"  x="610" y="115">VICTIM</text>
+  <text class="bs"  x="610" y="129">logged-in browser</text>
+
+  <path class="life" d="M110 134 L110 196"/>
+  <path class="life" d="M360 134 L360 196"/>
+  <path class="life" d="M610 134 L610 196"/>
+
+  <text class="step"  x="235" y="150">1   POST /comments</text>
+  <rect class="chip"  x="90"  y="156" width="290" height="20" rx="4"/>
+  <text class="code"  x="235" y="170">&lt;script&gt;alert(document.cookie)&lt;/script&gt;</text>
+  <text class="step"  x="485" y="150">2   victim loads /comments</text>
+  <text class="steps" x="485" y="168">stored HTML served back raw</text>
+
+  <path class="flow" d="M110 186 L354 186"/>
+  <path class="flow" d="M366 186 L604 186"/>
+
+  <rect class="out"  x="40" y="206" width="640" height="50" rx="6"/>
+  <text class="outl" x="56" y="228">3.  The script runs in the VICTIM's origin, not the attacker's.</text>
+  <text class="outs" x="56" y="246">No HttpOnly (CWE-1004) &#8594; document.cookie leaks session=abc123</text>
+
+  <rect class="fix"  x="40" y="268" width="420" height="40" rx="6"/>
+  <text class="fixl" x="54" y="286">FIX &#8212; escape() on /hello, autoescape on /comments,</text>
+  <text class="fixl" x="54" y="301">plus Set-Cookie: HttpOnly   (fixed_app.py L21, L30-33, L42)</text>
+
+  <rect class="dead"  x="474" y="268" width="206" height="40" rx="6"/>
+  <path class="xm"    d="M484 280 L496 292 M496 280 L484 292"/>
+  <text class="deadl" x="506" y="286">SameSite does nothing</text>
+  <text class="deadl" x="506" y="301">payload is same-origin</text>
+
+  <!-- ============ PANEL 2: CSRF ============ -->
+  <rect class="panel" x="16" y="350" width="688" height="304" rx="10"/>
+  <text class="ph"   x="32"  y="374">2.  CSRF (cross-site request forgery)  ·  CWE-352</text>
+  <text class="dir"  x="688" y="374">victim &#8594; attacker page &#8594; server</text>
+  <text class="psub" x="32"  y="392">No script injected. The victim's own browser sends the request.</text>
+
+  <rect class="box" x="40"  y="404" width="140" height="36" rx="6"/>
+  <text class="bl"  x="110" y="421">ATTACKER PAGE</text>
+  <text class="bs"  x="110" y="435">csrf.html</text>
+  <rect class="box" x="270" y="404" width="180" height="36" rx="6"/>
+  <text class="bl"  x="360" y="421">FLASK SERVER</text>
+  <text class="bs"  x="360" y="435">localhost:8080</text>
+  <rect class="box" x="540" y="404" width="140" height="36" rx="6"/>
+  <text class="bl"  x="610" y="421">VICTIM</text>
+  <text class="bs"  x="610" y="435">logged-in browser</text>
+
+  <path class="life" d="M110 440 L110 534"/>
+  <path class="life" d="M360 440 L360 534"/>
+  <path class="life" d="M610 440 L610 534"/>
+
+  <rect class="mask" x="196" y="446" width="328" height="20"/>
+  <text class="step" x="360" y="460">1   victim visits the attacker's page csrf.html</text>
+  <path class="flow" d="M610 476 L116 476"/>
+
+  <text class="step" x="235" y="496">2   form auto-submits  POST /comments</text>
+  <rect class="chip" x="88"  y="502" width="294" height="20" rx="4"/>
+  <text class="code" x="235" y="516">victim's browser attaches session=abc123</text>
+  <path class="flow" d="M110 532 L354 532"/>
+
+  <rect class="out"  x="40" y="544" width="640" height="48" rx="6"/>
+  <text class="outl" x="56" y="564">3.  The server sees a normal, authenticated request.</text>
+  <text class="outs" x="56" y="582">It cannot tell the victim never meant to send it &#8212; CWE-352</text>
+
+  <rect class="fix"  x="40" y="602" width="420" height="40" rx="6"/>
+  <text class="fixl" x="54" y="620">FIX &#8212; SameSite=Strict stops the browser attaching it,</text>
+  <text class="fixl" x="54" y="635">and a CSRF token the server actually checks on POST.</text>
+
+  <rect class="dead"  x="474" y="602" width="206" height="40" rx="6"/>
+  <path class="xm"    d="M484 614 L496 626 M496 614 L484 626"/>
+  <text class="deadl" x="506" y="620">HttpOnly does nothing</text>
+  <text class="deadl" x="506" y="635">no script reads it</text>
+
+  <!-- ============ FOOTNOTE ============ -->
+  <rect class="dot"  x="24" y="669" width="8" height="8" rx="2"/>
+  <text class="note" x="42" y="677">fixed_app.py adds encoding, CSP and HttpOnly &#8212; the XSS dies.</text>
+  <rect class="dot"  x="24" y="687" width="8" height="8" rx="2"/>
+  <text class="note" x="42" y="695">The CSRF still works: /comments checks no token on POST.</text>
+</svg>

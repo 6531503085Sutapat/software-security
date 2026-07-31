@@ -9,6 +9,8 @@
 
 ---
 
+![A blueprint diagram showing the Week 18 final exam covers Weeks 1-6 lightly, folds Weeks 7-9 midterm content into scope, weights Weeks 10-15 most heavily across six labeled topic blocks, excludes Week 16's capstone, breaks the 100 points into four sections split evenly between recall/identification and design reasoning, and contrasts this with Week 8's midterm which devoted 30 of 100 points to writing an actual exploit payload versus Week 18's zero.](img/exam-blueprint-final.svg)
+
 ## Section A — Modern-stack concepts (30 pts, 5 each)
 
 A1. What is **BOLA** and why is it the #1 API risk? How does it differ from mass assignment?

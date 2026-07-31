@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 442" role="img" aria-label="A left-to-right software development pipeline with five stages: write code, commit, build, deploy, run. Four scanners are placed at the stage each one actually operates on, and under each is written what it cannot see. At the write-code stage, SAST (Semgrep p/default) reads your own source code and finds the SQL injection in the /user route (CWE-89), the OS command injection in /ping (CWE-78, shell=True), the md5 password hash (CWE-327) and debug=True (CWE-489); it is blind to the CVE inside flask, because it never reads dependencies. At the commit stage, secret scanning (Gitleaks with --no-git) reads file and commit contents and finds AWS_SECRET_ACCESS_KEY and DB_PASSWORD, both CWE-798; it is blind to md5, because a weak algorithm is not a secret-shaped string. At the build stage, SCA (Trivy fs) reads requirements.txt and reports CVEs in flask and its dependencies with fixed versions; it is blind to your own SQL string in /user, because it only reads pins. Fuzzing with libFuzzer also belongs at the build stage: it runs the compiled harness rather than the text, and an AddressSanitizer heap-buffer-overflow appears at harness.c line 23, where there is no pattern for SAST to match. At the deploy stage, DAST (Burp or ZAP, weeks 4 to 6) probes the running app, sees the /ping payload actually fire and the debug console open, but is blind to file and line numbers, so it reports a symptom and not the cause. A CI gate between build and deploy fails the pipeline on HIGH or CRITICAL findings. Nothing scans at the run stage. The conclusion: the tools are complements, not substitutes. Every blind spot on one card is another card's finding, and the logic bug in Task 7 is nobody's finding but yours.">
+<title>Where each scanner looks across the SDLC, and what each one is blind to</title>
+<style>
+text { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.bg    { fill: #ffffff; }
+.h1    { fill: #12232e; font-size: 15.5px; font-weight: 700; }
+.sub   { fill: #6b7280; font-size: 11.5px; }
+.rail  { stroke: #017BC4; stroke-width: 2.5; fill: none; }
+.head  { fill: #017BC4; }
+.tick  { fill: #017BC4; stroke: #ffffff; stroke-width: 2; }
+.stage { fill: #12232e; font-size: 12.5px; font-weight: 700; }
+.trans { fill: #6b7280; font-size: 11px; }
+.gate  { fill: #E35205; }
+.gatel { fill: #b34205; font-size: 11px; font-weight: 700; }
+.conn  { stroke: #9fb8c9; stroke-width: 1.5; stroke-dasharray: 3 3; fill: none; }
+.card  { fill: #ffffff; stroke: #c9d4de; stroke-width: 1.2; }
+.ct    { fill: #017BC4; font-size: 13.5px; font-weight: 700; }
+.tool  { fill: #6b7280; font-size: 11px; }
+.rule  { stroke: #dde5ec; stroke-width: 1; }
+.lbl   { fill: #6b7280; font-size: 11px; font-weight: 700; letter-spacing: 0.8px; }
+.body  { fill: #1f2933; font-size: 11px; }
+.blind { fill: #fdeee4; stroke: #f2bf9c; stroke-width: 1; }
+.blbl  { fill: #a83e04; font-size: 11px; font-weight: 700; letter-spacing: 0.8px; }
+.btxt  { fill: #8a3705; font-size: 11px; }
+.box   { fill: #ffffff; stroke: #c9d4de; stroke-width: 1.2; }
+.bt    { fill: #12232e; font-size: 12.5px; font-weight: 700; }
+.bd    { fill: #1f2933; font-size: 11px; }
+@media (prefers-color-scheme: dark) {
+  .bg    { fill: #0f1419; }
+  .h1    { fill: #e8edf2; }
+  .sub   { fill: #9aa3ad; }
+  .rail  { stroke: #4aa3dd; }
+  .head  { fill: #4aa3dd; }
+  .tick  { fill: #4aa3dd; stroke: #0f1419; }
+  .stage { fill: #e8edf2; }
+  .trans { fill: #9aa3ad; }
+  .gate  { fill: #ff7a3d; }
+  .gatel { fill: #ff9b63; }
+  .conn  { stroke: #3d5666; }
+  .card  { fill: #171d24; stroke: #31404d; }
+  .ct    { fill: #4aa3dd; }
+  .tool  { fill: #9aa3ad; }
+  .rule  { stroke: #2b3641; }
+  .lbl   { fill: #9aa3ad; }
+  .body  { fill: #dde4ea; }
+  .blind { fill: #3a2213; stroke: #7a4520; }
+  .blbl  { fill: #ff9b63; }
+  .btxt  { fill: #ffbe9a; }
+  .box   { fill: #171d24; stroke: #31404d; }
+  .bt    { fill: #e8edf2; }
+  .bd    { fill: #dde4ea; }
+}
+</style>
+
+<rect class="bg" x="0" y="0" width="720" height="442"/>
+
+<text class="h1" x="24" y="28">One scanner is not "the security check"</text>
+<text class="sub" x="24" y="47">Where each tool looks - and what it cannot see</text>
+
+<!-- pipeline rail -->
+<line class="rail" x1="34" y1="84" x2="680" y2="84"/>
+<polygon class="head" points="678,77.5 696,84 678,90.5"/>
+<circle class="tick" cx="100" cy="84" r="5.5"/>
+<circle class="tick" cx="262" cy="84" r="5.5"/>
+<circle class="tick" cx="424" cy="84" r="5.5"/>
+<circle class="tick" cx="586" cy="84" r="5.5"/>
+<circle class="tick" cx="664" cy="84" r="5.5"/>
+
+<text class="stage" x="100" y="68" text-anchor="middle">Write code</text>
+<text class="stage" x="262" y="68" text-anchor="middle">Commit</text>
+<text class="stage" x="424" y="68" text-anchor="middle">Build</text>
+<text class="stage" x="586" y="68" text-anchor="middle">Deploy</text>
+<text class="stage" x="664" y="68" text-anchor="middle">Run</text>
+
+<text class="trans" x="181" y="101" text-anchor="middle">git commit</text>
+<text class="trans" x="343" y="101" text-anchor="middle">docker build</text>
+<text class="trans" x="625" y="101" text-anchor="middle">shipped</text>
+
+<!-- CI gate on the rail, between build and deploy -->
+<rect class="gate" x="502" y="72" width="6" height="24" rx="1.5"/>
+<text class="gatel" x="505" y="47" text-anchor="middle">CI gate - fails on HIGH/CRITICAL</text>
+
+<!-- connectors: stage tick down to the tool that runs there -->
+<line class="conn" x1="100" y1="90" x2="100" y2="112"/>
+<line class="conn" x1="262" y1="90" x2="262" y2="112"/>
+<line class="conn" x1="424" y1="90" x2="424" y2="112"/>
+<line class="conn" x1="586" y1="90" x2="586" y2="112"/>
+
+<!-- CARD 1 : SAST at write code -->
+<rect class="card" x="24" y="112" width="152" height="212" rx="7"/>
+<text class="ct"   x="34" y="134">SAST</text>
+<text class="tool" x="34" y="149">Semgrep p/default</text>
+<line class="rule" x1="34" y1="157" x2="166" y2="157"/>
+<text class="lbl"  x="34" y="174">READS</text>
+<text class="body" x="34" y="189">your own source code</text>
+<text class="lbl"  x="34" y="210">FINDS</text>
+<text class="body" x="34" y="225">/user - CWE-89 SQLi</text>
+<text class="body" x="34" y="238">/ping - CWE-78 shell</text>
+<text class="body" x="34" y="251">md5() - CWE-327</text>
+<text class="body" x="34" y="264">debug=True - CWE-489</text>
+<rect class="blind" x="26" y="272" width="148" height="50" rx="5"/>
+<text class="blbl" x="34" y="288">BLIND TO</text>
+<text class="btxt" x="34" y="303">the CVE in flask -</text>
+<text class="btxt" x="34" y="316">it never reads deps</text>
+
+<!-- CARD 2 : secret scanning at commit -->
+<rect class="card" x="186" y="112" width="152" height="212" rx="7"/>
+<text class="ct"   x="196" y="134">Secret scanning</text>
+<text class="tool" x="196" y="149">Gitleaks --no-git</text>
+<line class="rule" x1="196" y1="157" x2="328" y2="157"/>
+<text class="lbl"  x="196" y="174">READS</text>
+<text class="body" x="196" y="189">file + commit text</text>
+<text class="lbl"  x="196" y="210">FINDS</text>
+<text class="body" x="196" y="225">AWS_SECRET_</text>
+<text class="body" x="196" y="238">ACCESS_KEY</text>
+<text class="body" x="196" y="251">DB_PASSWORD</text>
+<text class="body" x="196" y="264">both CWE-798</text>
+<rect class="blind" x="188" y="272" width="148" height="50" rx="5"/>
+<text class="blbl" x="196" y="288">BLIND TO</text>
+<text class="btxt" x="196" y="303">md5() - a weak algo</text>
+<text class="btxt" x="196" y="316">is not a secret</text>
+
+<!-- CARD 3 : SCA at build -->
+<rect class="card" x="348" y="112" width="152" height="212" rx="7"/>
+<text class="ct"   x="358" y="134">SCA</text>
+<text class="tool" x="358" y="149">Trivy fs</text>
+<line class="rule" x1="358" y1="157" x2="490" y2="157"/>
+<text class="lbl"  x="358" y="174">READS</text>
+<text class="body" x="358" y="189">requirements.txt</text>
+<text class="lbl"  x="358" y="210">FINDS</text>
+<text class="body" x="358" y="225">CVEs in flask + deps</text>
+<text class="body" x="358" y="238">CVE id + fixed ver.</text>
+<text class="body" x="358" y="251">severity for the gate</text>
+<rect class="blind" x="350" y="272" width="148" height="50" rx="5"/>
+<text class="blbl" x="358" y="288">BLIND TO</text>
+<text class="btxt" x="358" y="303">the SQL string in</text>
+<text class="btxt" x="358" y="316">/user - only pins</text>
+
+<!-- CARD 4 : DAST at deploy / staging -->
+<rect class="card" x="510" y="112" width="152" height="212" rx="7"/>
+<text class="ct"   x="520" y="134">DAST</text>
+<text class="tool" x="520" y="149">Burp / ZAP (Wk 4-6)</text>
+<line class="rule" x1="520" y1="157" x2="652" y2="157"/>
+<text class="lbl"  x="520" y="174">READS</text>
+<text class="body" x="520" y="189">the running app</text>
+<text class="lbl"  x="520" y="210">FINDS</text>
+<text class="body" x="520" y="225">/ping payload fires</text>
+<text class="body" x="520" y="238">debug console open</text>
+<text class="body" x="520" y="251">errors, headers</text>
+<rect class="blind" x="512" y="272" width="148" height="50" rx="5"/>
+<text class="blbl" x="520" y="288">BLIND TO</text>
+<text class="btxt" x="520" y="303">no file:line to fix</text>
+<text class="btxt" x="520" y="316">symptom, not cause</text>
+
+<!-- fuzzing hangs off the build stage -->
+<line class="conn" x1="424" y1="324" x2="424" y2="344"/>
+<rect class="box" x="348" y="344" width="348" height="76" rx="7"/>
+<text class="bt" x="360" y="366">+ Fuzzing (Task 4) - also at Build</text>
+<text class="bd" x="360" y="384">Runs the compiled harness, not the text:</text>
+<text class="bd" x="360" y="399">ASan heap-buffer-overflow, harness.c:23 -</text>
+<text class="bd" x="360" y="414">no pattern for SAST to match.</text>
+
+<!-- the point -->
+<text class="bt" x="24" y="366">Complements, not substitutes.</text>
+<text class="bd" x="24" y="384">Every BLIND TO above is another</text>
+<text class="bd" x="24" y="399">card's FINDS. Task 7's logic bug</text>
+<text class="bd" x="24" y="414">is nobody's finding but yours.</text>
+</svg>

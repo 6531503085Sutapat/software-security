@@ -34,6 +34,8 @@ Answer in your own words (2–4 sentences each).
 > Tasks 2–4 are dominated by Actions queue and scan wall-clock, so push in class and finish the
 > write-up at home. Your instructor will say which task runs as homework.
 
+![Two panels: the CI gate in security-ci.yml, where a MEDIUM DS-0001 finding slips past the HIGH,CRITICAL threshold and the build goes green, and the /admin handler, where one except branch returns 200 with the flag while the other returns 403 and logs it.](img/fail-closed.svg)
+
 **Learning goals:** wire a security CI gate that fails closed on HIGH/CRITICAL, observe structured security logging + fail-closed handling locally, then play Break-the-Build.
 
 **Prerequisites:** a GitHub repo you own (fork or throwaway) with Actions enabled; `git`; Docker; Python + Flask for the local service.

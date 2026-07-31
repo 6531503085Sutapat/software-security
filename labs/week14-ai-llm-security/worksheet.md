@@ -16,6 +16,8 @@
 
 ---
 
+![Three sources — the developer's system prompt, the user's turn, and retrieved content — all enter the LLM's context window as the same plain text, and the model's reply then flows unescaped into an HTML sink.](img/prompt-injection.svg)
+
 ## Part 2 — Lecture Questions
 
 Answer in your own words (2–4 sentences each).

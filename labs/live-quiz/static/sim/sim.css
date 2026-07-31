@@ -53,3 +53,354 @@ input[type=text]{width:100%;font:inherit;padding:.4rem .5rem;border:1px solid va
                  border-radius:6px;background:var(--bg);color:var(--fg)}
 .preset{display:flex;flex-wrap:wrap;gap:.35rem;margin:.4rem 0}
 .preset button{font-size:.78rem}
+
+/* ── aes-modes (Week 3, software-security): ECB leaks structure, CBC's XOR leaks integrity ── */
+.aes-modes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+                gap:.9rem;margin:.2rem 0 .8rem}
+.aes-modes-fig{margin:0}
+.aes-modes-cap{font-size:.8rem;font-weight:700;margin:0 0 .3rem}
+.aes-modes-canvas{width:100%;height:auto;display:block;background:#fff;
+                  border:1px solid var(--line);border-radius:6px;
+                  image-rendering:pixelated}
+.aes-modes-stat{margin:.3rem 0 0;font-size:.75rem;color:var(--mut)}
+.aes-modes-gap{margin-top:1rem}
+.aes-modes-lab{margin:.8rem 0 .2rem;font-size:.8rem;color:var(--mut)}
+.aes-modes-scroll{overflow-x:auto;max-width:100%;margin:.5rem 0}
+.aes-modes-rowlabel{font-size:.75rem;color:var(--mut);margin:.55rem 0 .15rem;
+                    min-width:35rem}
+.aes-modes-cells{display:grid;grid-template-columns:repeat(16,minmax(2rem,1fr));
+                 gap:.15rem;min-width:35rem}
+.aes-modes-cell{display:flex;flex-direction:column;align-items:center;
+                font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+                font-size:.85rem;line-height:1.15;padding:.25rem 0;
+                border:1px solid var(--line);border-radius:4px;
+                background:var(--bg);color:var(--fg)}
+.aes-modes-idx .aes-modes-cell{border-color:transparent;background:none;
+                               color:var(--mut);font-size:.7rem;padding:0}
+.aes-modes-chg{background:var(--orange);border-color:var(--orange);color:#fff;
+               font-weight:700}
+.aes-modes-sel{border:2px solid var(--blue);font-weight:700}
+.aes-modes-hit{cursor:pointer}
+.aes-modes-hit:hover{border-color:var(--blue)}
+.aes-modes-hit:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.aes-modes-ch{display:block}
+.aes-modes-mk{display:block;font-size:.8rem;line-height:1;min-height:.9rem}
+.aes-modes-on{background:var(--orange);border-color:var(--orange);color:#fff;
+              font-weight:700}
+
+/* ── ecdsa-malleability (Week 11, security-cryptography): (r,s) vs (r,n−s) ── */
+/* Two EQUAL columns: the page is a side-by-side comparison, and .wrap's
+   1.5fr/1fr split would make one of the two forms look like the main event. */
+.ecdsamal-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+              gap:1rem;margin:.9rem 0}
+@media (max-width:760px){.ecdsamal-two{grid-template-columns:1fr}}
+.ecdsamal-card{margin:.9rem 0}
+.ecdsamal-two .ecdsamal-card{margin:0}
+.ecdsamal-card h3:first-child{margin-top:0}
+.ecdsamal-msg{margin:.1rem 0 .5rem;color:var(--mut)}
+.ecdsamal-lbl{margin:.7rem 0 .1rem;font-size:.78rem;color:var(--mut)}
+.ecdsamal-cap{margin:.1rem 0 .6rem;font-size:.8rem;color:var(--mut)}
+.ecdsamal-note{margin:.5rem 0 0;color:var(--mut);font-style:italic}
+.ecdsamal-claim{margin:.5rem 0 0;max-width:78ch}
+/* A code span such as hashlib.sha256((str(r)+str(s)).encode()).hexdigest() has
+   no break opportunity in it, and measured at 375px it pushed the whole page
+   29px sideways. word-break alone does not break an unbroken run. */
+.ecdsamal-msg code,.ecdsamal-cap code,.ecdsamal-wrapcode code{
+  overflow-wrap:anywhere;word-break:break-word}
+/* The txid is the value the back row of the lecture hall has to read. */
+.ecdsamal-hex{font-size:1rem;letter-spacing:.03em;line-height:1.45}
+/* Never colour alone: each badge carries a shape, a tick or cross, and the rule
+   it is applying, so it survives a projector and colour blindness. */
+.ecdsamal-badge{display:inline-block;margin:.5rem 0 0;padding:.2rem .6rem;
+  border:2px solid var(--line);border-radius:999px;font-weight:700;font-size:.85rem}
+.ecdsamal-badge.low{color:var(--blue);border-color:var(--blue)}
+.ecdsamal-badge.high{color:var(--orange);border-color:var(--orange)}
+.ecdsamal-total{font-size:1.35rem;font-weight:700;margin:.3rem 0 .2rem;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.ecdsamal-total.over{color:var(--orange)}
+/* Log rows: the left bar is redundant with the ✓/✗/↻ and the status code in the
+   heading, deliberately — colour never carries a status on its own. */
+.ecdsamal-row{border-left:4px solid var(--line);padding:.1rem 0 .1rem .7rem;margin:.8rem 0}
+.ecdsamal-row.ok{border-left-color:var(--blue)}
+.ecdsamal-row.spend{border-left-color:var(--orange)}
+.ecdsamal-row.bad{border-left-color:var(--orange)}
+.ecdsamal-row.dup{border-left-color:var(--mut)}
+.ecdsamal-head{margin:0;font-weight:700;font-size:.95rem}
+.ecdsamal-why{margin:.3rem 0 0;color:var(--mut)}
+.ecdsamal-flag{margin:.3rem 0 0;font-weight:700;color:var(--orange)}
+.ecdsamal-empty{margin:.4rem 0;color:var(--mut);font-style:italic}
+/* Keyboard: sim.css styles button:hover but nothing for focus, and this page is
+   driven from the keyboard during a lecture. Own class rather than a bare
+   `button:focus`, so no other simulation's chrome changes. */
+.preset .ecdsamal-btn{font-size:.85rem;padding:.4rem .85rem}
+.ecdsamal-btn:focus-visible,.ecdsamal-in:focus-visible{
+  outline:3px solid var(--blue);outline-offset:2px}
+
+/* ── iam-evaluation (Lesson 7, cloud-infrastructure-security): AWS request order ── */
+.iam-evaluation-title{font-size:1.3rem}
+.iam-evaluation-gap{margin-top:1rem}
+.iam-evaluation-presets button:focus-visible,
+.iam-evaluation-grid select:focus-visible,
+.iam-evaluation-check input:focus-visible,
+.iam-evaluation-opt input:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+.iam-evaluation-verdict{display:flex;flex-wrap:wrap;align-items:baseline;gap:.35rem .9rem;
+  border:2px solid var(--line);border-radius:10px;padding:.7rem .9rem;margin:.7rem 0 1rem;
+  background:var(--card)}
+.iam-evaluation-verdict.is-deny{border-color:var(--orange);background:rgba(227,82,5,.10)}
+.iam-evaluation-verdict.is-allow{border-color:var(--blue);background:rgba(1,123,196,.10)}
+.iam-evaluation-badge{font-size:1.55rem;font-weight:800;letter-spacing:.03em;line-height:1.15}
+.iam-evaluation-verdict.is-deny .iam-evaluation-badge{color:var(--orange)}
+.iam-evaluation-verdict.is-allow .iam-evaluation-badge{color:var(--blue)}
+.iam-evaluation-because{font-size:1.02rem;font-weight:700}
+.iam-evaluation-sub{flex-basis:100%;color:var(--mut);margin:.1rem 0 0;max-width:80ch}
+
+.iam-evaluation-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:.1rem .9rem}
+.iam-evaluation-wide{grid-column:1/-1}
+.iam-evaluation-grid select{width:100%;max-width:100%;font:inherit;font-size:.95rem;
+  padding:.35rem .4rem;border:1px solid var(--line);border-radius:6px;
+  background:var(--bg);color:var(--fg)}
+.iam-evaluation-check{display:flex;align-items:flex-start;gap:.45rem;margin:.7rem 0 .1rem}
+.iam-evaluation-check input{width:1.1rem;height:1.1rem;margin:.15rem 0 0;flex:0 0 auto}
+.iam-evaluation-check label{margin:0;font-size:.95rem;color:var(--fg)}
+.iam-evaluation-check label.iam-evaluation-leg{font-size:.85rem;color:var(--mut);
+  text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+
+.iam-evaluation-fs{border:0;padding:0;margin:.8rem 0 0;min-width:0}
+.iam-evaluation-fs legend{padding:0;font-size:.85rem;color:var(--mut);
+  text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.iam-evaluation-opts{display:flex;flex-wrap:wrap;gap:.1rem .9rem;margin:.3rem 0 0}
+.iam-evaluation-opt{display:flex;align-items:center;gap:.35rem}
+.iam-evaluation-opt input{width:1.05rem;height:1.05rem}
+.iam-evaluation-opt label{margin:0;font-size:.92rem;color:var(--fg)}
+
+.iam-evaluation-src{margin:.15rem 0 .2rem}
+.iam-evaluation-na{color:var(--mut);font-style:italic;margin:.25rem 0;max-width:70ch}
+.iam-evaluation-stmt{border-left:4px solid var(--line);padding-left:.6rem;margin:.5rem 0}
+.iam-evaluation-stmt.is-on{border-left-color:var(--blue)}
+.iam-evaluation-stmt.is-deny{border-left-color:var(--orange)}
+.iam-evaluation-stmt.is-cond{border-left-color:var(--orange);border-left-style:dashed}
+.iam-evaluation-head{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;
+  font-size:.92rem;font-weight:700}
+.iam-evaluation-chip{font-size:.72rem;font-weight:700;letter-spacing:.03em;
+  border:1px solid var(--line);border-radius:99px;padding:.05rem .55rem;color:var(--mut);
+  text-transform:uppercase}
+.iam-evaluation-chip.is-on{border-color:var(--blue);color:var(--blue)}
+.iam-evaluation-chip.is-deny{border-color:var(--orange);color:var(--orange)}
+.iam-evaluation-chip.is-cond{border-color:var(--orange);color:var(--orange);border-style:dashed}
+.iam-evaluation-json{font-size:.82rem;margin:.35rem 0 .25rem}
+.iam-evaluation-why{margin:.15rem 0 0;font-size:.86rem;color:var(--mut);max-width:70ch}
+
+.iam-evaluation-step{display:flex;gap:.6rem;padding:.55rem 0;border-top:1px solid var(--line)}
+.iam-evaluation-step:first-child{border-top:0;padding-top:.2rem}
+.iam-evaluation-step.is-skip{opacity:.6}
+.iam-evaluation-num{flex:0 0 1.7rem;height:1.7rem;border-radius:50%;
+  border:2px solid var(--line);display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:.9rem;color:var(--mut)}
+.iam-evaluation-step.is-pass .iam-evaluation-num{border-color:var(--blue);color:var(--blue)}
+.iam-evaluation-step.is-stop .iam-evaluation-num{border-color:var(--orange);
+  color:var(--orange);background:rgba(227,82,5,.12)}
+.iam-evaluation-body{min-width:0}
+.iam-evaluation-q{margin:0;font-size:.8rem;color:var(--mut);text-transform:uppercase;
+  letter-spacing:.04em;font-weight:700}
+.iam-evaluation-a{margin:.1rem 0 0;font-size:1rem;font-weight:700;overflow-wrap:break-word}
+.iam-evaluation-step.is-pass .iam-evaluation-a{color:var(--blue)}
+.iam-evaluation-step.is-stop .iam-evaluation-a{color:var(--orange)}
+.iam-evaluation-d{margin:.2rem 0 0;font-size:.88rem}
+.iam-evaluation-rule{margin:.3rem 0 0;padding-left:1.3rem}
+.iam-evaluation-rule li{font-size:.92rem;margin:.2rem 0}
+.iam-evaluation-nudge{margin:.6rem 0 0;font-weight:700;color:var(--orange);max-width:70ch}
+.iam-evaluation-nudge:empty{margin:0}
+@media (max-width:760px){.iam-evaluation-badge{font-size:1.35rem}}
+
+/* ── jwt-forge (Week 6, software-security): alg=none and the missing signature check ── */
+/* MUST stay after the shared rules: `.jwt-forge-strip` and `input.jwt-forge-in`
+   deliberately override `.q` and `input[type=text]` on source order, not on a
+   specificity trick. Do not append anything below that re-declares those. */
+/* Vertical budget is the scarce resource: the worksheet embeds this in a 4:3
+   iframe capped at 900px, so ~675px is all a lecturer sees without scrolling,
+   and the ACCEPTED/REJECTED pair has to land inside it after a preset click.
+   Measured, not guessed — the verdict line sat at y=710 before these trims. */
+h1.jwt-forge-title{font-size:1.35rem;line-height:1.3;margin-bottom:.25rem}
+.jwt-forge-lead{margin-bottom:.6rem}
+.jwt-forge-cue{margin:.35rem 0 .55rem}
+.jwt-forge-gap{margin-top:1rem}
+
+/* The token is one unbroken string, so it must be allowed to break anywhere.
+   `word-break:break-word` — what .q uses — does NOT break an unbroken run, and
+   the page would scroll sideways on a phone. */
+.jwt-forge-token{display:block;width:100%;max-width:100%;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.95rem;
+  line-height:1.5;padding:.5rem;border:1px solid var(--line);border-radius:6px;
+  background:var(--bg);color:var(--fg);resize:vertical;
+  overflow-wrap:anywhere;word-break:break-all}
+.jwt-forge-token:focus,.jwt-forge-sel:focus,input.jwt-forge-in:focus{
+  outline:2px solid var(--blue);outline-offset:1px}
+.jwt-forge-strip,.jwt-forge-raw,.jwt-forge-cmp{overflow-wrap:anywhere;word-break:break-all}
+.jwt-forge-strip{font-size:.9rem;line-height:1.7;margin:.45rem 0 0;padding:.5rem}
+.jwt-forge-raw,.jwt-forge-json{font-size:.85rem}
+.jwt-forge-json{overflow-x:auto}
+.jwt-forge-dot{font-weight:800;padding:0 .1em;opacity:.65}
+
+/* Part identity is never colour alone: each part carries its number and its own
+   underline style, both of which survive a projector and colour blindness. */
+.jwt-forge-p1{background:rgba(1,123,196,.20);border-bottom:3px solid var(--blue);padding:1px 2px}
+.jwt-forge-p2{background:rgba(227,82,5,.22);border-bottom:3px dashed var(--orange);padding:1px 2px}
+.jwt-forge-p3{background:rgba(128,128,128,.28);border-bottom:3px dotted var(--fg);padding:1px 2px}
+.jwt-forge-extra{background:rgba(227,82,5,.35);text-decoration:line-through}
+.jwt-forge-key{display:inline-block;min-width:1.5em;text-align:center;font-weight:800}
+.jwt-forge-legend{display:flex;flex-wrap:wrap;gap:1rem;margin:.4rem 0 0;
+  font-size:.85rem;color:var(--mut)}
+
+.jwt-forge-ctl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;
+  margin-top:.6rem}
+.jwt-forge-ctl label{margin:0 0 .15rem}
+.jwt-forge-sel{display:block;width:100%;font:inherit;font-size:.95rem;padding:.4rem;
+  border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg)}
+input.jwt-forge-in{font-size:.95rem;padding:.4rem .5rem}
+.jwt-forge-btns{margin:.7rem 0 0}
+.jwt-forge-btns button{font-size:.9rem;padding:.4rem .75rem;border-width:2px}
+.jwt-forge-btns button:focus{outline:2px solid var(--blue);outline-offset:1px}
+
+/* Two independent grids, both collapsing to one column early enough that the
+   4:3 worksheet iframe on a phone never scrolls sideways. */
+.jwt-forge-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem;margin-top:1rem}
+.jwt-forge-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;margin-top:1rem}
+@media (max-width:760px){.jwt-forge-three,.jwt-forge-two{grid-template-columns:1fr}}
+@media (max-width:560px){.jwt-forge-ctl{grid-template-columns:1fr}}
+
+/* Verdicts carry a word, a glyph and a border style, so the meaning survives a
+   projector that crushes colour. */
+.jwt-forge-badge{display:inline-block;min-width:6.6em;text-align:center;font-weight:800;
+  font-size:.75rem;letter-spacing:.05em;padding:.15rem .45rem;border-radius:4px;
+  border:2px solid;white-space:nowrap}
+.jwt-forge-pass{color:var(--blue);border-color:var(--blue);border-style:solid}
+.jwt-forge-fail{color:var(--orange);border-color:var(--orange);border-style:dashed}
+.jwt-forge-skip{color:var(--mut);border-color:var(--mut);border-style:dotted}
+.jwt-forge-verdict{display:flex;flex-wrap:wrap;align-items:baseline;gap:.5rem;margin:.2rem 0 .3rem}
+.jwt-forge-verdict .jwt-forge-badge{font-size:.85rem}
+.jwt-forge-vtext{font-size:1rem;font-weight:700}
+.jwt-forge-steps{list-style:none;margin:.5rem 0 0;padding:0}
+.jwt-forge-steps li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.5rem;
+  align-items:start;margin:0 0 .6rem}
+.jwt-forge-steptitle{font-weight:700}
+.jwt-forge-why{margin:.15rem 0 0;color:var(--mut)}
+.jwt-forge-cmp{margin:.4rem 0 0;font-size:.85rem}
+.jwt-forge-alert{color:var(--orange);font-weight:700;margin:.35rem 0 0}
+.jwt-forge-note{margin:.4rem 0 0;color:var(--mut);font-size:.85rem}
+.jwt-forge-summary{margin:0;font-size:1rem;font-weight:700}
+
+/* ── stack-frame (Week 11, software-security): canary detects, FORTIFY prevents ── */
+.stack-frame-presets button{display:flex;flex-direction:column;align-items:flex-start;
+  gap:.1rem;text-align:left;line-height:1.25}
+.stack-frame-presets button[aria-pressed=true]{border-color:var(--blue);
+  box-shadow:inset 0 0 0 2px var(--blue)}
+.stack-frame-pname{font-size:.85rem;font-weight:700}
+.stack-frame-pflags{font-size:.68rem;color:var(--mut);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+/* ADDED during wiring, not from the build: the reviewer's a11y fix introduced
+   <p class="stack-frame-presetlabel" id="presetlabel"> as the group label, and
+   the captured extra_css had no rule for it. Matches the other bar labels. */
+.stack-frame-presetlabel{margin:.6rem 0 .2rem;font-size:.8rem;color:var(--mut)}
+.stack-frame-presets button:focus-visible,.stack-frame-range:focus-visible,
+.stack-frame-num:focus-visible,.stack-frame-toggle input:focus-visible{
+  outline:3px solid var(--blue);outline-offset:2px}
+.stack-frame-controls{margin:.6rem 0 1rem}
+.stack-frame-inputs{display:flex;align-items:center;gap:.7rem}
+.stack-frame-range{flex:1 1 auto;min-width:0;accent-color:var(--orange)}
+.stack-frame-num{width:5.5rem;font:inherit;font-size:1.05rem;font-weight:700;
+  padding:.3rem .4rem;border:1px solid var(--line);border-radius:6px;
+  background:var(--bg);color:var(--fg)}
+.stack-frame-toggles{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;margin-top:.7rem}
+.stack-frame-toggle{display:inline-flex;align-items:center;gap:.4rem;margin:0;
+  font-size:.85rem;color:var(--fg);cursor:pointer}
+.stack-frame-toggle input{width:1.1rem;height:1.1rem;accent-color:var(--orange)}
+.stack-frame-axis{margin:.35rem 0;font-size:.72rem;color:var(--mut);
+  text-transform:uppercase;letter-spacing:.05em}
+.stack-frame-scroll{overflow-x:auto}
+.stack-frame-grid{min-width:270px;display:flex;flex-direction:column;gap:3px}
+.stack-frame-row{display:grid;grid-template-columns:minmax(8.5rem,13rem) minmax(0,1fr);
+  gap:.5rem;align-items:center;padding:.15rem .2rem;border-left:4px solid transparent;
+  border-radius:4px}
+.stack-frame-row--buf{border-left-color:var(--line)}
+.stack-frame-row--hit{border-left-color:var(--orange);background:rgba(227,82,5,.09)}
+.stack-frame-rowhead{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.stack-frame-rowname{font-size:clamp(.75rem,1.3vw,1rem);font-weight:700}
+.stack-frame-rowmeta{font-size:clamp(.62rem,1vw,.78rem);color:var(--mut)}
+.stack-frame-row--hit .stack-frame-rowmeta{color:var(--orange);font-weight:700}
+.stack-frame-rownote{font-size:clamp(.6rem,1vw,.75rem);color:var(--mut);font-style:italic}
+.stack-frame-cells{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:2px}
+.stack-frame-cell{border:1px solid var(--line);border-radius:3px;text-align:center;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:clamp(.65rem,1.2vw,1.05rem);line-height:1.6;color:var(--mut)}
+.stack-frame-cell--in{background:rgba(1,123,196,.22);border-color:var(--blue);
+  color:var(--fg);font-weight:700}
+.stack-frame-cell--smash{background:repeating-linear-gradient(45deg,
+  rgba(227,82,5,.55) 0 5px,rgba(227,82,5,.2) 5px 10px);
+  border-color:var(--orange);color:var(--fg);font-weight:700}
+.stack-frame-cell--nul{outline:2px solid var(--fg);outline-offset:-3px}
+.stack-frame-cell--void{border-style:dashed;opacity:.5}
+.stack-frame-legend{font-size:.75rem;color:var(--mut);margin:.6rem 0 0;line-height:1.45}
+.stack-frame-status{font-size:clamp(.95rem,1.8vw,1.25rem);line-height:1.3;margin:0}
+.stack-frame-why{margin:.55rem 0 0;font-size:clamp(.8rem,1.2vw,.95rem)}
+.stack-frame-gap{margin-top:1rem}
+.stack-frame-steps{margin:0;padding-left:1.4rem}
+.stack-frame-step{padding:.55rem 0;border-top:1px solid var(--line);margin:0}
+.stack-frame-step:first-child{border-top:0;padding-top:.1rem}
+.stack-frame-step--dead{opacity:.62}
+.stack-frame-badge{display:inline-block;margin-right:.4rem;font-size:.62rem;
+  font-weight:700;letter-spacing:.05em;padding:.1rem .4rem;border-radius:4px;
+  white-space:nowrap;border:1px solid var(--line);color:var(--mut)}
+.stack-frame-badge--ok{border-color:var(--blue);color:var(--blue)}
+.stack-frame-badge--abort,.stack-frame-badge--pwn{border-color:var(--orange);
+  color:#fff;background:var(--orange)}
+.stack-frame-steptitle{font-weight:700;font-size:clamp(.76rem,1.2vw,.92rem);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.stack-frame-stepnote{display:block;margin-top:.25rem;color:var(--mut);
+  font-size:clamp(.72rem,1.1vw,.88rem)}
+@media (max-width:560px){
+  .stack-frame-row{grid-template-columns:1fr;gap:.2rem}
+  .stack-frame-grid{min-width:0}
+}
+
+/* ── xss-context (Week 5, software-security): one value, four sinks, one escaper ── */
+.xss-context-fs{border:0;padding:0;margin:.5rem 0 0;min-width:0}
+.xss-context-leg{padding:0;font-size:.85rem;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--mut)}
+.xss-context-opts{display:flex;flex-wrap:wrap;gap:.4rem;margin:.3rem 0 .2rem}
+.xss-context-opt{display:inline-flex;align-items:center;gap:.35rem;margin:0;
+  padding:.3rem .55rem;font-size:.9rem;color:var(--fg);background:var(--card);
+  border:1px solid var(--line);border-radius:6px;cursor:pointer}
+.xss-context-opt:focus-within{outline:2px solid var(--blue);outline-offset:2px}
+.xss-context-opt:has(input:checked){border-color:var(--blue);font-weight:700;
+  box-shadow:inset 0 0 0 1px var(--blue)}
+.xss-context-esc{margin:.6rem 0 .2rem;font-size:.85rem;color:var(--mut)}
+.xss-context-out{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:.85rem;color:var(--fg);background:var(--bg);border:1px solid var(--line);
+  border-radius:4px;padding:.1rem .3rem;overflow-wrap:anywhere}
+.xss-context-nochange{color:var(--mut);font-style:italic}
+.xss-context-sum{margin:.6rem 0 0;font-size:1.1rem;font-weight:800}
+.xss-context-sum.hot{color:var(--orange)}
+.xss-context-sum.cool{color:var(--blue)}
+.xss-context-note{margin:.2rem 0 0;color:var(--mut);font-size:.9rem;max-width:82ch}
+.xss-context-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.7rem;margin-top:.7rem}
+@media (max-width:760px){.xss-context-grid{grid-template-columns:1fr}}
+.xss-context-sink{min-width:0;background:var(--card);border:1px solid var(--line);
+  border-radius:8px;padding:.7rem}
+.xss-context-sink h3{margin:0 0 .4rem;font-size:.95rem;color:var(--fg)}
+.xss-context-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:.9rem;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;
+  background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:.5rem}
+.xss-context-tpl{color:var(--mut)}
+.xss-context-val{padding:1px 2px;border-radius:3px;font-weight:700;color:var(--fg);
+  background:rgba(1,123,196,.20);box-shadow:inset 0 0 0 1px var(--blue)}
+.xss-context-val.hot{background:rgba(227,82,5,.30);box-shadow:inset 0 0 0 1px var(--orange)}
+.xss-context-badgeline{margin:.5rem 0 0}
+.xss-context-badge{display:inline-block;padding:.15rem .5rem;border:2px solid currentColor;
+  border-radius:6px;font-size:1rem;font-weight:800;letter-spacing:.02em}
+.xss-context-badge.exec{color:var(--orange)}
+.xss-context-badge.broken{color:var(--fg);border-style:dashed}
+.xss-context-badge.safe{color:var(--blue)}
+.xss-context-why{margin:.35rem 0 0;font-size:.95rem;line-height:1.5}

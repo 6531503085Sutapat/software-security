@@ -24,6 +24,8 @@ Answer in 2–4 sentences each.
 
 ## Part 3 — Hands-on Lab (150 min)
 
+![Stored XSS carries the attacker's payload through the server to the victim, where it runs in the victim's origin and reads the cookie, while CSRF runs the opposite way and has the victim's own browser attach that cookie to the attacker's forged POST.](img/xss-and-csrf.svg)
+
 **Learning goals:** land reflected + stored XSS, abuse a JS-readable cookie, build a CSRF PoC against the comment board, then prove `fixed_app.py` blocks all of it.
 
 **Prerequisites:** Docker + Docker Compose, a browser with DevTools, a text editor. Working dir: `labs/week05-xss-client-side/`.
@@ -73,6 +75,10 @@ docker run --rm -p 3000:3000 bkimminich/juice-shop       # -> http://localhost:3
   ```
   Open the file and confirm the comment appears on `/comments`.
 - *Deliverable:* the HTML + screenshot of the forged comment + why `SameSite=Strict` blocks it.
+
+```sim
+xss-context
+```
 
 **Task 5 — Defend / fix it (30 min) 🛡️.**
 - *Goal:* prove `fixed_app.py` blocks Tasks 1–3, then show that Task 4's CSRF PoC still gets through and explain why.

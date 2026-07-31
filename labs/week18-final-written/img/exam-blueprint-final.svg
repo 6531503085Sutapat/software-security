@@ -1,0 +1,203 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 550" role="img" aria-label="Exam blueprint for the Week 18 cumulative final. A thin foundation band across Weeks 1 to 6 covers threat modeling, SDLC and tooling, cryptography, injection, cross-site scripting, and authentication and authorization, at lighter weight. Weeks 7 to 9, the midterm content, are folded into scope without a dedicated block. A wide emphasis band across Weeks 10 to 15 carries most of the exam weight: API security with BOLA, mass assignment and rate limits; memory safety and exploitation; supply-chain integrity with SLSA, SBOM and Cosign; cloud and container least-privilege IAM; AI and LLM prompt injection; and DevSecOps fail-closed gate design. Week 16, the capstone studio, is not examinable. The exam is 150 minutes and 100 points across four sections: Section A, 30 points, modern-stack concepts spanning the whole term; Section B, 20 points, spot-the-vulnerability naming and fixing four code snippets; Section C, 30 points, applied design with no exploit payload required; Section D, 20 points, DevSecOps pipeline and supply-chain incident design. Fifty points test recall and identification, fifty points test design reasoning. Unlike Week 8's midterm, which devoted 30 of 100 points to writing an actual SQL injection payload, Week 18 requires zero points of payload-writing — the shift is from writing exploits to designing fixes and pipelines.">
+<title>Week 18 Final Exam Blueprint</title>
+<style>
+  .title { font: bold 16px system-ui, sans-serif; fill: #1f2937; text-anchor: middle; }
+  .subtitle { font: 11px system-ui, sans-serif; fill: #6b7280; text-anchor: middle; }
+  .hdr { font: bold 12.5px system-ui, sans-serif; fill: #017BC4; }
+  .hdr-orange { font: bold 12.5px system-ui, sans-serif; fill: #E35205; }
+  .row-lbl { font: 11px system-ui, sans-serif; fill: #6b7280; }
+  .row-lbl-orange { font: bold 12px system-ui, sans-serif; fill: #E35205; }
+  .badge { font: 10px system-ui, sans-serif; fill: #017BC4; text-anchor: middle; }
+  .badge-em { font: 10px system-ui, sans-serif; fill: #E35205; text-anchor: middle; }
+  .block-title { font: bold 11px system-ui, sans-serif; fill: #1f2937; text-anchor: middle; }
+  .block-tag { font: 10px system-ui, sans-serif; fill: #374151; text-anchor: middle; }
+  .found-block { fill: #d9edfb; stroke: #017BC4; stroke-width: 1.2; }
+  .emph-block { fill: #fbe1cf; stroke: #E35205; stroke-width: 1.6; }
+  .muted-bar { fill: #e5e7eb; stroke: #9ca3af; stroke-width: 1; }
+  .muted-text { font: 10.5px system-ui, sans-serif; fill: #4b5563; text-anchor: middle; }
+  .divider { stroke: #d1d5db; stroke-width: 1; }
+  .bar-a, .bar-b { fill: #017BC4; }
+  .bar-c, .bar-d { fill: #E35205; }
+  .bar-stroke { stroke: #ffffff; stroke-width: 1.5; }
+  .col-hd { font: bold 11px system-ui, sans-serif; fill: #1f2937; text-anchor: middle; }
+  .col-sub { font: 10px system-ui, sans-serif; fill: #6b7280; text-anchor: middle; }
+  .bracket-line { stroke: #9ca3af; stroke-width: 1; }
+  .bracket-blue { font: bold 10.5px system-ui, sans-serif; fill: #017BC4; text-anchor: middle; }
+  .bracket-orange { font: bold 10.5px system-ui, sans-serif; fill: #E35205; text-anchor: middle; }
+  .body-txt { font: 10.5px system-ui, sans-serif; fill: #374151; }
+  .mini-lbl { font: 10.5px system-ui, sans-serif; fill: #6b7280; }
+  .mini-bar-text { font: 10px system-ui, sans-serif; fill: #ffffff; text-anchor: middle; }
+  .footer { font: italic 10.5px system-ui, sans-serif; fill: #6b7280; }
+
+  @media (prefers-color-scheme: dark) {
+    .title { fill: #f1f5f9; }
+    .subtitle { fill: #9aa3ad; }
+    .hdr { fill: #4aa3dd; }
+    .hdr-orange { fill: #ff7a3d; }
+    .row-lbl { fill: #9aa3ad; }
+    .row-lbl-orange { fill: #ff7a3d; }
+    .badge { fill: #4aa3dd; }
+    .badge-em { fill: #ff7a3d; }
+    .block-title { fill: #f1f5f9; }
+    .block-tag { fill: #d1d5db; }
+    .found-block { fill: #0f2c3d; stroke: #4aa3dd; }
+    .emph-block { fill: #3a2415; stroke: #ff7a3d; }
+    .muted-bar { fill: #2a2f37; stroke: #6b7280; }
+    .muted-text { fill: #b6bec7; }
+    .divider { stroke: #3a4048; }
+    .bar-a, .bar-b { fill: #4aa3dd; }
+    .bar-c, .bar-d { fill: #ff7a3d; }
+    .bar-stroke { stroke: #1b1f24; }
+    .col-hd { fill: #f1f5f9; }
+    .col-sub { fill: #9aa3ad; }
+    .bracket-line { stroke: #6b7280; }
+    .bracket-blue { fill: #4aa3dd; }
+    .bracket-orange { fill: #ff7a3d; }
+    .body-txt { fill: #d1d5db; }
+    .mini-lbl { fill: #9aa3ad; }
+    .footer { fill: #9aa3ad; }
+  }
+</style>
+
+<text class="title" x="360" y="26">Week 18 Final Written Exam — Blueprint</text>
+<text class="subtitle" x="360" y="44">Cumulative · 150 min · 100 pts · heaviest weight on Weeks 10–15</text>
+
+<text class="hdr" x="20" y="64">TERM COVERAGE</text>
+
+<text class="row-lbl" x="20" y="78">Foundation — Weeks 1–6 · lighter weight, still in scope</text>
+
+<!-- Foundation blocks: weeks 1-6 -->
+<g>
+  <rect class="found-block" x="20" y="84" width="110" height="34" rx="4"/>
+  <text class="badge" x="75" y="96">W1</text>
+  <text class="block-title" x="75" y="110">Threat Model</text>
+
+  <rect class="found-block" x="134" y="84" width="110" height="34" rx="4"/>
+  <text class="badge" x="189" y="96">W2</text>
+  <text class="block-title" x="189" y="110">SDLC &amp; Tooling</text>
+
+  <rect class="found-block" x="248" y="84" width="110" height="34" rx="4"/>
+  <text class="badge" x="303" y="96">W3</text>
+  <text class="block-title" x="303" y="110">Cryptography</text>
+
+  <rect class="found-block" x="362" y="84" width="110" height="34" rx="4"/>
+  <text class="badge" x="417" y="96">W4</text>
+  <text class="block-title" x="417" y="110">Injection</text>
+
+  <rect class="found-block" x="476" y="84" width="110" height="34" rx="4"/>
+  <text class="badge" x="531" y="96">W5</text>
+  <text class="block-title" x="531" y="110">XSS</text>
+
+  <rect class="found-block" x="590" y="84" width="110" height="34" rx="4"/>
+  <text class="badge" x="645" y="96">W6</text>
+  <text class="block-title" x="645" y="110">AuthN / AuthZ</text>
+</g>
+
+<!-- Weeks 7-9 gap -->
+<rect class="muted-bar" x="20" y="128" width="680" height="14" rx="3"/>
+<text class="muted-text" x="360" y="138">Weeks 7–9 — midterm content, folded into scope</text>
+
+<text class="row-lbl-orange" x="20" y="158">Emphasis — Weeks 10–15 · most exam weight</text>
+
+<!-- Emphasis blocks: weeks 10-15 -->
+<g>
+  <rect class="emph-block" x="20" y="164" width="110" height="66" rx="4"/>
+  <text class="badge-em" x="75" y="176">W10</text>
+  <text class="block-title" x="75" y="190">API Security</text>
+  <text class="block-tag" x="75" y="202">BOLA</text>
+  <text class="block-tag" x="75" y="213">Mass-Assignment</text>
+  <text class="block-tag" x="75" y="224">Rate Limits</text>
+
+  <rect class="emph-block" x="134" y="164" width="110" height="66" rx="4"/>
+  <text class="badge-em" x="189" y="176">W11</text>
+  <text class="block-title" x="189" y="190">Memory Safety</text>
+  <text class="block-tag" x="189" y="202">&amp; Exploitation</text>
+
+  <rect class="emph-block" x="248" y="164" width="110" height="66" rx="4"/>
+  <text class="badge-em" x="303" y="176">W12</text>
+  <text class="block-title" x="303" y="190">Supply Chain</text>
+  <text class="block-tag" x="303" y="202">SLSA · SBOM</text>
+  <text class="block-tag" x="303" y="213">· Cosign</text>
+
+  <rect class="emph-block" x="362" y="164" width="110" height="66" rx="4"/>
+  <text class="badge-em" x="417" y="176">W13</text>
+  <text class="block-title" x="417" y="190">Cloud / Container</text>
+  <text class="block-tag" x="417" y="202">Least-Priv. IAM</text>
+
+  <rect class="emph-block" x="476" y="164" width="110" height="66" rx="4"/>
+  <text class="badge-em" x="531" y="176">W14</text>
+  <text class="block-title" x="531" y="190">AI / LLM</text>
+  <text class="block-tag" x="531" y="202">Prompt Injection</text>
+
+  <rect class="emph-block" x="590" y="164" width="110" height="66" rx="4"/>
+  <text class="badge-em" x="645" y="176">W15</text>
+  <text class="block-title" x="645" y="190">DevSecOps</text>
+  <text class="block-tag" x="645" y="202">Fail-Closed</text>
+  <text class="block-tag" x="645" y="213">Gate Design</text>
+</g>
+
+<!-- Week 16 excluded -->
+<rect class="muted-bar" x="20" y="238" width="680" height="14" rx="3"/>
+<text class="muted-text" x="360" y="248">Week 16 — Capstone studio: not examinable</text>
+
+<line class="divider" x1="20" y1="264" x2="700" y2="264"/>
+
+<text class="hdr" x="20" y="282">WHERE THE 100 POINTS ARE</text>
+<text class="mini-lbl" x="700" y="282" text-anchor="end">150 minutes total</text>
+
+<!-- Stacked points bar: A 30, B 20, C 30, D 20 -->
+<g>
+  <rect class="bar-a bar-stroke" x="20" y="290" width="204" height="28"/>
+  <rect class="bar-b bar-stroke" x="224" y="290" width="136" height="28"/>
+  <rect class="bar-c bar-stroke" x="360" y="290" width="204" height="28"/>
+  <rect class="bar-d bar-stroke" x="564" y="290" width="136" height="28"/>
+  <text class="mini-bar-text" x="122" y="308">A · 30 pts</text>
+  <text class="mini-bar-text" x="292" y="308">B · 20 pts</text>
+  <text class="mini-bar-text" x="462" y="308">C · 30 pts</text>
+  <text class="mini-bar-text" x="632" y="308">D · 20 pts</text>
+</g>
+
+<text class="col-sub" x="122" y="338">Concepts, whole term</text>
+<text class="col-sub" x="292" y="338">Spot-Vuln: name + fix</text>
+<text class="col-sub" x="462" y="338">Applied Design (no payload)</text>
+<text class="col-sub" x="632" y="338">Gate &amp; Incident Design</text>
+
+<!-- Brackets grouping recall vs design -->
+<g class="bracket-line">
+  <line x1="20" y1="356" x2="354" y2="356"/>
+  <line x1="20" y1="356" x2="20" y2="352"/>
+  <line x1="354" y1="356" x2="354" y2="352"/>
+</g>
+<text class="bracket-blue" x="187" y="370">50 pts — recall &amp; identify</text>
+
+<g class="bracket-line">
+  <line x1="366" y1="356" x2="700" y2="356"/>
+  <line x1="366" y1="356" x2="366" y2="352"/>
+  <line x1="700" y1="356" x2="700" y2="352"/>
+</g>
+<text class="bracket-orange" x="533" y="370">50 pts — design the fix</text>
+
+<line class="divider" x1="20" y1="386" x2="700" y2="386"/>
+
+<text class="hdr-orange" x="20" y="404">THE SHIFT VS. WEEK 8</text>
+<text class="body-txt" x="20" y="418">Week 8 spent 30/100 pts writing an exploit payload (SQLi).</text>
+<text class="body-txt" x="20" y="431">Week 18: 0 pts require a payload — all design &amp; recall.</text>
+
+<text class="mini-lbl" x="20" y="446">Week 8 — Midterm (100 pts)</text>
+<g>
+  <rect x="20" y="450" width="204" height="16" fill="#E35205" class="bar-stroke"/>
+  <rect x="224" y="450" width="476" height="16" fill="#017BC4" class="bar-stroke"/>
+  <text class="mini-bar-text" x="122" y="462">Payload (30)</text>
+  <text class="mini-bar-text" x="462" y="462">Concepts + Spot-Vuln (70)</text>
+</g>
+
+<text class="mini-lbl" x="20" y="480">Week 18 — Final (100 pts)</text>
+<g>
+  <rect x="20" y="484" width="680" height="16" fill="#017BC4" class="bar-stroke"/>
+  <text class="mini-bar-text" x="360" y="496">0 pts payload-writing · 100 design / recall</text>
+</g>
+
+<text class="footer" x="20" y="514">"Reason about design &amp; the pipeline, not just single bugs."</text>
+<text class="footer" x="20" y="527">Map findings to OWASP 2025 / API / LLM Top 10 / CWE.</text>
+
+</svg>

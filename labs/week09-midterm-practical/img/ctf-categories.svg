@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 640" role="img" aria-label="Diagram: Week 9 midterm practical is a 100-point, 150-minute individual CTF covering Weeks 1 to 6, split into four categories. Injection, worth 30 points, comes from the Week 4 lab and includes Boolean Bypass SQL injection for 15 points and Shell Out command injection for 15 points; the flag requires proving input never becomes executable query or shell syntax, corresponding to Week 8 exam Section B1 and Section C. XSS, worth 15 points, comes from the Week 5 lab and is Pop the Alert, a stored cross-site scripting challenge; the flag requires output being encoded before it reaches the DOM, corresponding to Week 8 Section B2. Auth and Access Control, worth 30 points, comes from the Week 6 lab and includes Not Your Order, an IDOR challenge for 15 points, and Forge Ahead, a weak JWT forgery challenge for 15 points; the flag requires the server checking ownership and verifying the JWT signature, corresponding to Week 8 Section B3 and Section D2. Cryptography, worth 25 points, comes from the Week 3 lab and includes Crack It, cracking a weak password hash for 15 points, and Penguin, breaking an ECB oracle for 10 points; the flag requires salted slow hashing and recognizing that ECB leaks block structure, corresponding to Week 8 Section B4. All flags are per-student, individual, sandbox-only, with partial credit for documented progress without the flag. The diagram's point is that this practical tests the same Weeks 1 to 6 material as the Week 8 written exam, just hands-on instead of on paper.">
+  <title>Week 9 CTF Scoreboard: four categories, their source labs, what each flag actually proves, and their link to the Week 8 written exam</title>
+  <style>
+    .title { fill:#0f172a; font: 700 16px system-ui, sans-serif; }
+    .subtitle { fill:#6b7280; font: 11.5px system-ui, sans-serif; }
+    .pairnote { fill:#374151; font: 11px system-ui, sans-serif; }
+    .pairref { fill:#017BC4; font: 700 11px system-ui, sans-serif; }
+    .card { fill:none; stroke:#017BC4; stroke-width:1.5; }
+    .cardHi { fill:none; stroke:#E35205; stroke-width:2.5; }
+    .accent { fill:#017BC4; }
+    .accentHi { fill:#E35205; }
+    .pill { fill:#017BC4; }
+    .pillHi { fill:#E35205; }
+    .pillText { fill:#ffffff; font: 700 12.5px system-ui, sans-serif; text-anchor:middle; }
+    .catName { fill:#0f172a; font: 700 13px system-ui, sans-serif; }
+    .srcTag { fill:#6b7280; font: 11px system-ui, sans-serif; }
+    .challenge { fill:#1f2937; font: 11.5px system-ui, sans-serif; }
+    .challengeNote { fill:#6b7280; font: italic 11px system-ui, sans-serif; }
+    .divider { stroke:#d1d5db; stroke-width:1; }
+    .flagLabel { fill:#6b7280; font: 700 11px system-ui, sans-serif; }
+    .flagText { fill:#0f172a; font: italic 500 11px system-ui, sans-serif; }
+    .chip { fill:#017BC4; }
+    .chipText { fill:#ffffff; font: 600 11px system-ui, sans-serif; text-anchor:middle; }
+    .legend { fill:#6b7280; font: 11px system-ui, sans-serif; }
+    .rules { fill:#374151; font: 11px system-ui, sans-serif; }
+
+    @media (prefers-color-scheme: dark) {
+      .title { fill:#e5e7eb; }
+      .subtitle { fill:#9aa3ad; }
+      .pairnote { fill:#c7ccd1; }
+      .pairref { fill:#4aa3dd; }
+      .card { stroke:#4aa3dd; }
+      .cardHi { stroke:#ff7a3d; }
+      .accent { fill:#4aa3dd; }
+      .accentHi { fill:#ff7a3d; }
+      .pill { fill:#4aa3dd; }
+      .pillHi { fill:#ff7a3d; }
+      .catName { fill:#e5e7eb; }
+      .srcTag { fill:#9aa3ad; }
+      .challenge { fill:#dbe2ea; }
+      .challengeNote { fill:#9aa3ad; }
+      .divider { stroke:#374151; }
+      .flagLabel { fill:#9aa3ad; }
+      .flagText { fill:#e5e7eb; }
+      .chip { fill:#4aa3dd; }
+      .legend { fill:#9aa3ad; }
+      .rules { fill:#c7ccd1; }
+    }
+  </style>
+
+  <text class="title" x="20" y="28">Week 9 — Midterm Practical: CTF Scoreboard</text>
+  <text class="subtitle" x="20" y="46">100 pts · 150 min · Weeks 1–6 · individual, sandbox-only</text>
+  <text class="pairnote" x="20" y="62">Same content as <tspan class="pairref">Week 8 (written)</tspan> — see ↔ links below</text>
+
+  <!-- Card 1: Injection (30 pts, hi-weight) -->
+  <g transform="translate(20,76)">
+    <rect class="cardHi" x="0" y="0" width="330" height="232" rx="8"/>
+    <rect class="accentHi" x="4" y="4" width="5" height="224"/>
+    <text class="catName" x="20" y="26">Injection</text>
+    <rect class="pillHi" x="258" y="8" width="64" height="24" rx="12"/>
+    <text class="pillText" x="290" y="24">30 pts</text>
+    <text class="srcTag" x="20" y="48">Source: Week 4 — labs/week04-injection</text>
+    <text class="challenge" x="20" y="68">#1 Boolean Bypass — SQLi · 15 pts</text>
+    <text class="challenge" x="20" y="86">#2 Shell Out — Cmd injection · 15 pts</text>
+    <line class="divider" x1="20" x2="310" y1="102" y2="102"/>
+    <text class="flagLabel" x="20" y="120">FLAG TESTS</text>
+    <text class="flagText" x="20" y="138">Flag = input never becomes executable</text>
+    <text class="flagText" x="20" y="154">query/shell syntax, not just a scanner</text>
+    <rect class="chip" x="20" y="196" width="150" height="22" rx="11"/>
+    <text class="chipText" x="95" y="211">↔ W8 §B1 + §C</text>
+  </g>
+
+  <!-- Card 2: XSS (15 pts) -->
+  <g transform="translate(370,76)">
+    <rect class="card" x="0" y="0" width="330" height="232" rx="8"/>
+    <rect class="accent" x="4" y="4" width="5" height="224"/>
+    <text class="catName" x="20" y="26">XSS</text>
+    <rect class="pill" x="258" y="8" width="64" height="24" rx="12"/>
+    <text class="pillText" x="290" y="24">15 pts</text>
+    <text class="srcTag" x="20" y="48">Source: Week 5 — labs/week05-xss-client-side</text>
+    <text class="challenge" x="20" y="68">#3 Pop the Alert — Stored XSS · 15 pts</text>
+    <text class="challengeNote" x="20" y="86">(only challenge — full 15 pts)</text>
+    <line class="divider" x1="20" x2="310" y1="102" y2="102"/>
+    <text class="flagLabel" x="20" y="120">FLAG TESTS</text>
+    <text class="flagText" x="20" y="138">Flag = output is encoded before it</text>
+    <text class="flagText" x="20" y="154">reaches the DOM, not one alert popup</text>
+    <rect class="chip" x="20" y="196" width="150" height="22" rx="11"/>
+    <text class="chipText" x="95" y="211">↔ W8 §B2</text>
+  </g>
+
+  <!-- Card 3: Auth / Access Control (30 pts, hi-weight) -->
+  <g transform="translate(20,326)">
+    <rect class="cardHi" x="0" y="0" width="330" height="232" rx="8"/>
+    <rect class="accentHi" x="4" y="4" width="5" height="224"/>
+    <text class="catName" x="20" y="26">Auth / Access Control</text>
+    <rect class="pillHi" x="258" y="8" width="64" height="24" rx="12"/>
+    <text class="pillText" x="290" y="24">30 pts</text>
+    <text class="srcTag" x="20" y="48">Source: Week 6 — labs/week06-authn-authz</text>
+    <text class="challenge" x="20" y="68">#4 Not Your Order — IDOR · 15 pts</text>
+    <text class="challenge" x="20" y="86">#5 Forge Ahead — Weak JWT · 15 pts</text>
+    <line class="divider" x1="20" x2="310" y1="102" y2="102"/>
+    <text class="flagLabel" x="20" y="120">FLAG TESTS</text>
+    <text class="flagText" x="20" y="138">Flag = server checks ownership AND</text>
+    <text class="flagText" x="20" y="154">verifies the JWT signature, not decodes it</text>
+    <rect class="chip" x="20" y="196" width="150" height="22" rx="11"/>
+    <text class="chipText" x="95" y="211">↔ W8 §B3 + §D2</text>
+  </g>
+
+  <!-- Card 4: Cryptography (25 pts) -->
+  <g transform="translate(370,326)">
+    <rect class="card" x="0" y="0" width="330" height="232" rx="8"/>
+    <rect class="accent" x="4" y="4" width="5" height="224"/>
+    <text class="catName" x="20" y="26">Cryptography</text>
+    <rect class="pill" x="258" y="8" width="64" height="24" rx="12"/>
+    <text class="pillText" x="290" y="24">25 pts</text>
+    <text class="srcTag" x="20" y="48">Source: Week 3 — labs/week03-cryptography</text>
+    <text class="challenge" x="20" y="68">#6 Crack It — Weak hash · 15 pts</text>
+    <text class="challenge" x="20" y="86">#7 Penguin — ECB oracle · 10 pts</text>
+    <line class="divider" x1="20" x2="310" y1="102" y2="102"/>
+    <text class="flagLabel" x="20" y="120">FLAG TESTS</text>
+    <text class="flagText" x="20" y="138">Flag = salting/slow hashing stops #6;</text>
+    <text class="flagText" x="20" y="154">ECB's fixed blocks leak structure (#7)</text>
+    <rect class="chip" x="20" y="196" width="150" height="22" rx="11"/>
+    <text class="chipText" x="95" y="211">↔ W8 §B4</text>
+  </g>
+
+  <text class="legend" x="20" y="574">Orange border = highest-weight category (30 pts)</text>
+  <text class="legend" x="20" y="590">Blue chip = linked Week 8 exam section</text>
+  <text class="rules" x="20" y="612">Rules: per-student flags, individual, sandbox-only.</text>
+  <text class="rules" x="20" y="628">Partial credit for documented progress without the flag.</text>
+</svg>
