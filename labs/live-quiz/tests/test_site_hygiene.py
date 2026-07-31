@@ -270,3 +270,31 @@ def test_self_referential_urls_ignore_a_forged_host_header(monkeypatch):
 
     rb = c.get("/robots.txt", headers={"Host": "evil.example"}).data.decode()
     assert "evil.example" not in rb
+
+
+# ── "this week" ────────────────────────────────────────────────────────────
+
+def test_current_unit_marker_is_opt_in_and_absent_by_default():
+    """19 identical rows and no student accounts means nothing can infer where
+    the cohort is; the course states it in $COURSES or the page says nothing.
+    A wrong marker is worse than none, so it is never guessed from the date."""
+    assert C.current_unit(_course()) in (None, C.COURSES[0].get("current"))
+    for c in C.COURSES:
+        if not c.get("current"):
+            assert C.current_unit(c["slug"]) is None
+
+
+def test_current_unit_marks_exactly_one_row(monkeypatch, client):
+    """It must mark the unit whose number_label matches — not an index, because
+    the cloud course really has `7b` and `1–3` as unit numbers."""
+    slug = _course()
+    weeks = C.list_weeks(slug)
+    if not weeks:
+        pytest.skip("no units published")
+    target = weeks[min(2, len(weeks) - 1)]
+    c = dict(C.course(slug)); c["current"] = target["number_label"]
+    monkeypatch.setattr(C, "COURSES", [c] + [x for x in C.COURSES if x["slug"] != slug])
+    html_out = client.get(f"/learn/{slug}/").data.decode()
+    assert html_out.count('aria-current="step"') == 1
+    assert html_out.count('id="lx-now"') == 1
+    assert "This week" in html_out

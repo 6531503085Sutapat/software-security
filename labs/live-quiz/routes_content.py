@@ -96,6 +96,7 @@ def index():
         return render_template("learn_index.html", course=c,
                                weeks=C.list_weeks(c["slug"]),
                                modules=C.list_modules(c["slug"]),
+                               current_unit=C.current_unit(c["slug"]),
                                nav_courses=C.nav_courses(), only_course=True)
     return render_template("learn_courses.html", courses=courses,
                            nav_courses=C.nav_courses())
@@ -194,6 +195,7 @@ def course_index(a):
         return render_template("learn_index.html", course=c,
                                weeks=C.list_weeks(a),
                                modules=C.list_modules(a),
+                               current_unit=C.current_unit(a),
                                nav_courses=C.nav_courses(),
                                only_course=len(C.COURSES) == 1)
     if C.WEEK_RE.match(a or ""):

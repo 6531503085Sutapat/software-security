@@ -233,6 +233,11 @@ def _load_courses() -> list[dict]:
                     "root": root, "arena_url": (c.get("arena_url") or None),
                     "unit": unit,
                     "modules": _clean_modules(slug, c.get("modules")),
+            # Which unit the cohort is on right now, as a `number` (not an index):
+            # optional, and absent means "say nothing", which is what every course
+            # did before this existed. A term moves on; a wrong marker is worse
+            # than none, so it is never guessed from the date.
+            "current": str(c["current"]) if c.get("current") not in (None, "") else None,
                     "unit_label": str(c.get("unit_label") or unit.capitalize())})
     if not out:
         raise ValueError("COURSES was set but produced no courses")
@@ -570,6 +575,12 @@ PRIMARY_BADGE = {
 GRADED_BADGES = {"LAB", "EXAM", "CTF"}
 
 PRIMARY_ORDER = ("worksheet", "mock-ctf", "exam", "ctf", "scrimmage", "readme")
+
+
+def current_unit(course_slug: str | None = None) -> str | None:
+    """The unit the cohort is on, or None. Set per course in $COURSES."""
+    c = course(course_slug)
+    return (c or {}).get("current")
 
 
 def primary_kind(slug: str, course_slug: str | None = None) -> str | None:

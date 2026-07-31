@@ -6,7 +6,7 @@
 1. **Before class** — Docker Desktop working (Week 1 *Lab 0*); skim last week's recap.
 2. **Lecture (120 min)** — weekly quiz first (~10 min), then the lecture. Slides: `slides/week15.md`.
 3. **Lab (180 min)** — play this week's game, then complete **Worksheet 15** (`worksheet.md`, Parts 1–4, incl. *Audit the AI* + *EiPE/Prompt*). Two run paths: **(a)** spawn the local target `docker compose up` → the **insecure** service on `:8090` (fails OPEN) vs the **secure** service on `:8091` (fails CLOSED + logs); **(b)** `push security-ci.yml → GitHub Actions` for the pipeline gate.
-4. **Submit** — worksheet PDF → Classroom · code → GitHub · weekly quiz → Google Form. (How: [SUBMISSION.md](../../SUBMISSION.md).)
+4. **Submit** — worksheet PDF → `learn.zcr.ai/submit` · code → GitHub · weekly quiz → `learn.zcr.ai/quiz`. (How: [SUBMISSION.md](../../SUBMISSION.md).)
 5. **Project** — apply this week's lesson to your [NoteVault project](../../project/README.md) where it fits.
 
 *Time breakdown: [AGENDA.md](../../AGENDA.md). Grading: see the worksheet rubric.*
