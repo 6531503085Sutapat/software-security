@@ -70,8 +70,14 @@ visible results *and* a red build.
 ## 5. "Break the Build" game (see week15 README)
 
 - **Blue:** keep the gate green by fixing findings.
-- **Red:** open PRs that try to sneak past — e.g. add an old `urllib3`, a
-  `chmod 777`, or a hard-coded token. A correctly-built gate turns the PR red.
+- **Red:** open PRs that try to sneak past — e.g. add an old `urllib3` (Trivy
+  SCA), a Dockerfile that runs as **root** — no `USER` line, or `USER root`
+  (Trivy config, `DS-0002`, HIGH), or a hard-coded token (Gitleaks). One
+  defect per job. A correctly-built gate turns the PR red.
+- Don't reach for `chmod 777` here: both gate steps filter to
+  `--severity HIGH,CRITICAL` and Trivy's Dockerfile scanner has no `chmod`
+  rule at all, so it returns nothing and the build stays green. That makes it
+  a *Red point* under §6 scoring, not a failing-gate screenshot.
 
 ## 6. Run the sample service locally (logging + fail-closed demo)
 
