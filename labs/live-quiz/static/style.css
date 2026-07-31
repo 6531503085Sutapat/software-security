@@ -69,6 +69,35 @@ body {
 [hidden] { display: none !important; }
 /* all answer-shape glyphs inherit their box color (color+shape+text coding) */
 .glyph, .pglyph, .bglyph, .rglyph, .pwait .shapes svg { fill: currentColor; }
+/* The <symbol> library at the top of the game screens. It carried
+   style="position:absolute" until the app-plane CSP (style-src 'self', no
+   'unsafe-inline') made every inline style attribute inert — measured, not
+   assumed: computed position read back as `static`. Same for the swatch and
+   answer-letter colours below: these classes exist because the policy is
+   correct and the markup had to come to it, not the other way round. */
+.glyph-defs { position: absolute; }
+
+/* The answer-shape swatches that appear OUTSIDE a game: the console's legend and
+   the player's waiting screen. `color` and `fill` both, because the two callers
+   differ — the console's paths are filled directly, the player's <use> glyphs
+   inherit `fill: currentColor` from the rule above. */
+.sw-red    { color: var(--a-red);    fill: var(--a-red); }
+.sw-blue   { color: var(--a-blue);   fill: var(--a-blue); }
+.sw-yellow { color: var(--a-yellow); fill: var(--a-yellow); }
+.sw-green  { color: var(--a-green);  fill: var(--a-green); }
+
+/* Spacing and sizing that used to ride on style="" attributes. Small, but the
+   policy does not grade on size: an inline style attribute is dropped whether it
+   moves a button 6px or colours the whole screen. */
+.set-new     { margin-top: 6px; }
+.field-gap   { margin-bottom: 16px; }
+.field-gap-lg{ margin-bottom: 18px; }
+.form-inline { display: inline; }
+.in-narrow   { max-width: 6rem; }
+.card-gap    { margin-top: 1rem; }
+/* display:contents so the wrapper adds no box of its own. [hidden] above is
+   !important, so hiding still wins over this. */
+.p-contents  { display: contents; }
 
 button { font-family: inherit; }
 /* The site-wide focus ring, and for most elements the ONLY one. At 60% alpha it
@@ -219,6 +248,18 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; justif
   font: 600 clamp(30px, 4.3vw, 52px)/1.14 var(--serif); color: var(--ink);
   letter-spacing: .002em; margin: 2px 0; max-width: 1100px; text-wrap: balance;
 }
+
+/* `--o` is the answer option's identity colour, read by every rule below and by
+   the player tiles. It used to be handed to each element as an inline
+   style="--o:var(--a-red)" written by host.js/player.js — and the app-plane CSP
+   (style-src 'self', with no 'unsafe-inline') drops inline style attributes, so
+   from the day that policy shipped the projector showed four uncoloured shapes
+   and every phone four grey tiles. The colour class was already on the element;
+   only the variable was inline. This is that variable, moved to the class. */
+.opt.red,    .bar.red,    .ptile.red,    .rglyph.red    { --o: var(--a-red); }
+.opt.blue,   .bar.blue,   .ptile.blue,   .rglyph.blue   { --o: var(--a-blue); }
+.opt.yellow, .bar.yellow, .ptile.yellow, .rglyph.yellow { --o: var(--a-yellow); }
+.opt.green,  .bar.green,  .ptile.green,  .rglyph.green  { --o: var(--a-green); }
 
 .answers {
   flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; min-height: 0;
@@ -687,8 +728,9 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; justif
       player.html, host.js and player.js. Redefining one silently restyles a
       working, verified game and no test would catch it. Tokens here live on
       .lx-page and are all prefixed --lx-.
-   2. NEVER declares --o or --w. Those are NOT :root tokens — they are set at
-      runtime, per element, by host.js/player.js. Declaring either at any scope
+   2. NEVER declares --o or --w. Those are NOT :root tokens. `--o` is declared
+      once, per answer-colour class, in the game section above; `--w` is set at
+      runtime by host.js through the CSSOM. Declaring either at any scope here
       would hand every game tile a silent fallback colour or width.
    3. EVERY SELECTOR CONTAINS AT LEAST ONE .lx- CLASS. That is the proof that
       no rule here can match anything on /host or /play: those templates and

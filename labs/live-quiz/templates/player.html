@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Live Quiz — Play · KOSEN·KMITL Software Security</title>
   <link rel="stylesheet" href="/static/style.css?v={{ asset_v }}">
-  <script src="/static/socket.io.min.js"></script>
+  <script src="/static/socket.io.min.js?v={{ asset_v }}"></script>
 </head>
 <body>
   <!-- shape glyphs: answers are always coded by COLOR + SHAPE + TEXT -->
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <svg width="0" height="0" class="glyph-defs" aria-hidden="true">
     <symbol id="s-tri" viewBox="0 0 100 100"><path d="M50 12 L91 84 Q93 88 88 88 L12 88 Q7 88 9 84 Z"/></symbol>
     <symbol id="s-dia" viewBox="0 0 100 100"><path d="M50 8 L92 50 L50 92 L8 50 Z"/></symbol>
     <symbol id="s-cir" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/></symbol>
@@ -57,17 +57,17 @@
       <!-- waiting for host -->
       <div id="p-wait" class="pwait">
         <div class="shapes" aria-hidden="true">
-          <svg style="color:var(--a-red)"><use href="#s-tri"/></svg>
-          <svg style="color:var(--a-blue)"><use href="#s-dia"/></svg>
-          <svg style="color:var(--a-yellow)"><use href="#s-cir"/></svg>
-          <svg style="color:var(--a-green)"><use href="#s-sq"/></svg>
+          <svg class="sw-red"><use href="#s-tri"/></svg>
+          <svg class="sw-blue"><use href="#s-dia"/></svg>
+          <svg class="sw-yellow"><use href="#s-cir"/></svg>
+          <svg class="sw-green"><use href="#s-sq"/></svg>
         </div>
         <div class="big" id="p-wait-big">You’re in!</div>
         <div class="sub" id="p-wait-sub">Watch the big screen — the first question is coming.</div>
       </div>
 
       <!-- question -->
-      <div id="p-question" hidden style="display:contents">
+      <div id="p-question" class="p-contents" hidden>
         <div class="pstem" id="p-stem"></div>
         <div class="ptiles" id="p-tiles" role="group" aria-label="Tap your answer"></div>
         <div class="plock" id="p-lock" hidden>Locked in ✓ — waiting for the room…</div>
@@ -88,6 +88,6 @@
     </section>
   </div>
 
-  <script src="/static/player.js"></script>
+  <script src="/static/player.js?v={{ asset_v }}"></script>
 </body>
 </html>
