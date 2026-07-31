@@ -10,7 +10,7 @@ Mitigations (OWASP Top 10 for LLM Applications 2025):
 Note: defence in depth. We do NOT rely on the model "deciding" to keep the secret —
 we filter the output, and ideally the secret would not be in the prompt at all.
 
-Run:  flask --app guarded_chatbot run --port 6001   (or use docker-compose.yml)
+Run:  flask --app guarded_chatbot run --port 8083   (or use docker-compose.yml)
 """
 import os
 import re
@@ -82,4 +82,4 @@ def chat():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=6001)
+    app.run(host="0.0.0.0", port=8083)
