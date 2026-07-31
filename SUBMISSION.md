@@ -92,7 +92,12 @@ machine before Week 1. Nothing on the website will work without this step.**
 This is a security course — we practice the same rigor on your own work. The following controls are in place; assume your submission is checked.
 
 - **Your flags are unique to you.** Each student receives **personalized CTF/lab flags** derived from your student ID. A flag is traceable to the person it was issued to — submitting someone else's flag is detected automatically and counts as a violation for **both** parties.
-- **Your screenshots must show you.** Evidence must include your **terminal `whoami` / login email / student ID** and a **timestamp**. Generic or borrowed screenshots are not accepted.
+- **Your screenshots must show you.** Evidence must include a terminal running `printf '%s | %s | ' "$(whoami)" '<YOUR-STUDENT-ID>'; date '+%F %T %Z'` **in
+  the same image as the evidence**. When the evidence is a browser page, a DevTools panel or a
+  rendered response, put that terminal **beside the browser and capture the whole screen** — a
+  cropped window carries nothing that identifies you, and the lab's own output is
+  byte-identical for the whole cohort *by design*, so the stamp is the only thing that makes
+  the shot yours. Generic or borrowed screenshots are not accepted.
 - **Your code is attributable.** Work in **your own GitHub fork** with your own commits. Submissions are run through **code-similarity tools (MOSS/JPlag)** against classmates and previous cohorts. A single "paste-everything" commit with no history is a red flag.
 - **Quizzes** are individual, time-limited and **one attempt** — your access code is
   single-use and tied to you. Question order *and* option order are shuffled
