@@ -1,0 +1,92 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1 class="jwt-forge-title">A JWT is not sealed. <code>alg</code> is a claim, not a fact.</h1>
+<p class="lead jwt-forge-lead">Three base64url strings joined by dots — and the
+browser can retype any of them. What stops a forgery is the check on the right,
+not the encoding.</p>
+
+<div class="preset jwt-forge-btns" id="presets"></div>
+<p class="hint jwt-forge-cue" id="action-note" aria-live="polite"></p>
+
+<div class="card">
+  <label for="token">The token — every character is attacker-controlled</label>
+  <textarea id="token" class="jwt-forge-token" rows="2" spellcheck="false" autocomplete="off"></textarea>
+  <div class="q jwt-forge-strip" id="strip"></div>
+  <p class="jwt-forge-legend">
+    <span><span class="jwt-forge-key jwt-forge-p1">1</span> header</span>
+    <span><span class="jwt-forge-key jwt-forge-p2">2</span> payload</span>
+    <span><span class="jwt-forge-key jwt-forge-p3">3</span> signature</span>
+  </p>
+  <div class="jwt-forge-ctl">
+    <div>
+      <label for="alg">header <code>alg</code></label>
+      <select id="alg" class="jwt-forge-sel">
+        <option value="HS256">HS256</option>
+        <option value="HS512">HS512</option>
+        <option value="none">none</option>
+        <option value="NoNe">NoNe</option>
+      </select>
+    </div>
+    <div>
+      <label for="role">payload <code>role</code></label>
+      <select id="role" class="jwt-forge-sel">
+        <option value="user">user</option>
+        <option value="admin">admin</option>
+      </select>
+    </div>
+    <div>
+      <label for="sub">payload <code>sub</code></label>
+      <input id="sub" type="text" class="jwt-forge-in" autocomplete="off" spellcheck="false">
+    </div>
+  </div>
+  <div class="preset jwt-forge-btns">
+    <button type="button" id="sign-real">Re-sign with the server key</button>
+    <button type="button" id="sign-guess">Re-sign with a guessed key</button>
+    <button type="button" id="drop-sig">Drop the signature</button>
+  </div>
+</div>
+
+<div class="jwt-forge-two">
+  <div class="card">
+    <h3>Verifier A — decode only</h3>
+    <p class="jwt-forge-verdict" id="naive-verdict" aria-live="polite" aria-atomic="true"></p>
+    <div class="q">const claims = jwt.decode(token);
+if (claims.role === "admin") grantAdmin();</div>
+    <div id="naive-why"></div>
+  </div>
+  <div class="card">
+    <h3>Verifier B — verify, algorithm pinned</h3>
+    <p class="jwt-forge-verdict" id="strict-verdict" aria-live="polite" aria-atomic="true"></p>
+    <div class="q">const claims = jwt.verify(token, serverKey,
+                          { algorithms: ["HS256"] });</div>
+    <ol class="jwt-forge-steps" id="steps"></ol>
+  </div>
+</div>
+
+<div class="card jwt-forge-gap">
+  <p class="jwt-forge-summary" id="summary" aria-live="polite" aria-atomic="true"></p>
+  <p class="jwt-forge-note" id="engine"></p>
+</div>
+
+<div class="jwt-forge-three">
+  <div class="card">
+    <h3><span class="jwt-forge-key jwt-forge-p1">1</span> Header</h3>
+    <div class="q jwt-forge-raw" id="raw1"></div>
+    <div class="q jwt-forge-json" id="dec1"></div>
+  </div>
+  <div class="card">
+    <h3><span class="jwt-forge-key jwt-forge-p2">2</span> Payload</h3>
+    <div class="q jwt-forge-raw" id="raw2"></div>
+    <div class="q jwt-forge-json" id="dec2"></div>
+  </div>
+  <div class="card">
+    <h3><span class="jwt-forge-key jwt-forge-p3">3</span> Signature</h3>
+    <div class="q jwt-forge-raw" id="raw3"></div>
+    <p class="jwt-forge-note" id="dec3"></p>
+  </div>
+</div>
+
+<script src="/static/sim/jwt-forge.js?v={{ asset_v }}"></script>
+</body></html>

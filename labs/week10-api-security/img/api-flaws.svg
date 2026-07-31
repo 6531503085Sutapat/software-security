@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 616" role="img" aria-label="One REST API on port 8080 with three separate flaws, each living in a different handler rather than in the input. A curl client sending an unverified X-User-Id header makes an HTTP request to a single Flask router in vulnerable_api.py, which fans out to three handlers. Handler one, GET /api/users/{id}/orders, loads by id and never compares the owner to the caller: this is OWASP API1 BOLA, CWE-639, and swapping the id to 3 returns carol's Server rack order. The fix is a per-object ownership check, caller id not equal to uid returns 403, admins exempt. Handler two, POST /api/users, splats the whole JSON body into the model with user.update(body), so a client-supplied is_admin true field is written: OWASP API3 mass assignment, CWE-915. The fix is an explicit allow-list, ALLOWED_CREATE_FIELDS of username and password only, with the server setting id, balance and is_admin itself. Handler three, POST /api/login, has no counter and no lockout, so unlimited password guesses are processed and alice123 eventually answers 200 OK: OWASP API4 unrestricted resource consumption, CWE-307. The fix is a per-IP throttle of RATE_LIMIT 5 attempts per RATE_WINDOW of 60 seconds, returning 429. The conclusion: all three are authorization and design flaws, not input-validation flaws. The JSON is well formed, so escaping, encoding or a WAF rule blocks none of them.">
+<title>One API, three flaws — each in the handler that owns it</title>
+<style>
+svg { font-family: system-ui, sans-serif; }
+.bg   { fill: #ffffff; }
+.h1   { fill: #111827; font-size: 16px; font-weight: 700; }
+.h2   { fill: #6b7280; font-size: 11.5px; }
+.box  { fill: #ffffff; stroke: #017BC4; stroke-width: 1.5; }
+.boxt { fill: #017BC4; font-size: 12px; font-weight: 700; }
+.boxs { fill: #6b7280; font-size: 11px; }
+.flow { stroke: #017BC4; stroke-width: 2; fill: none; }
+.ah   { fill: #017BC4; }
+.rel  { fill: #6b7280; font-size: 11px; }
+.card { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; }
+.accent { fill: #E35205; }
+.route  { fill: #111827; font-size: 13px; font-weight: 700; }
+.badge  { fill: #E35205; font-size: 11px; font-weight: 700; }
+.code   { fill: #111827; font-size: 11px; }
+.note   { fill: #6b7280; font-size: 11px; }
+.fixbox { fill: #e8f3fb; stroke: #017BC4; stroke-width: 1.2; }
+.fixlab { fill: #017BC4; font-size: 11px; font-weight: 700; }
+.fixtxt { fill: #111827; font-size: 11px; }
+.rule   { stroke: #cbd5e1; stroke-width: 1; }
+.punch  { fill: #E35205; font-size: 12.5px; font-weight: 700; }
+.punch2 { fill: #111827; font-size: 11.5px; }
+@media (prefers-color-scheme: dark) {
+  .bg   { fill: #0f1419; }
+  .h1   { fill: #e5e7eb; }
+  .h2   { fill: #9aa3ad; }
+  .box  { fill: #172029; stroke: #4aa3dd; }
+  .boxt { fill: #4aa3dd; }
+  .boxs { fill: #9aa3ad; }
+  .flow { stroke: #4aa3dd; }
+  .ah   { fill: #4aa3dd; }
+  .rel  { fill: #9aa3ad; }
+  .card { fill: #172029; stroke: #3b4756; }
+  .accent { fill: #ff7a3d; }
+  .route  { fill: #e5e7eb; }
+  .badge  { fill: #ff7a3d; }
+  .code   { fill: #e5e7eb; }
+  .note   { fill: #9aa3ad; }
+  .fixbox { fill: #10293c; stroke: #4aa3dd; }
+  .fixlab { fill: #4aa3dd; }
+  .fixtxt { fill: #e5e7eb; }
+  .rule   { stroke: #3b4756; }
+  .punch  { fill: #ff7a3d; }
+  .punch2 { fill: #e5e7eb; }
+}
+</style>
+<defs>
+<marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path class="ah" d="M0,0 L10,5 L0,10 z"/>
+</marker>
+</defs>
+
+<rect class="bg" x="0" y="0" width="720" height="616"/>
+
+<text class="h1" x="24" y="30">One API, three flaws — each in the handler that owns it</text>
+<text class="h2" x="24" y="49">OWASP API Security Top 10:2023 · vulnerable_api.py on :8080 · fix on :8081</text>
+
+<!-- request path, drawn once -->
+<rect class="box" x="24" y="64" width="180" height="46" rx="8"/>
+<text class="boxt" x="114" y="84" text-anchor="middle">curl client</text>
+<text class="boxs" x="114" y="100" text-anchor="middle">X-User-Id: 1 (unverified)</text>
+
+<path class="flow" d="M114,110 L114,128" marker-end="url(#ah)"/>
+<text class="rel" x="124" y="126">HTTP request</text>
+
+<rect class="box" x="24" y="132" width="180" height="46" rx="8"/>
+<text class="boxt" x="114" y="152" text-anchor="middle">Flask router :8080</text>
+<text class="boxs" x="114" y="168" text-anchor="middle">one path in, three handlers</text>
+
+<path class="flow" d="M114,178 L114,456"/>
+<path class="flow" d="M114,206 L234,206" marker-end="url(#ah)"/>
+<path class="flow" d="M114,331 L234,331" marker-end="url(#ah)"/>
+<path class="flow" d="M114,456 L234,456" marker-end="url(#ah)"/>
+<text class="rel" x="124" y="200">loads by id</text>
+<text class="rel" x="124" y="325">binds the body</text>
+<text class="rel" x="124" y="450">checks password</text>
+
+<!-- flaw 1 : BOLA -->
+<rect class="card" x="240" y="150" width="460" height="112" rx="8"/>
+<rect class="accent" x="240" y="160" width="5" height="92" rx="2"/>
+<text class="route" x="262" y="176">GET /api/users/{id}/orders</text>
+<text class="badge" x="684" y="176" text-anchor="end">API1 BOLA · CWE-639</text>
+<text class="code" x="262" y="198">handler: return ORDERS.get(uid) — owner never compared</text>
+<text class="note" x="262" y="216">swap the id: /api/users/3/orders → carol's Server rack order</text>
+<rect class="fixbox" x="254" y="228" width="434" height="26" rx="5"/>
+<text class="fixlab" x="266" y="245">FIX</text>
+<text class="fixtxt" x="296" y="245">ownership check: caller["id"] != uid → 403 (admin exempt)</text>
+
+<!-- flaw 2 : mass assignment -->
+<rect class="card" x="240" y="275" width="460" height="112" rx="8"/>
+<rect class="accent" x="240" y="285" width="5" height="92" rx="2"/>
+<text class="route" x="262" y="301">POST /api/users</text>
+<text class="badge" x="684" y="301" text-anchor="end">API3 Mass assignment · CWE-915</text>
+<text class="code" x="262" y="323">handler: user.update(body) — whole JSON body is bound</text>
+<text class="note" x="262" y="341">body {"username":"mallory","is_admin":true} → is_admin true</text>
+<rect class="fixbox" x="254" y="353" width="434" height="26" rx="5"/>
+<text class="fixlab" x="266" y="370">FIX</text>
+<text class="fixtxt" x="296" y="370">bind only ALLOWED_CREATE_FIELDS = {"username", "password"}</text>
+
+<!-- flaw 3 : unrestricted resource consumption -->
+<rect class="card" x="240" y="400" width="460" height="112" rx="8"/>
+<rect class="accent" x="240" y="410" width="5" height="92" rx="2"/>
+<text class="route" x="262" y="426">POST /api/login</text>
+<text class="badge" x="684" y="426" text-anchor="end">API4 No rate limit · CWE-307</text>
+<text class="code" x="262" y="448">handler: no counter, no lockout — every guess processed</text>
+<text class="note" x="262" y="466">brute force alice: guess alice123 and it answers 200 OK</text>
+<rect class="fixbox" x="254" y="478" width="434" height="26" rx="5"/>
+<text class="fixlab" x="266" y="495">FIX</text>
+<text class="fixtxt" x="296" y="495">per-IP throttle: RATE_LIMIT=5 / RATE_WINDOW=60 → 429</text>
+
+<!-- punchline -->
+<line class="rule" x1="24" y1="528" x2="700" y2="528"/>
+<text class="punch" x="24" y="551">All three are authorization and design flaws, not input flaws.</text>
+<text class="punch2" x="24" y="570">The JSON is well-formed: escaping and encoding change nothing.</text>
+<text class="punch2" x="24" y="588">A WAF cannot know which order id belongs to which caller.</text>
+</svg>

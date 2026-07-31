@@ -1,0 +1,57 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>A stack frame, and what an overflow overwrites</h1>
+<p class="lead">The frame grows <b>down</b>; <code>strcpy</code> writes <b>up</b>, from
+<code>buf[0]</code> towards the saved return address. Set how many bytes are copied
+in, and watch <i>where the check happens</i> — that is the part the hardened build
+gets marked wrong on.</p>
+
+<p class="stack-frame-presetlabel" id="presetlabel">Jump to a state worth stopping on:</p>
+<div class="preset stack-frame-presets" id="presets" role="group"
+     aria-labelledby="presetlabel"></div>
+
+<div class="card stack-frame-controls">
+  <label for="n">Bytes written into <code>char buf[64]</code> — <b>including the NUL terminator</b></label>
+  <div class="stack-frame-inputs">
+    <input id="n" class="stack-frame-range" type="range" min="0" max="96" step="1" value="80">
+    <input id="nbox" class="stack-frame-num" type="number" min="0" max="96" step="1" value="80"
+           aria-label="Bytes written into buf, as a number">
+  </div>
+  <div class="stack-frame-toggles">
+    <label class="stack-frame-toggle" for="canary"><input type="checkbox" id="canary">
+      <span>Stack canary <code>-fstack-protector-strong</code></span></label>
+    <label class="stack-frame-toggle" for="fortify"><input type="checkbox" id="fortify">
+      <span>FORTIFY <code>-D_FORTIFY_SOURCE=2 -O2</code></span></label>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="card">
+    <h3>The frame — high addresses at the top</h3>
+    <p class="stack-frame-axis">&#9650; high addresses &middot; the caller</p>
+    <div class="stack-frame-scroll"><div class="stack-frame-grid" id="grid"></div></div>
+    <p class="stack-frame-axis">&#9660; low addresses &middot; <code>buf[0]</code>, where <code>strcpy</code> starts</p>
+    <p class="stack-frame-legend"><b>A</b> = a copied byte. <b>0</b> = the NUL
+      terminator, ringed. A faint dot = untouched. Hatched cells are writes
+      <i>outside</i> <code>buf</code>. When a check aborts <i>before</i> the copy,
+      every cell stays a dot and every row reads <b>never written</b> &mdash; an
+      empty grid is the difference between <i>preventing</i> a write and
+      <i>noticing</i> one afterwards. Nothing here is carried by colour alone:
+      every row also says, in words, whether it is intact.</p>
+  </div>
+  <div>
+    <div class="card">
+      <h3>Outcome</h3>
+      <p class="verdict stack-frame-status" id="status" aria-live="polite"></p>
+      <div id="why"></div>
+    </div>
+    <div class="card stack-frame-gap">
+      <h3>What happens, in order</h3>
+      <ol class="stack-frame-steps" id="steps"></ol>
+    </div>
+  </div>
+</div>
+<script src="/static/sim/stack-frame.js?v={{ asset_v }}"></script>
+</body></html>

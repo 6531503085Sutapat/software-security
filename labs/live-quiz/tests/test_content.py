@@ -14,6 +14,7 @@ representative ones.
 import html
 import os
 import re
+import shutil
 import sys
 
 import pytest
@@ -55,17 +56,44 @@ def test_payloads_inside_code_spans_and_fences_are_still_inert(payload):
 
 
 def test_the_actual_week05_worksheet_renders_inert():
-    """Not a synthetic case — the real file, as students will receive it."""
+    """Not a synthetic case — the real file, as students will receive it.
+
+    Week 5 now legitimately embeds a diagram (![]()) and a ```sim fence, which
+    render as a real <img> and a real <iframe> — that is not payload text
+    becoming live, it is OUR OWN content: the image resolved by filesystem
+    identity under `<unit>/img/` (content.py's `_resolve_repo_image`), the
+    iframe reached only through the SIMS allowlist. So this test no longer
+    blanket-forbids `<img`/`<iframe` on this page; instead it pins down that
+    each is EXACTLY the one legitimate embed and nothing else, while every tag
+    the PAYLOAD TEXT itself could produce — <script>, <svg>, an event handler,
+    a javascript: URL — is still checked with zero tolerance, same as before.
+    """
     md = C.read("week05-xss-client-side", "worksheet")
     if md is None:
         pytest.skip("week05 worksheet not present")
     assert "<script>alert(document.cookie)</script>" in md, "test premise changed"
-    out = C.render(md)
-    for bad in ("<script", "<img ", "<svg", "<iframe"):
-        assert bad not in out.lower(), f"{bad!r} became live markup"
-    # no live event handler anywhere inside a tag
-    import re as _re
-    for tag in _re.findall(r"<[a-z][^>]*>", out, _re.I):
+    # render_document, not a bare render(md): it is the exact call the real
+    # /learn route makes, so the ctx (course + on-disk directory) that lets the
+    # sim fence and the diagram's ![]() resolve is the real one, not a stub.
+    doc = C.render_document("week05-xss-client-side", "worksheet", "software-security")
+    assert doc is not None, "week05 worksheet not resolvable via the real route"
+    out = doc["html"]
+    assert "<script" not in out.lower(), "'<script' became live markup"
+    assert "<svg" not in out.lower(), "'<svg' became live markup"
+
+    iframes = re.findall(r"<iframe\b[^>]*>", out, re.I)
+    assert len(iframes) == 1, f"expected exactly the one sim embed, found {iframes}"
+    assert 'src="/sim/xss-context"' in iframes[0]
+    assert 'sandbox="allow-scripts"' in iframes[0]
+    assert "allow-same-origin" not in iframes[0]
+
+    imgs = re.findall(r"<img\b[^>]*>", out, re.I)
+    assert len(imgs) == 1, f"expected exactly the one diagram embed, found {imgs}"
+    assert 'src="/learn/software-security/week05-xss-client-side/img/' in imgs[0]
+    assert "onerror" not in imgs[0].lower() and "onload" not in imgs[0].lower()
+
+    # no live event handler anywhere inside ANY tag, including the two above
+    for tag in re.findall(r"<[a-z][^>]*>", out, re.I):
         assert "on" + "error" not in tag.lower() and "onload" not in tag.lower()
         assert "javascript:" not in tag.lower()
     assert "alert(document.cookie)" in out, "the payload must remain readable"
@@ -694,3 +722,164 @@ def test_a_step_that_agrees_with_the_resumed_count_still_resumes():
     """The other side of the same rule — the week 14 case must keep working."""
     out = C.render("1. first\n   ```bash\n   x\n   ```\n2. second\n")
     assert '<ol start="2">' in out, out
+
+
+# ── diagrams: `![alt](img/x.svg)` ──────────────────────────────────────────
+#
+# Every negative here is the point. This route hands back bytes from inside a
+# lab directory, and a lab directory holds `solution_app.py`, compose files and
+# planted flags. The renderer and the route share ONE resolver so they cannot
+# drift into disagreeing about what is servable.
+
+_WK1 = "week01-threat-modeling"
+
+
+@pytest.fixture
+def client():
+    from app import app as flask_app
+    flask_app.config["TESTING"] = True
+    return flask_app.test_client()
+
+
+def _img_ctx():
+    c = C.list_courses()[0]
+    return {"course": c["slug"], "dir": os.path.join(c["root"], _WK1)}
+
+
+def test_a_units_own_diagram_renders_as_an_image():
+    out = C.render("![Where the trust boundaries are](img/trust-boundaries.svg)",
+                   ctx=_img_ctx())
+    assert "<img src=" in out and "trust-boundaries.svg" in out, out
+    assert 'alt="Where the trust boundaries are"' in out, out
+    assert 'loading="lazy"' in out, out
+
+
+def test_an_image_that_does_not_exist_stays_plain_text():
+    """Rendering a broken picture teaches nothing and hides the mistake; the
+    markdown shows instead, which is honest about there being nothing there."""
+    out = C.render("![nope](img/no-such-file.svg)", ctx=_img_ctx())
+    assert "<img" not in out, out
+    assert "![nope](img/no-such-file.svg)" in out, out
+
+
+def test_an_image_source_cannot_walk_out_of_the_course():
+    for src in ("../../../../etc/passwd",
+                "img/../../week05-xss-client-side/worksheet.md",
+                "/etc/hosts",
+                "https://evil.example/x.svg"):
+        out = C.render(f"![x]({src})", ctx=_img_ctx())
+        assert "<img" not in out, (src, out)
+
+
+def test_a_lab_source_file_is_not_addressable_as_an_image():
+    """The whole reason images live in their own img/ directory."""
+    c = C.list_courses()[0]
+    for name in ("worksheet.md", "solution_app.py", "docker-compose.yml"):
+        assert C.unit_image_path(c["slug"], _WK1, name) is None, name
+
+
+def test_only_known_image_extensions_resolve():
+    """Against a file that REALLY EXISTS in img/. Asserting on names that are
+    absent anyway passes whether the allowlist is there or not - which is what
+    the first version of this test did."""
+    c = C.list_courses()[0]
+    decoy = os.path.join(c["root"], _WK1, "img", "decoy.py")
+    with open(decoy, "w", encoding="utf-8") as fh:
+        fh.write("# not an image\n")
+    try:
+        assert os.path.isfile(decoy)
+        assert C.unit_image_path(c["slug"], _WK1, "decoy.py") is None
+    finally:
+        os.unlink(decoy)
+
+
+def test_a_symlink_out_of_img_does_not_resolve():
+    """The one way `name` can name a file outside the course despite the
+    filename pattern: someone commits a symlink. realpath resolves it and the
+    containment check is what refuses."""
+    c = C.list_courses()[0]
+    link = os.path.join(c["root"], _WK1, "img", "escape.svg")
+    try:
+        os.symlink("/etc/hosts", link)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks unavailable here")
+    try:
+        assert os.path.islink(link)
+        assert C.unit_image_path(c["slug"], _WK1, "escape.svg") is None
+    finally:
+        os.unlink(link)
+
+
+def test_the_renderer_and_the_route_agree_by_construction(client):
+    """A URL the renderer emits must be one the route serves, and the bytes must
+    come back as an image with a policy of its own."""
+    ctx = _img_ctx()
+    out = C.render("![d](img/trust-boundaries.svg)", ctx=ctx)
+    url = re.search(r'<img src="([^"]+)"', out).group(1)
+    r = client.get(url)
+    assert r.status_code == 200, (url, r.status_code)
+    assert r.headers["Content-Type"] == "image/svg+xml"
+    # An SVG reached by navigation, not by <img>, is the case where script in it
+    # would run. The response refuses on its own.
+    assert "default-src 'none'" in r.headers["Content-Security-Policy"]
+    assert r.headers["X-Content-Type-Options"] == "nosniff"
+    assert r.data.startswith(b"<svg"), r.data[:40]
+
+
+def test_the_image_route_refuses_anything_outside_img(client):
+    c = C.list_courses()[0]
+    for bad in (f"/learn/{c['slug']}/{_WK1}/img/worksheet.md",
+                f"/learn/{c['slug']}/{_WK1}/img/..%2f..%2fworksheet.md",
+                f"/learn/{c['slug']}/no-such-week/img/trust-boundaries.svg",
+                f"/learn/not-a-course/{_WK1}/img/trust-boundaries.svg"):
+        assert client.get(bad).status_code in (301, 308, 404), bad
+
+
+def test_alt_text_cannot_break_out_of_the_attribute():
+    out = C.render('![a" onerror="alert(1)](img/trust-boundaries.svg)', ctx=_img_ctx())
+    assert 'onerror="alert(1)"' not in out, out
+    assert "&quot;" in out, out
+
+
+def test_emphasis_does_not_reach_inside_an_alt_attribute():
+    """The tag is stashed for the same reason code spans are: `_ITALIC` would
+    otherwise pair asterisks across an attribute and open an <em> inside it."""
+    out = C.render("![a *b* c](img/trust-boundaries.svg)", ctx=_img_ctx())
+    assert "<em>" not in out, out
+
+
+def test_an_image_written_inside_a_code_span_stays_literal():
+    out = C.render("`![x](img/trust-boundaries.svg)`", ctx=_img_ctx())
+    assert "<img" not in out, out
+    assert "<code>" in out, out
+
+
+def test_the_filename_pattern_is_what_stops_a_relative_name():
+    """Without it, `../img/<real file>` resolves: the extension is fine and
+    realpath lands back inside img/, so every other check waves it through.
+    Flask's <name> converter will not match a slash, so this is not reachable
+    over HTTP today - it is reachable the moment anything else calls the
+    resolver, which is exactly when a redundant-looking guard earns its place."""
+    c = C.list_courses()[0]
+    for name in ("../img/trust-boundaries.svg", "img/trust-boundaries.svg",
+                 "./trust-boundaries.svg", "..", "/etc/hosts",
+                 "TRUST-BOUNDARIES.SVG", ".hidden.svg"):
+        assert C.unit_image_path(c["slug"], _WK1, name) is None, name
+
+
+def test_an_unpublished_unit_serves_no_images():
+    """A directory that ships no public document is not part of the course, and
+    its img/ must not become a back door into it."""
+    c = C.list_courses()[0]
+    unit = "week98-not-published"
+    d = os.path.join(c["root"], unit, "img")
+    os.makedirs(d, exist_ok=True)
+    f = os.path.join(d, "x.svg")
+    with open(f, "w", encoding="utf-8") as fh:
+        fh.write("<svg xmlns='http://www.w3.org/2000/svg'/>")
+    try:
+        assert os.path.isfile(f)
+        assert not C.primary_kind(unit, c["slug"]), "fixture is not unpublished"
+        assert C.unit_image_path(c["slug"], unit, "x.svg") is None
+    finally:
+        shutil.rmtree(os.path.join(c["root"], unit), ignore_errors=True)

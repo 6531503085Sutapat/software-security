@@ -1,0 +1,104 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>ECB leaks structure. CBC does not — and neither one stops tampering.</h1>
+<p class="lead">Same key, same picture, two modes. <b>ECB</b> encrypts every 16-byte
+block on its own, so equal blocks give equal ciphertext and the shape survives.
+<b>CBC</b> XORs each block with the previous ciphertext first. Panel 2 is the sting:
+that same XOR is what lets an attacker <b>edit</b> a CBC token without the key.</p>
+<div class="preset" id="presets"></div>
+
+<div class="card" id="panel1">
+  <h3>1 · The picture</h3>
+  <div class="aes-modes-grid">
+    <figure class="aes-modes-fig">
+      <figcaption class="aes-modes-cap" id="capPlain">Plaintext</figcaption>
+      <canvas id="cvPlain" class="aes-modes-canvas" width="128" height="96"
+              role="img" aria-label="A padlock drawn in four flat colours">
+        A padlock drawn in four flat colours.
+      </canvas>
+      <p class="aes-modes-stat" id="statPlain"></p>
+    </figure>
+    <figure class="aes-modes-fig">
+      <figcaption class="aes-modes-cap" id="capEcb">ECB ciphertext</figcaption>
+      <canvas id="cvEcb" class="aes-modes-canvas" width="128" height="96"
+              role="img" aria-label="ECB ciphertext, in which the padlock is still visible">
+        ECB ciphertext: the padlock is still visible.
+      </canvas>
+      <p class="aes-modes-stat" id="statEcb"></p>
+    </figure>
+    <figure class="aes-modes-fig">
+      <figcaption class="aes-modes-cap" id="capCbc">CBC ciphertext</figcaption>
+      <canvas id="cvCbc" class="aes-modes-canvas" width="128" height="96"
+              role="img" aria-label="CBC ciphertext, which is uniform noise">
+        CBC ciphertext: uniform noise.
+      </canvas>
+      <p class="aes-modes-stat" id="statCbc"></p>
+    </figure>
+  </div>
+  <div class="preset">
+    <button id="newKey" type="button">New key</button>
+    <button id="mapToggle" type="button" aria-pressed="false">Show block-identity map</button>
+  </div>
+  <p id="imgWhy"></p>
+  <p class="hint">Every byte — plaintext or ciphertext — is drawn through the same
+  4-colour palette (its top two bits). The cipher is a toy 16-byte permutation
+  written for this page: 6 rounds of substitute, mix, shuffle. It stands in for AES
+  so that the <em>mode</em> is the only thing changing. It is not AES and it is not secure.</p>
+</div>
+
+<div class="card aes-modes-gap" id="panel2">
+  <h3>2 · The session token</h3>
+  <p>A 32-byte token — two blocks — encrypted with CBC. The IV and the ciphertext
+  travel in the clear, so both are attacker-editable. Pick a byte, then a bit.</p>
+  <div class="q" id="tokenPlain"></div>
+
+  <div class="aes-modes-scroll">
+    <div class="aes-modes-rowlabel">byte index</div>
+    <div class="aes-modes-cells aes-modes-idx" id="idxRow">
+      <span class="aes-modes-cell"><span class="aes-modes-ch">0</span></span>
+      <span class="aes-modes-cell"><span class="aes-modes-ch">1</span></span>
+      <span class="aes-modes-cell"><span class="aes-modes-ch">2</span></span>
+      <span class="aes-modes-cell"><span class="aes-modes-ch">3</span></span>
+      <span class="aes-modes-cell"><span class="aes-modes-ch">4</span></span>
+      <span class="aes-modes-cell"><span class="aes-modes-ch">5</span></span>
+      <span class="aes-modes-cell"><span class="aes-modes-ch">6</span></span>
+      <span class="aes-modes-cell"><span class="aes-modes-ch">7</span></span>
+      <span class="aes-modes-cell"><span class="aes-modes-ch">8</span></span>
+      <span class="aes-modes-cell"><span class="aes-modes-ch">9</span></span>
+      <span class="aes-modes-cell"><span class="aes-modes-ch">10</span></span>
+      <span class="aes-modes-cell"><span class="aes-modes-ch">11</span></span>
+      <span class="aes-modes-cell"><span class="aes-modes-ch">12</span></span>
+      <span class="aes-modes-cell"><span class="aes-modes-ch">13</span></span>
+      <span class="aes-modes-cell"><span class="aes-modes-ch">14</span></span>
+      <span class="aes-modes-cell"><span class="aes-modes-ch">15</span></span>
+    </div>
+    <div class="aes-modes-rowlabel">IV — public, editable (click a byte)</div>
+    <div class="aes-modes-cells" id="ivRow"></div>
+    <div class="aes-modes-rowlabel">C0 — ciphertext block 0, editable (click a byte)</div>
+    <div class="aes-modes-cells" id="c0Row"></div>
+    <div class="aes-modes-rowlabel">C1 — ciphertext block 1, left alone</div>
+    <div class="aes-modes-cells" id="c1Row"></div>
+  </div>
+
+  <p class="aes-modes-lab" id="bitLab">Which bit to flip in the selected byte</p>
+  <div class="preset" id="bitRow" role="group" aria-labelledby="bitLab"></div>
+  <p class="verdict" id="tamperLabel" aria-live="polite"></p>
+
+  <div class="aes-modes-scroll">
+    <div class="aes-modes-rowlabel">P0 = D(C0) &oplus; IV</div>
+    <div class="aes-modes-cells" id="p0Row"></div>
+    <div class="aes-modes-rowlabel">P1 = D(C1) &oplus; C0</div>
+    <div class="aes-modes-cells" id="p1Row"></div>
+  </div>
+  <p class="hint">↯ marks a byte that changed. · is an unprintable byte.</p>
+  <div class="q" id="tokenOut"></div>
+  <div id="flipWhy"></div>
+  <p class="hint">Same toy 16-byte permutation as panel 1 — <b>not AES</b>, and not
+  secure. Nothing here depends on which block cipher is underneath: the attack is
+  on the <em>mode</em>, and it works identically against real AES-CBC. What stops
+  it is authentication — an HMAC over the ciphertext, or AES-GCM.</p>
+</div>
+<script src="/static/sim/aes-modes.js?v={{ asset_v }}"></script>
+</body></html>

@@ -39,6 +39,8 @@ docker compose up         # INSECURE API on :8080, SECURE API on :8081
 Confirm both APIs respond: `curl http://localhost:8080/` and `curl http://localhost:8081/`. Note which port is insecure. Record the three seeded users.
 **Deliverable:** both root responses + the user table.
 
+![One REST API with three flaws — reading another user's orders by id, smuggling an admin field into user creation, and an unthrottled login — each shown at the handler where it occurs, next to its one-line fix.](img/api-flaws.svg)
+
 ### Task 1 — BOLA: read another user's orders (35 min)
 **Goal:** Read carol's (admin) orders without being carol — API1:2023.
 **Steps:**

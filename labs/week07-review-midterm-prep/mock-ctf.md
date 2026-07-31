@@ -6,6 +6,8 @@
 > This is practice — **hints are included** and solutions point back to the labs. No real
 > exam flags here. Goal: get comfortable with the format so Week 9 has no surprises.
 
+![A revision map of weeks 1 to 6: each week's core idea and OWASP/CWE tag, arranged so untrusted input crosses a trust boundary and the week's control sits at the crossing](img/revision-map.svg)
+
 **Targets:** `labs/week03-cryptography`, `labs/week04-injection`, `labs/week05-xss-client-side`,
 `labs/week06-authn-authz` (`docker compose up` in each).
 

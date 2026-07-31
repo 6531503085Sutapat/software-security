@@ -19,6 +19,8 @@ Answer in your own words (2–4 sentences each).
 4. Why is coverage-guided fuzzing considered the dominant modern bug-finding technique?
 5. Define true positive vs. false positive in scanner triage, and why misclassifying both directions is costly.
 
+![A left to right SDLC pipeline showing SAST at write code, secret scanning at commit, SCA and fuzzing at build, and DAST at deploy, with what each tool cannot see written underneath it.](img/sdlc-gates.svg)
+
 ## Part 3 — Hands-on Lab (180 min)
 **Learning goals:** run a SAST tool and a secret scanner, triage findings by CWE/severity, and remediate real flaws.
 **Prerequisites:** Docker installed; internet to pull the Semgrep/Gitleaks images.
