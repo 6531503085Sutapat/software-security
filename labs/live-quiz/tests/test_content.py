@@ -675,3 +675,22 @@ def test_the_running_count_resets_for_each_new_list_not_just_the_open_tag():
                    "1. fresh\n   ```bash\n   x\n   ```\n2. second of the fresh list\n")
     starts = re.findall(r'<ol(?: start="(\d+)")?>', out)
     assert starts == ["", "", "2"], starts
+
+
+def test_an_indented_note_does_not_carry_the_count_into_the_next_section():
+    """Indentation says "this belongs to the step above"; it does not prove the
+    NEXT list continues the old one. A note indented under Part 1's last step
+    keeps the count alive across the gap, and Part 2's "1." would resume as 3 —
+    a number no student could reconcile with the page.
+
+    The author's own number breaks the tie: they wrote 1, so it renders 1.
+    """
+    out = C.render("1. first\n2. second\n\n   an indented note\n\n1. Part 2 step one\n")
+    starts = re.findall(r'<ol(?: start="(\d+)")?>', out)
+    assert starts == ["", ""], starts
+
+
+def test_a_step_that_agrees_with_the_resumed_count_still_resumes():
+    """The other side of the same rule — the week 14 case must keep working."""
+    out = C.render("1. first\n   ```bash\n   x\n   ```\n2. second\n")
+    assert '<ol start="2">' in out, out
