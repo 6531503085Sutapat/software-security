@@ -82,4 +82,11 @@ software-security/
 
 ## License
 
-Course materials (text, slides, lab guides): **CC BY-NC-SA 4.0** unless noted. Third-party vulnerable targets (Juice Shop, DVWA, crAPI, etc.) retain their own licenses and are referenced, not redistributed.
+Two licences, because this repository holds two kinds of work:
+
+- **Course material** (worksheets, slides, lab guides, exams, CTF briefs) — **CC BY-NC-SA 4.0**. See [LICENSE-CONTENT](LICENSE-CONTENT).
+- **Platform code** (`labs/live-quiz/`, `tools/`, scripts) — **MIT**. See [LICENSE](LICENSE).
+
+Third-party vulnerable targets (Juice Shop, DVWA, crAPI, etc.) keep their own licences and are *referenced, not redistributed*. Files that ARE bundled — the Inter font (OFL) and the Socket.IO client (MIT) — are listed in [NOTICE](NOTICE).
+
+The deliberately vulnerable lab code carries the MIT licence's "AS IS", no-warranty terms, and they are meant literally: don't deploy it, don't copy patterns out of it, don't expose it to an untrusted network.
