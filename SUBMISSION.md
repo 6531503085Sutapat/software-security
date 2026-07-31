@@ -5,11 +5,11 @@ All offensive work is on the provided sandbox targets only — see [ETHICS.md](E
 
 | What | Where |
 |---|---|
-| Course material — worksheets, lab guides | **`quiz.zcr.ai/learn`** — no sign-in needed |
-| Weekly quiz | **`quiz.zcr.ai/quiz`** — the one-time code on your slip |
+| Course material — worksheets, lab guides | **`learn.zcr.ai/learn`** — no sign-in needed |
+| Weekly quiz | **`learn.zcr.ai/quiz`** — the one-time code on your slip |
 | Labs / CTF / scoreboard | **`ctf.zcr.ai`** — your account is issued to you, username = your student ID |
 | Code fixes | **GitHub** — your own fork |
-| Worksheet PDFs, project report | **`quiz.zcr.ai/submit`** — the submission code on your slip |
+| Worksheet PDFs, project report | **`learn.zcr.ai/submit`** — the submission code on your slip |
 
 > **No Google.** Material, quizzes and worksheet submission all run on the course
 > platform. You will not be asked for a Google account.
@@ -17,9 +17,21 @@ All offensive work is on the provided sandbox targets only — see [ETHICS.md](E
 ---
 
 ## One-time setup (Week 1)
-1. Create a GitHub account; **fork** the course repo to your account.
-2. `git clone` your fork; stand up the environment (Docker, VM, Burp) per Week 1 Lab 0.
-3. Sign in to **`ctf.zcr.ai`** with the account slip you are given (username = your student ID) and read the material at **`quiz.zcr.ai/learn`**.
+
+**Every lab starts with `cd labs/weekNN-…`, so you need the repository on your own
+machine before Week 1. Nothing on the website will work without this step.**
+
+1. Create a GitHub account, then **fork** the course repo:
+   <https://github.com/nutthakorn7/software-security>
+2. Clone your fork and check it out:
+   ```bash
+   git clone https://github.com/<your-github-username>/software-security.git
+   cd software-security
+   ```
+3. Stand up the environment (Docker Desktop, Burp/ZAP; a Linux VM is an optional
+   fallback) — this is **Week 1 Lab 0**.
+4. Sign in to **`ctf.zcr.ai`** with the account slip you are given (username = your
+   student ID). All the reading is at **`learn.zcr.ai`** — no sign-in needed.
 
 ---
 
@@ -34,7 +46,7 @@ All offensive work is on the provided sandbox targets only — see [ETHICS.md](E
 **Submit (two parts):**
 | Part | Where | What |
 |------|-------|------|
-| Worksheet | **`quiz.zcr.ai/submit`** | the completed worksheet exported to **PDF** (screenshots embedded). You can replace it any time before the deadline. |
+| Worksheet | **`learn.zcr.ai/submit`** | the completed worksheet exported to **PDF** (screenshots embedded). You can replace it any time before the deadline. |
 | Code fix | **GitHub** | push branch `wk<NN>`, open a PR (paste the commit link in the worksheet) |
 
 **File name:** `Wk<NN>_<StudentID>.pdf`  (e.g. `Wk04_65123456.pdf`)
@@ -44,7 +56,7 @@ All offensive work is on the provided sandbox targets only — see [ETHICS.md](E
 ---
 
 ## QUIZ — how it works
-- **On the course platform**: go to **`quiz.zcr.ai/quiz`** and enter the **one-time
+- **On the course platform**: go to **`learn.zcr.ai/quiz`** and enter the **one-time
   code on your slip**. It works once, for you only, and you cannot go back to a
   previous question once you continue.
 - **Weekly quiz:** a short **~10-min quiz at the start of every teaching week** (6 Q: 5 MCQ + 1 short, **individual**). Low-stakes — the **lowest 1–2 are dropped**.
@@ -57,12 +69,12 @@ All offensive work is on the provided sandbox targets only — see [ETHICS.md](E
 | Exam | How submitted |
 |------|---------------|
 | W8 Midterm written | on paper in class (120 min) |
-| W9 Midterm CTF | flags in **`ctf.zcr.ai`**; payload + mitigation via **`quiz.zcr.ai/submit`** (150 min) |
+| W9 Midterm CTF | flags in **`ctf.zcr.ai`**; payload + mitigation via **`learn.zcr.ai/submit`** (150 min) |
 | W18 Final written | on paper (150 min) |
 | W19 Final CTF + demo | flags in **`ctf.zcr.ai`**; live project demo (graded by rubric) |
 
 ## TERM PROJECT
-- Report: fill [project/REPORT-TEMPLATE.md](project/REPORT-TEMPLATE.md) → export PDF → **`quiz.zcr.ai/submit`**.
+- Report: fill [project/REPORT-TEMPLATE.md](project/REPORT-TEMPLATE.md) → export PDF → **`learn.zcr.ai/submit`**.
 - Code + SBOM + signed artifact + CI pipeline: in the team's **GitHub** repo (link in the report).
 - Milestones per [project/README.md](project/README.md).
 

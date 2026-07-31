@@ -877,6 +877,15 @@ body.lx-page {
     flex-wrap: nowrap; overflow-x: auto; width: 100%; margin-left: 0;
     padding-bottom: 2px; -webkit-overflow-scrolling: touch;
   }
+  /* The scroll strip fixed the header eating half the viewport, but it left the
+     ONE time-critical destination — the weekly quiz — clipped at the right edge,
+     visible only as a sliver of orange, reachable only by a swipe nobody is told
+     to make. Pull it to the front on a phone: the item most likely to be tapped
+     is the item that should not need discovering. Source order is unchanged, so
+     the tab sequence still reads label -> game -> hand-in -> quiz. */
+  .lx-actions-lab { order: 0; }
+  .lx-cta         { order: 1; }
+  .lx-actions .lx-nav-a { order: 2; }
 }
 .lx-actions-lab {
   flex: none; font: 700 12px/1 var(--sans);
@@ -1839,4 +1848,21 @@ body.lx-page {
   .lx-prose h2, .lx-prose h3 { break-after: avoid; }
   .lx-prose pre, .lx-prose table, .lx-prose blockquote { break-inside: avoid; }
   .lx-h1 { font-size: 22pt; }
+}
+
+/* "This week". Students had 19 identical rows and no way to tell which one the
+   class is on — with no student accounts there is no progress to infer, so the
+   cohort's position is stated once in $COURSES and shown here. Absent = nothing
+   rendered, which is exactly how every course behaved before. */
+.lx-nowline { margin: 0 0 var(--lx-sp-4); font: 400 15px/22px var(--sans); }
+.lx-unit--now { background: var(--lx-hover); box-shadow: inset 3px 0 0 var(--kmitl-orange); }
+.lx-nowtag {
+  align-self: center; white-space: nowrap;
+  padding: 3px 9px; border-radius: var(--lx-r-pill);
+  background: var(--kmitl-orange-deep); color: #fff;      /* 5.63:1 */
+  font: 700 12px/16px var(--sans);
+}
+@media (prefers-color-scheme: dark) {
+  .lx-page .lx-unit--now { background: #1D2228; }
+  .lx-page .lx-nowtag { background: var(--kmitl-orange); color: #16110C; }  /* 6.1:1 */
 }

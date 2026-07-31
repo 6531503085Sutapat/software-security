@@ -41,9 +41,10 @@
     same table the reading page prints, so a document is named identically on
     both. It used to be a dict literal here, which the reading page could not
     reach, so that page printed raw slugs. -#}
-{%- macro unit_row(w, course) -%}
-<li>
-  <a class="lx-unit" href="/learn/{{ course.slug }}/{{ w.slug }}">
+{%- macro unit_row(w, course, current) -%}
+{%- set _here = (current and w.number_label == current) -%}
+<li{% if _here %} id="lx-now"{% endif %}>
+  <a class="lx-unit{% if _here %} lx-unit--now{% endif %}" href="/learn/{{ course.slug }}/{{ w.slug }}"{% if _here %} aria-current="step"{% endif %}>
     {#- THE LEADING SLOT CARRIES THE NUMBER, not the type.
 
         This is the single highest-value fix on this page. A 19-week course is
@@ -73,6 +74,7 @@
       <span class="lx-unit-meta">{% for k in w.available %}{{ kind_label(k) }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
     </span>
     <span class="lx-unit-tags">
+      {%- if _here %}<span class="lx-nowtag">This week</span>{% endif %}
       {#- `badge` CAN be the empty string: a directory whose only public file is
           a slide deck falls through PRIMARY_ORDER and content.py:262 yields "".
           Rather than dropping the slot, print the primary document's own name —
@@ -146,6 +148,11 @@
         be a second list, not a shortcut, and it would not fit on two lines on a
         phone. The anchor index is the position in `groups`, not in the filtered
         list, so an unlabelled group between two labelled ones cannot shift it. -#}
+    {% if current_unit %}
+    <p class="lx-nowline"><a class="lx-link" href="#lx-now">Jump to this week
+      ({{ course.unit_label }} {{ current_unit }})</a></p>
+    {% endif %}
+
     {% if labelled|length > 1 %}
     <nav class="lx-jump" aria-label="Modules in this course">
       <p class="lx-jump-h">Jump to a module</p>
@@ -178,7 +185,7 @@
               <span class="lx-mod-tog" aria-hidden="true"></span>
             </summary>
             <ul class="lx-units">
-              {% for w in g.weeks %}{{ unit_row(w, course) }}{% endfor %}
+              {% for w in g.weeks %}{{ unit_row(w, course, current_unit) }}{% endfor %}
             </ul>
           </details>
         {% else %}
@@ -186,7 +193,7 @@
               declared range, degrade to a plain list IN PLACE — never to an
               empty module, and never by vanishing. -#}
           <ul class="lx-units lx-units--flat">
-            {% for w in g.weeks %}{{ unit_row(w, course) }}{% endfor %}
+            {% for w in g.weeks %}{{ unit_row(w, course, current_unit) }}{% endfor %}
           </ul>
         {% endif %}
       {% endfor %}
@@ -194,7 +201,7 @@
       {#- FLAT. This is the path the cryptography and cloud courses take today,
           and the path every course takes until `modules` exists. Same macro. -#}
       <ul class="lx-units lx-units--flat">
-        {% for w in weeks %}{{ unit_row(w, course) }}{% endfor %}
+        {% for w in weeks %}{{ unit_row(w, course, current_unit) }}{% endfor %}
       </ul>
     {% endif %}
 
