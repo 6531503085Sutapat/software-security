@@ -242,19 +242,29 @@ def site_origin() -> str:
 
 
 def _asset_version() -> str:
-    """A cache-busting token derived from the stylesheet's own mtime.
+    """A cache-busting token derived from the newest of our own assets.
 
     Long-lived caching and a URL that never changes are incompatible: the CSS
     was being revalidated on every navigation precisely because it had no
     fingerprint to make caching safe. `?v=<mtime>` gives it one, so the file can
     be cached hard and still change the instant a deploy rewrites it. Computed
-    once at import — the file cannot change under a running container.
+    once at import — the files cannot change under a running container.
+
+    It covers the SCRIPTS as well as the stylesheet, and that is not tidiness.
+    A stale host.js is a dead projector: the screen's whole lifecycle lives in
+    that file, so a browser holding yesterday's copy shows a lobby that never
+    fills and a Start button that never enables — the same symptom as the CSP
+    bug this was found next to, with no error to tell them apart. One token
+    across all of them means a deploy invalidates the set, never a subset.
     """
-    try:
-        return str(int(os.path.getmtime(
-            os.path.join(app.static_folder, "style.css"))))
-    except OSError:
-        return "0"
+    newest = 0.0
+    for name in ("style.css", "host.js", "player.js", "set_form.js", "confirm.js"):
+        try:
+            newest = max(newest, os.path.getmtime(
+                os.path.join(app.static_folder, name)))
+        except OSError:
+            continue          # a file we don't ship yet must not break the page
+    return str(int(newest))
 
 
 ASSET_V = _asset_version()
