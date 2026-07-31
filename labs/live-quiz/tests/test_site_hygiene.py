@@ -298,3 +298,86 @@ def test_current_unit_marks_exactly_one_row(monkeypatch, client):
     assert html_out.count('aria-current="step"') == 1
     assert html_out.count('id="lx-now"') == 1
     assert "This week" in html_out
+
+
+# ── no lab may send a student to a port their browser refuses ──────────────
+
+# Chrome, Chromium and Firefox all ship a hard-coded list of ports they will not
+# open, to stop the browser being used to speak other protocols. A page telling
+# a student to open one of these is not "flaky" — it can never work, on any
+# machine, for anyone.
+BLOCKED_PORTS = {
+    1719, 1720, 1723, 2049, 3659, 4045, 5060, 5061,
+    6000,                       # X11 — this is the one that actually bit us
+    6566, 6665, 6666, 6667, 6668, 6669, 6697, 10080,
+}
+
+_URL_PORT = re.compile(r"https?://(?:localhost|127\.0\.0\.1|0\.0\.0\.0):(\d+)", re.I)
+
+
+def _lab_docs():
+    """Every student-facing markdown file under a week/lesson directory."""
+    for course in C.COURSES:
+        root = course["root"]
+        if not os.path.isdir(root):
+            continue
+        for dirpath, _dirs, names in os.walk(root):
+            for n in names:
+                if n.endswith(".md"):
+                    yield os.path.join(dirpath, n)
+
+
+def test_no_worksheet_points_a_browser_at_a_blocked_port():
+    """Week 14's insecure chatbot listened on :6000 and its worksheet told
+    students to open it in a browser and screenshot the resulting alert. Every
+    browser refuses :6000 with ERR_UNSAFE_PORT before the request is sent, so
+    that task — 35 minutes of a 40-point band — could not be completed by
+    anyone. `curl` reaches :6000 happily and never executes script, which is
+    exactly why the curl-based task beside it kept passing and hid the fault.
+
+    Reproduced before the fix with two identical servers: Chromium loaded :6001
+    and refused :6000.
+    """
+    offenders = []
+    for path in _lab_docs():
+        text = _slurp_text(path)
+        if text is None:
+            continue
+        for port in {int(p) for p in _URL_PORT.findall(text)}:
+            if port in BLOCKED_PORTS:
+                offenders.append(f"{os.path.relpath(path)} -> :{port}")
+    assert not offenders, (
+        "these pages tell a student to open a port no browser will load: "
+        + "; ".join(sorted(offenders)))
+
+
+def test_published_compose_files_do_not_bind_a_blocked_port():
+    """The other half: the worksheet can only be right if the lab agrees. A
+    compose file publishing a blocked port means the next person to write the
+    worksheet is led straight back into the same hole."""
+    offenders = []
+    for course in C.COURSES:
+        root = course["root"]
+        if not os.path.isdir(root):
+            continue
+        for dirpath, _dirs, names in os.walk(root):
+            for n in names:
+                if not (n.startswith("docker-compose") and n.endswith((".yml", ".yaml"))):
+                    continue
+                path = os.path.join(dirpath, n)
+                text = _slurp_text(path)
+                if text is None:
+                    continue
+                for host_port in re.findall(r'["\']?(\d{2,5}):\d{2,5}["\']?', text):
+                    if int(host_port) in BLOCKED_PORTS:
+                        offenders.append(f"{os.path.relpath(path)} -> :{host_port}")
+    assert not offenders, (
+        "these labs publish a port no browser will load: " + "; ".join(sorted(offenders)))
+
+
+def _slurp_text(path):
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            return fh.read()
+    except OSError:
+        return None
