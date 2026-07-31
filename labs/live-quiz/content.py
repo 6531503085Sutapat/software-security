@@ -749,6 +749,22 @@ def render_course_doc(name: str, course_slug: str | None = None) -> dict | None:
 # --- rendering -------------------------------------------------------------
 
 _INLINE_CODE = re.compile(r"`([^`]+)`")
+# A code span, OR a whole link whose label is a code span.
+#
+# The two branches can never compete: one can only start at `[`, the other only
+# at a backtick, so whichever is written first, the scanner reaches the `[` of a
+# code-labelled link before its backtick and matches the link branch there.
+# (Checked, not assumed — swapping the order changes no test.) What matters is
+# that this runs INSTEAD OF the bare code pass, so the label and the brackets
+# around it are consumed together rather than the label being lifted out and the
+# brackets stranded as literal text.
+#
+# The `[` and `](…)` sit OUTSIDE the backticks, so a payload written inside them
+# (`` `[x](javascript:1)` ``) still matches the plain code branch and is never
+# linkified — the property the code-first ordering exists to protect.
+_CODE_OR_CODE_LINK = re.compile(
+    r"\[`(?P<label>[^`]+)`\]\((?P<href>[^)\s]+)\)"
+    r"|`(?P<code>[^`]+)`")
 _BOLD = re.compile(r"\*\*([^*]+)\*\*")
 _ITALIC = re.compile(r"(?<![*\w])\*([^*\n]+)\*(?!\*)")
 _LINK = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)")
@@ -823,47 +839,70 @@ def _inline(escaped: str, ctx: dict | None = None) -> str:
 
     Order matters: code spans first, so a payload inside backticks (which is how
     the worksheets present them) is never scanned for emphasis or links.
+
+    That ordering had one casualty. A link whose LABEL is a code span —
+    ``[`ETHICS.md`](ETHICS.md)``, the house style for pointing at a file — was
+    split by the code pass into `[`, the code, and `](ETHICS.md)`, so the link
+    pattern never saw a link and students read a literal
+    `[ETHICS.md](ETHICS.md)`, brackets and all, with nothing to click. Twenty of
+    them across sixteen published documents, including the two that point at each
+    course's ethics policy. `_CODE_LINK` below matches that whole shape FIRST, so
+    the label is still treated as code (never re-scanned for markdown) while the
+    link around it is built by the same `_build_link` every other link goes
+    through — same scheme check, same repo-link resolution, same quoting.
     """
     parts, last = [], 0
-    for m in _INLINE_CODE.finditer(escaped):
+    for m in _CODE_OR_CODE_LINK.finditer(escaped):
         parts.append((_fmt(escaped[last:m.start()], ctx), None))
-        parts.append((m.group(1), "code"))
+        if m.group("href") is not None:                     # [`label`](href)
+            body = f"<code>{m.group('label')}</code>"
+            parts.append((_build_link(body, m.group("href"), ctx), None))
+        else:
+            parts.append((m.group("code"), "code"))
         last = m.end()
     parts.append((_fmt(escaped[last:], ctx), None))
     return "".join(f"<code>{t}</code>" if k else t for t, k in parts)
 
 
+def _build_link(text: str, href: str, ctx: dict | None) -> str:
+    """One link, from already-escaped `text` and `href`. The only place an <a> is
+    built, so every caller gets the same safety decisions."""
+    # A repo-relative .md link is rewritten to the URL that serves the same
+    # document. Done BEFORE the scheme test, because the rewritten value is
+    # always a site-absolute path and so always passes it.
+    resolved = _resolve_repo_link(href, ctx)
+    if resolved:
+        href = resolved
+    # href is already escaped; unescape only to test the scheme, never to emit.
+    elif not _SAFE_LINK.match(html.unescape(href)):
+        return f"{text} ({href})"      # shown, not clickable
+    elif ctx and href.startswith(("./", "../")):
+        # A repo-relative path that resolution just declined: the file is
+        # absent, or present but not something this plane serves. It used to
+        # render as a link straight to a 404; show the path as text instead,
+        # which is honest about there being nothing to open.
+        # Guarded on `ctx` because without it nothing was ever resolved —
+        # a caller rendering a bare string gets the old behaviour untouched.
+        #
+        # NOT limited to `.md`. It was, and the moment code-labelled links
+        # started resolving, week15's ``[`.github/workflows/security-ci.yml`]
+        # (../../.github/workflows/security-ci.yml)`` turned from inert text
+        # into a live link to a 404 — the content plane serves documents, not
+        # the repo, so no relative path to a non-document can ever open.
+        return f"{text} ({href})"
+    # Quotes MUST be escaped here even though the document-wide escape used
+    # quote=False. This is the one place content lands inside an attribute,
+    # and `[x](https://a"onmouseover="alert(1))` contains no whitespace, so it
+    # satisfies the href pattern and would otherwise close the attribute and
+    # open a live event handler. Found by testing, not by reading.
+    safe = href.replace('"', "&quot;").replace("'", "&#x27;")
+    return f'<a href="{safe}" rel="noopener noreferrer">{text}</a>'
+
+
 def _fmt(s: str, ctx: dict | None = None) -> str:
     s = _BOLD.sub(r"<strong>\1</strong>", s)
     s = _ITALIC.sub(r"<em>\1</em>", s)
-
-    def link(m):
-        text, href = m.group(1), m.group(2)
-        # A repo-relative .md link is rewritten to the URL that serves the same
-        # document. Done BEFORE the scheme test, because the rewritten value is
-        # always a site-absolute path and so always passes it.
-        resolved = _resolve_repo_link(href, ctx)
-        if resolved:
-            href = resolved
-        # href is already escaped; unescape only to test the scheme, never to emit.
-        elif not _SAFE_LINK.match(html.unescape(href)):
-            return f"{text} ({href})"      # shown, not clickable
-        elif ctx and href.endswith(".md") and href.startswith(("./", "../")):
-            # A repo-relative .md that resolution just declined: the file is
-            # absent, or present but not something this plane serves. It used to
-            # render as a link straight to a 404; show the path as text instead,
-            # which is honest about there being nothing to open.
-            # Guarded on `ctx` because without it nothing was ever resolved —
-            # a caller rendering a bare string gets the old behaviour untouched.
-            return f"{text} ({href})"
-        # Quotes MUST be escaped here even though the document-wide escape used
-        # quote=False. This is the one place content lands inside an attribute,
-        # and `[x](https://a"onmouseover="alert(1))` contains no whitespace, so it
-        # satisfies the href pattern and would otherwise close the attribute and
-        # open a live event handler. Found by testing, not by reading.
-        safe = href.replace('"', "&quot;").replace("'", "&#x27;")
-        return f'<a href="{safe}" rel="noopener noreferrer">{text}</a>'
-    return _LINK.sub(link, s)
+    return _LINK.sub(lambda m: _build_link(m.group(1), m.group(2), ctx), s)
 
 
 _TAGS = re.compile(r"<[^>]+>")

@@ -392,3 +392,63 @@ def test_the_allowlist_never_admits_code_or_answers():
         assert f.endswith(".md"), f"{f} is not markdown"
         low = f.lower()
         assert "solution" not in low and "answer" not in low, f"{f} looks instructor-only"
+
+
+# ── a link whose label is a code span ───────────────────────────────────────
+#
+# The house style for pointing at a file is ``[`ETHICS.md`](ETHICS.md)``. Code
+# spans are extracted before anything else runs — deliberately, so a payload in
+# backticks is never scanned for emphasis or links — and that pass used to split
+# this shape into `[`, the code, and `](ETHICS.md)`, so the link pattern never
+# saw a link. Students read a literal `[ETHICS.md](ETHICS.md)`, brackets and
+# all, with nothing to click: 20 of them across 16 published documents,
+# including both links to each course's ethics policy. Found by reading the
+# rendered page, not the source.
+
+def test_a_code_labelled_link_becomes_a_real_link():
+    out = C.render("see [`ETHICS.md`](https://example.com/e) please")
+    assert '<a href="https://example.com/e"' in out
+    assert "<code>ETHICS.md</code></a>" in out
+    assert "[<code>" not in out, "the brackets leaked into the page as text"
+
+
+def test_a_code_labelled_link_keeps_its_label_as_code():
+    """The label must still be CODE — it names a file, and it must not be
+    re-scanned for markdown on the way through."""
+    out = C.render("[`*not-italic*`](https://example.com)")
+    assert "<code>*not-italic*</code>" in out
+    assert "<em>" not in out
+
+
+@pytest.mark.parametrize("href", ["javascript:alert(1)", "data:text/html,<script>x</script>"])
+def test_a_code_labelled_link_obeys_the_same_scheme_rules(href):
+    """Same gate as every other link: the label being code buys it nothing."""
+    out = C.render(f"[`click`]({href})")
+    assert "<a " not in out
+    assert "<code>click</code>" in out
+
+
+def test_a_code_labelled_link_cannot_break_out_of_the_href_attribute():
+    out = C.render('[`a`](https://a"onmouseover="alert(1))')
+    assert 'onmouseover="alert' not in out
+    assert "&quot;" in out
+
+
+def test_brackets_inside_a_code_span_are_still_never_linkified():
+    """The shape that must NOT match: the brackets are inside the backticks, so
+    this is a payload being shown, not a link being written."""
+    out = C.render("`[x](javascript:alert(1))`")
+    assert "<a " not in out
+    assert "<code>[x](javascript:alert(1))</code>" in out
+
+
+def test_an_unresolvable_relative_link_is_text_whatever_its_extension():
+    """Week 15 links `../../.github/workflows/security-ci.yml`. The content
+    plane serves documents, not the repo, so that can never open. It used to be
+    inert only by accident — it was a code-labelled link, and those did not
+    render at all. Once they did, it became a live link to a 404."""
+    ctx = {"course": C.COURSES[0]["slug"], "dir": C.COURSES[0]["root"]}
+    for src in ("[`ci.yml`](../../.github/workflows/security-ci.yml)",
+                "[ci.yml](../../.github/workflows/security-ci.yml)"):
+        out = C.render(src, ctx=ctx)
+        assert "<a " not in out, f"{src} rendered a link to something unservable"
