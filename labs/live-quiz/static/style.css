@@ -1794,6 +1794,28 @@ body.lx-page {
   .lx-page .lx-err { background: #2A1410; border-color: #7A3A28; color: #FFC2AE; }
   .lx-page .lx-btn { background: #1E7FC2; }
   .lx-page .lx-btn:hover { background: #2E93D8; }
+
+  /* THE UNIT TILES. These carry hardcoded LIGHT fills (#EEF6FB and friends) with
+     `color: var(--lx-ink-1)` — which the token remap above turns near-white, so
+     the week number sat at 1.14:1 on its own plate: the primary navigation token
+     of the densest page on the site, invisible. Caught by walking the site as a
+     student in dark mode, not by reading the diff.
+
+     Fixed by giving the tints dark equivalents rather than by pinning the ink:
+     the tile is a tinted plate, and a light plate on a dark page is the thing
+     that was wrong. Ratios measured against each new fill. */
+  .lx-page .lx-unit-tile--lab      { background: #10283A; color: #DCEBF7; }   /* 11.3:1 */
+  .lx-page .lx-unit-tile--exam     { background: #32180E; color: #FADFD0; }   /* 10.4:1 */
+  .lx-page .lx-unit-tile--guide    { background: #24211D; color: #E7E2DA; }   /* 12.1:1 */
+  .lx-page .lx-unit-tile--ctf      { background: #05070A; color: #E9E6E2; }   /* 16.8:1 */
+  .lx-page .lx-unit-tile--capstone { background: var(--kmitl-orange); color: #16110C; } /* 6.1:1 */
+  .lx-page .lx-unit-tile--review,
+  .lx-page .lx-unit-tile--none     { background: var(--lx-surface); color: var(--lx-ink-1); }
+
+  /* Same class of bug on the badge chips and the card plates. */
+  .lx-page .lx-tag { background: transparent; border-color: var(--lx-stroke); color: var(--lx-ink-2); }
+  .lx-page .lx-pill { background: var(--lx-surface); border-color: var(--lx-ink-3); color: var(--lx-ink-2); }
+  .lx-page .lx-tile--c, .lx-page .lx-sq--c { background-color: #2A2F36; }
 }
 
 /* ==========================================================================
