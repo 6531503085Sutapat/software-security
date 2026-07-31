@@ -45,9 +45,12 @@ POLICIES = {"app": _APP_CSP, "learn": LEARN_CSP, "sim": SIM_CSP}
 
 _INLINE_SCRIPT = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", re.S)
 _STYLE_ATTR = re.compile(r"\sstyle\s*=\s*\"")
-_EVENT_ATTR = re.compile(
-    r"\son(?:click|submit|change|input|load|error|focus|blur|key\w+|mouse\w+)\s*=",
-    re.I)
+# Any `on*=` attribute, not a list of the ones we happened to think of. An
+# enumerated list is a denylist, and this test exists to catch the CLASS: the
+# first version named nine handlers and would have waved through ontoggle,
+# onpaste, oncontextmenu, onpointerdown and every future one. HTML has no
+# non-event attribute starting with "on", so the pattern needs no exceptions.
+_EVENT_ATTR = re.compile(r"\son[a-z]+\s*=", re.I)
 
 
 _HTML_COMMENT = re.compile(r"<!--.*?-->", re.S)

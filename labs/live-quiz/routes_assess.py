@@ -276,6 +276,16 @@ def quiz_take():
                 _db(), att, request.form.get("question_id", type=int),
                 choice=request.form.get("choice", type=int),
                 text=(request.form.get("text") or "").strip() or None, now=_now())
+        except A.StaleAnswer:
+            # The POST is for a question that is no longer open — a double-click,
+            # a back-button re-submit, a second tab, a request the phone retried.
+            # Drop the write and show whatever question IS open. This branch used
+            # to fall into the handler below, which SUBMITTED the attempt: one
+            # double-click ended a graded quiz with every remaining question
+            # unanswered, under the message "Time is up." Reproduced against a
+            # real attempt before this fix, which is the only way it shows up —
+            # nothing errors, the student simply loses the rest of their quiz.
+            return redirect(url_for("assess.quiz_take"))
         except A.AttemptError:
             # Time-up is the expected way a timed quiz ends — close it out and
             # show the student their state rather than an error page.

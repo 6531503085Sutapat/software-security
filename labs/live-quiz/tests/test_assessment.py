@@ -385,3 +385,48 @@ def test_partial_grading_is_flagged_in_the_export(conn):
     A.submit(conn, answer_all(conn, att), T2)
     (row,) = A.gradebook_rows(conn, aid)
     assert row["fully_graded"] is False, "exporting this as a final mark would be wrong"
+
+
+# ── a double-click must not end a graded attempt ───────────────────────────
+
+def test_repeat_post_for_a_closed_question_is_recoverable(conn):
+    """The defect this pins: /quiz/take caught EVERY AttemptError as time-up and
+    submitted the attempt. A student who double-clicked, hit Back and re-sent,
+    had a second tab, or whose phone retried one POST lost every remaining
+    question of a graded quiz — and was told "Time is up" while it happened.
+    Reproduced against a running server before the fix.
+
+    The recoverable case must be a StaleAnswer (which the route re-renders from)
+    and never a bare AttemptError (which the route is entitled to close out)."""
+    aid = publish(conn)
+    att, _ = start(conn, aid)
+    q1 = A.question_for_student(conn, att, now=T1)
+    att = A.answer(conn, att, q1["question_id"], choice=0, now=T1)
+    assert att["cursor"] == 1
+
+    with pytest.raises(A.StaleAnswer):
+        A.answer(conn, att, q1["question_id"], choice=0, now=T1)
+
+    # and the attempt is untouched: still open, still on question 2
+    att = A.get_attempt(conn, att["id"])
+    assert att["submitted_at"] is None
+    assert att["cursor"] == 1
+    assert A.question_for_student(conn, att, now=T1)["index"] == 2
+
+
+def test_terminal_refusals_stay_terminal(conn):
+    """The other half of the same distinction. Time-up and already-submitted
+    must NOT be StaleAnswer — the route closes the attempt on those, and turning
+    them into a redirect would loop a student on a dead quiz forever."""
+    aid = publish(conn, time_limit_sec=600)
+    att, _ = start(conn, aid)
+    q1 = A.question_for_student(conn, att, now=T1)
+    late = "2026-08-15T09:00:00"          # well past the 10-minute limit
+    with pytest.raises(A.AttemptError) as ei:
+        A.answer(conn, att, q1["question_id"], choice=0, now=late)
+    assert not isinstance(ei.value, A.StaleAnswer)
+
+    att = A.submit(conn, A.get_attempt(conn, att["id"]), T2)
+    with pytest.raises(A.AttemptError) as ei:
+        A.answer(conn, att, q1["question_id"], choice=0, now=T2)
+    assert not isinstance(ei.value, A.StaleAnswer)
