@@ -29,9 +29,17 @@ COPY app.py .
 
 # ------------------------------------------------------------------
 # Runtime stage: distroless — no shell, no package manager, tiny attack
-# surface. (gcr.io/distroless/python3) — also pinned by digest in real use.
+# surface (gcr.io/distroless/python3), pinned by digest like the build stage.
+#
+# The pin is not decoration. Left as a bare `FROM gcr.io/distroless/python3-debian12`
+# this resolves to :latest, and `trivy config` flags the "after" file with the
+# very rule the "before" file is supposed to own — DS-0001, ':latest' tag used.
+# Task 4 asks students to prove the hardened build is clean, and it was not.
+# harden.md row 1 prescribes this fix; the reference implementation now follows
+# its own checklist. Refresh with:
+#   docker buildx imagetools inspect gcr.io/distroless/python3-debian12
 # ------------------------------------------------------------------
-FROM gcr.io/distroless/python3-debian12
+FROM gcr.io/distroless/python3-debian12@sha256:2fdb05402a2cf21cf78fdb3ba4c5db167241e9e498140f5bf689d7efb773731f
 
 WORKDIR /app
 
