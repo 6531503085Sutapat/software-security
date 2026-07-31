@@ -21,10 +21,10 @@
 Play Microsoft's free STRIDE threat-modeling card deck against the sample app's DFD — each valid threat scores a point.
 
 ## Lab 0 — Environment setup (do once)
-1. Install VirtualBox/UTM + a Kali or Ubuntu VM.
-2. Install Docker + Docker Compose inside the VM.
-3. Install a browser proxy: Burp Suite Community **or** OWASP ZAP.
-4. Verify: `docker run hello-world` and `git --version`.
+1. Install **Docker Desktop** (macOS/Windows) or Docker Engine + Compose (Linux).
+2. Install a browser proxy: Burp Suite Community **or** OWASP ZAP.
+3. Verify: `docker run hello-world` and `git --version`.
+4. *Fallback only, if Docker will not run on your machine* — install VirtualBox/UTM with a Kali or Ubuntu VM and put Docker inside it. Every later unit states its prerequisite as Docker working from Lab 0, so this is the exception, not the normal path.
 
 ## Lab 1 — Threat-model a sample app
 You are given a small web app (source provided by instructor).
