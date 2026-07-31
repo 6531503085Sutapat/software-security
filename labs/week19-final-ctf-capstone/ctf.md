@@ -5,6 +5,8 @@
 
 > Submit per challenge: the **flag** (or noted proof), the **payload/command**, and a **one-line mitigation**. Difficulty rises with points. (The graded project demo is scored separately — see the [Week 19 worksheet](../week16-capstone/worksheet.md) rubric.)
 
+![A two-column exam blueprint showing the 150-point capstone CTF split across six categories on the left, feeding via a funnel into the six-step term project demo pipeline on the right, with the flag-payload-mitigation submission format tying the two halves together.](img/capstone-map.svg)
+
 | # | Title | Topic / target | Pts |
 |---|-------|----------------|-----|
 | 1 | **Boolean Bypass** | SQLi login (week04) | 10 |

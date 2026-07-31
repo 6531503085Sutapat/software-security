@@ -1,0 +1,144 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1 class="iam-evaluation-title">How AWS decides: explicit deny beats everything</h1>
+<p class="lead">Build a request, switch policies on and off, read the decision.
+Every step says <b>why</b> &mdash; including the case where a statement matches the
+action and the resource but its <code>Condition</code> does not, so the
+<b>Allow</b> silently never applies.</p>
+
+<div class="preset iam-evaluation-presets" id="presets"></div>
+
+<div class="iam-evaluation-verdict" id="verdict" role="status" aria-live="polite">
+  <span class="iam-evaluation-badge" id="badge">&mdash;</span>
+  <span class="iam-evaluation-because" id="because"></span>
+  <p class="iam-evaluation-sub" id="sub"></p>
+</div>
+
+<div class="wrap">
+  <div>
+
+    <div class="card">
+      <h3>The request</h3>
+      <div class="iam-evaluation-grid">
+        <div>
+          <label for="f-principal">Principal &mdash; who is calling</label>
+          <select id="f-principal">
+            <option value="arn:aws:iam::111122223333:user/devuser">devuser (IAM user)</option>
+            <option value="arn:aws:iam::111122223333:role/AppRole">AppRole (the app&rsquo;s role)</option>
+            <option value="anonymous">anonymous &mdash; no credentials at all</option>
+          </select>
+        </div>
+        <div>
+          <label for="f-action">Action</label>
+          <select id="f-action">
+            <option value="s3:GetObject">s3:GetObject</option>
+            <option value="s3:PutObject">s3:PutObject</option>
+            <option value="s3:DeleteObject">s3:DeleteObject</option>
+            <option value="s3:ListBucket">s3:ListBucket</option>
+          </select>
+        </div>
+        <div class="iam-evaluation-wide">
+          <label for="f-resource">Resource</label>
+          <select id="f-resource">
+            <option value="arn:aws:s3:::internal-app-bucket/public/report.pdf">&hellip;internal-app-bucket/public/report.pdf</option>
+            <option value="arn:aws:s3:::internal-app-bucket/secret/keys.txt">&hellip;internal-app-bucket/secret/keys.txt</option>
+            <option value="arn:aws:s3:::internal-app-bucket">&hellip;internal-app-bucket (the bucket itself)</option>
+            <option value="arn:aws:s3:::other-team-bucket/notes.txt">&hellip;other-team-bucket/notes.txt</option>
+          </select>
+        </div>
+        <div>
+          <label for="f-ip">Condition key <code>aws:SourceIp</code></label>
+          <select id="f-ip">
+            <option value="10.0.5.9">10.0.5.9 &mdash; office network</option>
+            <option value="203.0.113.42">203.0.113.42 &mdash; public internet</option>
+          </select>
+        </div>
+        <div>
+          <label for="f-prefix">Condition key <code>s3:prefix</code> (sent with ListBucket)</label>
+          <select id="f-prefix">
+            <option value="">(not sent)</option>
+            <option value="public/">public/</option>
+            <option value="secret/">secret/</option>
+          </select>
+        </div>
+      </div>
+      <div class="iam-evaluation-check">
+        <input type="checkbox" id="f-mfa">
+        <label for="f-mfa">MFA used on this request &mdash; <code>aws:MultiFactorAuthPresent</code></label>
+      </div>
+    </div>
+
+    <div class="card iam-evaluation-gap">
+      <h3>The policies</h3>
+
+      <!-- The two `checked` defaults below mirror preset 1 in iam-evaluation.js,
+           which the script applies on load. They are in the markup as well so the
+           controls are never in an impossible state (no radio selected) in the
+           moment before the script runs. Change a preset 1 default, change these. -->
+      <fieldset class="iam-evaluation-fs">
+        <legend>1 &middot; Identity policy, on the caller</legend>
+        <div class="iam-evaluation-opts">
+          <span class="iam-evaluation-opt"><input type="radio" name="idp" id="idp-star" value="star" checked><label for="idp-star">Action &#9733; / Resource &#9733;</label></span>
+          <span class="iam-evaluation-opt"><input type="radio" name="idp" id="idp-scoped" value="scoped"><label for="idp-scoped">least privilege</label></span>
+          <span class="iam-evaluation-opt"><input type="radio" name="idp" id="idp-none" value="none"><label for="idp-none">none attached</label></span>
+        </div>
+      </fieldset>
+      <div class="iam-evaluation-src" id="src-idp"></div>
+
+      <fieldset class="iam-evaluation-fs">
+        <legend>2 &middot; Resource policy, on the bucket</legend>
+        <div class="iam-evaluation-opts">
+          <span class="iam-evaluation-opt"><input type="radio" name="rp" id="rp-open" value="open"><label for="rp-open">Principal &#9733;</label></span>
+          <span class="iam-evaluation-opt"><input type="radio" name="rp" id="rp-scoped" value="scoped">
+            <label for="rp-scoped">scoped to AppRole</label></span>
+          <span class="iam-evaluation-opt"><input type="radio" name="rp" id="rp-none" value="none" checked><label for="rp-none">none attached</label></span>
+        </div>
+      </fieldset>
+      <div class="iam-evaluation-src" id="src-rp"></div>
+
+      <div class="iam-evaluation-check">
+        <input type="checkbox" id="f-scp">
+        <label class="iam-evaluation-leg" for="f-scp">3 &middot; Service control policy, on the account</label>
+      </div>
+      <div class="iam-evaluation-src" id="src-scp"></div>
+
+      <div class="iam-evaluation-check">
+        <input type="checkbox" id="f-pb">
+        <label class="iam-evaluation-leg" for="f-pb">4 &middot; Permissions boundary, on the caller</label>
+      </div>
+      <div class="iam-evaluation-src" id="src-pb"></div>
+    </div>
+
+  </div>
+
+  <div>
+    <div class="card">
+      <h3>How the decision was made</h3>
+      <div id="steps"></div>
+    </div>
+
+    <div class="card iam-evaluation-gap">
+      <h3>The rule, in order</h3>
+      <ol class="iam-evaluation-rule">
+        <li>An <b>explicit Deny</b> that matches &rarr; <b>DENY</b>. Final.</li>
+        <li>Else <b>no Allow</b> matches &rarr; <b>implicit DENY</b>.</li>
+        <li>Else &rarr; <b>ALLOW</b>.</li>
+      </ol>
+      <p>The walkthrough shows <b>four</b> steps against these three rules. The
+      extra one is the <b>permissions boundary</b>, checked between rules 1 and 2
+      because it decides which Allows still count. It is a ceiling on what the
+      identity policy grants &mdash; never a grant of its own, and it holds no
+      Deny: being outside it is enough.</p>
+      <p class="iam-evaluation-nudge" id="nudge" role="status" aria-live="polite"></p>
+      <p class="hint">Two deliberate simplifications, so you do not learn them
+      wrong: the SCP here is modelled Deny-only (a real SCP must also carry an
+      Allow, or everything under it is denied), and the permissions boundary caps
+      only what the <i>identity</i> policy grants &mdash; a same-account bucket
+      policy is not capped by it.</p>
+    </div>
+  </div>
+</div>
+<script src="/static/sim/iam-evaluation.js?v={{ asset_v }}"></script>
+</body></html>

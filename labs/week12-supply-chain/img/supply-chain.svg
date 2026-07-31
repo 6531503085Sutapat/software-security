@@ -1,0 +1,258 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 716" role="img" aria-label="A six-row table tracing one dependency's journey from a public registry into production, with the attack at each hop in the middle column and the control that answers it in the right column. Hop 1, the registry, pypi.org, where anyone may publish: the attack is typosquatting, a package named reqeusts, a misspelling of requests, where one typo means attacker code runs as you; the control is one trusted index, use --index-url only and no --extra-index-url. A package name, not yet a file, travels to hop 2. Hop 2, the resolver, where pip resolves and the highest version wins: the attack is dependency confusion, a public acme-internal-utils version 99.0.0 beating the private 1.4.0, which is CWE-1357; the control is scoping the namespace so the private index wins by name, and reserving the public name too. One version, chosen from many, travels to hop 3. Hop 3, fetch, where pip downloads and setup.py runs: the attack is a compromised maintainer whose setup.py writes PWNED.txt, running before any of your code, which is CWE-829; the control is a lockfile with hashes, pip install --require-hashes, where a hash mismatch blocks the swap. A tarball that executes on install travels to hop 4. Hop 4, build, docker build plus pip install: the attack is stale pins, Jinja2 2.11.3 and urllib3 1.26.4, so known CVEs ride in, which is CWE-1104 and CWE-1395; the control is SCA in CI, sca_scan.sh running trivy and pip-audit, whose output is a remediation worklist. Layers baked into an image travel to hop 5. Hop 5, the image, week12-supplychain colon lab, and the layers you inherit: the attack is having no inventory, so you cannot answer whether you are affected and transitive dependencies stay invisible; the control is a CycloneDX SBOM, sign.sh producing sbom.cdx.json, a component list for incident response and SLSA. One digest, shipped to prod, travels to hop 6. Hop 6, deploy, the last gate: the attack is an unsigned image, where nothing proves who built it, an A08 integrity failure; the control is a Sigstore keyless gate, cosign verify backed by Fulcio and Rekor, where an unsigned image returns no signatures found. The conclusion at the foot of the diagram: quote, we scanned our code, unquote, covers none of this. SAST reads the code you wrote; all six hops above are code you did not, and each needs its own control.">
+  <title>Six hops to production — an attack and a control at each</title>
+  <style>
+    .bg     { fill:#ffffff; }
+    .title  { fill:#111827; font:700 19px system-ui,sans-serif; }
+    .sub    { fill:#6b7280; font:400 12.5px system-ui,sans-serif; }
+    .colh   { fill:#4b5563; font:700 13px system-ui,sans-serif; letter-spacing:0.6px; }
+    .rule   { stroke:#d7dde3; stroke-width:1.5; }
+
+    .hop    { fill:#f2f8fc; stroke:#017BC4; stroke-width:2; }
+    .hopt   { fill:#0f2233; font:700 13px system-ui,sans-serif; }
+    .hops   { fill:#6b7280; font:400 10.5px ui-monospace,Menlo,Consolas,monospace; }
+
+    .atk    { fill:#fff6f1; stroke:#E35205; stroke-width:1.8; }
+    .atkacc { fill:#E35205; }
+    .atkh   { fill:#b23f00; font:700 13px system-ui,sans-serif; }
+    .ctl    { fill:#f4f9fd; stroke:#017BC4; stroke-width:1.8; }
+    .ctlacc { fill:#017BC4; }
+    .ctlh   { fill:#015a8f; font:700 13px system-ui,sans-serif; }
+    .line   { fill:#374151; font:400 11px system-ui,sans-serif; }
+    .mono   { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; }
+
+    .spine  { stroke:#017BC4; stroke-width:2.5; fill:none; }
+    .ahb    { fill:#017BC4; }
+    .conn   { stroke:#9aa3ad; stroke-width:1.6; fill:none; }
+    .ahg    { fill:#9aa3ad; }
+    .flow   { fill:#6b7280; font:400 10.5px system-ui,sans-serif; }
+
+    .glyphA { fill:#E35205; }
+    .glyphC { fill:#017BC4; }
+    .tick   { stroke:#ffffff; stroke-width:2; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+    .bang   { fill:#ffffff; }
+
+    .banner { fill:#fff1e8; stroke:#E35205; stroke-width:2; }
+    .bant   { fill:#b23f00; font:700 13.5px system-ui,sans-serif; }
+    .banl   { fill:#374151; font:400 12px system-ui,sans-serif; }
+
+    @media (prefers-color-scheme: dark) {
+      .bg     { fill:#0b1016; }
+      .title  { fill:#f3f4f6; }
+      .sub    { fill:#9aa3ad; }
+      .colh   { fill:#c4ccd4; }
+      .rule   { stroke:#33404c; }
+
+      .hop    { fill:#101d27; stroke:#4aa3dd; }
+      .hopt   { fill:#e5eef5; }
+      .hops   { fill:#9aa3ad; }
+
+      .atk    { fill:#241812; stroke:#ff7a3d; }
+      .atkacc { fill:#ff7a3d; }
+      .atkh   { fill:#ff7a3d; }
+      .ctl    { fill:#0f1c26; stroke:#4aa3dd; }
+      .ctlacc { fill:#4aa3dd; }
+      .ctlh   { fill:#4aa3dd; }
+      .line   { fill:#c4ccd4; }
+
+      .spine  { stroke:#4aa3dd; }
+      .ahb    { fill:#4aa3dd; }
+      .conn   { stroke:#9aa3ad; }
+      .ahg    { fill:#9aa3ad; }
+      .flow   { fill:#9aa3ad; }
+
+      .glyphA { fill:#ff7a3d; }
+      .glyphC { fill:#4aa3dd; }
+      .tick   { stroke:#0b1016; }
+      .bang   { fill:#241000; }
+
+      .banner { fill:#241812; stroke:#ff7a3d; }
+      .bant   { fill:#ff7a3d; }
+      .banl   { fill:#c4ccd4; }
+    }
+  </style>
+
+  <rect class="bg" x="0" y="0" width="720" height="716"/>
+
+  <defs>
+    <marker id="ahb" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="ahb" d="M0,0 L10,5 L0,10 z"/>
+    </marker>
+    <marker id="ahg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="ahg" d="M0,0 L10,5 L0,10 z"/>
+    </marker>
+  </defs>
+
+  <!-- ============ HEADER ============ -->
+  <text class="title" x="30" y="32">Six hops to production — an attack and a control at each</text>
+  <text class="sub" x="30" y="54">Week 12 · OWASP 2025 A03 Supply Chain + A08 Integrity</text>
+
+  <text class="colh" x="96"  y="82" text-anchor="middle">THE HOP</text>
+  <text class="colh" x="295" y="82" text-anchor="middle">WHAT ATTACKS IT HERE</text>
+  <text class="colh" x="571" y="82" text-anchor="middle">CONTROL THAT ANSWERS IT</text>
+  <line class="rule" x1="30" y1="90" x2="690" y2="90"/>
+
+  <!-- ============ SPINE: the dependency travelling down ============ -->
+  <path class="spine" d="M96,173 L96,187" marker-end="url(#ahb)"/>
+  <path class="spine" d="M96,261 L96,275" marker-end="url(#ahb)"/>
+  <path class="spine" d="M96,349 L96,363" marker-end="url(#ahb)"/>
+  <path class="spine" d="M96,437 L96,451" marker-end="url(#ahb)"/>
+  <path class="spine" d="M96,525 L96,539" marker-end="url(#ahb)"/>
+
+  <text class="flow" x="110" y="183">a package name — not yet a file</text>
+  <text class="flow" x="110" y="271">one version, chosen from many</text>
+  <text class="flow" x="110" y="359">a tarball that executes on install</text>
+  <text class="flow" x="110" y="447">layers baked into an image</text>
+  <text class="flow" x="110" y="535">one digest, shipped to prod</text>
+
+  <!-- ============ ATTACK -> CONTROL connectors ============ -->
+  <path class="conn" d="M418,136 L446,136" marker-end="url(#ahg)"/>
+  <path class="conn" d="M418,224 L446,224" marker-end="url(#ahg)"/>
+  <path class="conn" d="M418,312 L446,312" marker-end="url(#ahg)"/>
+  <path class="conn" d="M418,400 L446,400" marker-end="url(#ahg)"/>
+  <path class="conn" d="M418,488 L446,488" marker-end="url(#ahg)"/>
+  <path class="conn" d="M418,576 L446,576" marker-end="url(#ahg)"/>
+
+  <!-- ================= ROW 1 — REGISTRY (y=100) ================= -->
+  <rect class="hop" x="30" y="100" width="144" height="72" rx="8"/>
+  <text class="hopt" x="44" y="127">1 · REGISTRY</text>
+  <text class="hops" x="44" y="147">pypi.org</text>
+  <text class="hops" x="44" y="163">open to anyone</text>
+
+  <rect class="atk" x="186" y="100" width="232" height="72" rx="7"/>
+  <rect class="atkacc" x="186" y="100" width="5" height="72" rx="2.5"/>
+  <path class="glyphA" d="M205,110 l9,16 l-18,0 z"/>
+  <rect class="bang" x="204" y="116" width="2" height="5"/>
+  <rect class="bang" x="204" y="122.5" width="2" height="2"/>
+  <text class="atkh" x="220" y="125">Typosquatting</text>
+  <text class="line mono" x="200" y="145">requests → reqeusts</text>
+  <text class="line" x="200" y="163">one typo, code runs as you</text>
+
+  <rect class="ctl" x="452" y="100" width="238" height="72" rx="7"/>
+  <rect class="ctlacc" x="452" y="100" width="5" height="72" rx="2.5"/>
+  <circle class="glyphC" cx="471" cy="119" r="8"/>
+  <path class="tick" d="M467,119 l3,3.5 l5.5,-6.5"/>
+  <text class="ctlh" x="486" y="125">One trusted index</text>
+  <text class="line mono" x="466" y="145">use --index-url only</text>
+  <text class="line mono" x="466" y="163">no --extra-index-url</text>
+
+  <!-- ================= ROW 2 — RESOLVER (y=188) ================= -->
+  <rect class="hop" x="30" y="188" width="144" height="72" rx="8"/>
+  <text class="hopt" x="44" y="215">2 · RESOLVER</text>
+  <text class="hops" x="44" y="235">pip resolves</text>
+  <text class="hops" x="44" y="251">highest ver wins</text>
+
+  <rect class="atk" x="186" y="188" width="232" height="72" rx="7"/>
+  <rect class="atkacc" x="186" y="188" width="5" height="72" rx="2.5"/>
+  <path class="glyphA" d="M205,198 l9,16 l-18,0 z"/>
+  <rect class="bang" x="204" y="204" width="2" height="5"/>
+  <rect class="bang" x="204" y="210.5" width="2" height="2"/>
+  <text class="atkh" x="220" y="213">Dependency confusion</text>
+  <text class="line mono" x="200" y="233">public 99.0.0 beats 1.4.0</text>
+  <text class="line" x="200" y="251">acme-internal-utils · CWE-1357</text>
+
+  <rect class="ctl" x="452" y="188" width="238" height="72" rx="7"/>
+  <rect class="ctlacc" x="452" y="188" width="5" height="72" rx="2.5"/>
+  <circle class="glyphC" cx="471" cy="207" r="8"/>
+  <path class="tick" d="M467,207 l3,3.5 l5.5,-6.5"/>
+  <text class="ctlh" x="486" y="213">Scope the namespace</text>
+  <text class="line" x="466" y="233">private index wins by name</text>
+  <text class="line" x="466" y="251">reserve the public name too</text>
+
+  <!-- ================= ROW 3 — FETCH (y=276) ================= -->
+  <rect class="hop" x="30" y="276" width="144" height="72" rx="8"/>
+  <text class="hopt" x="44" y="303">3 · FETCH</text>
+  <text class="hops" x="44" y="323">pip download</text>
+  <text class="hops" x="44" y="339">setup.py runs</text>
+
+  <rect class="atk" x="186" y="276" width="232" height="72" rx="7"/>
+  <rect class="atkacc" x="186" y="276" width="5" height="72" rx="2.5"/>
+  <path class="glyphA" d="M205,286 l9,16 l-18,0 z"/>
+  <rect class="bang" x="204" y="292" width="2" height="5"/>
+  <rect class="bang" x="204" y="298.5" width="2" height="2"/>
+  <text class="atkh" x="220" y="301">Compromised maintainer</text>
+  <text class="line mono" x="200" y="321">setup.py writes PWNED.txt</text>
+  <text class="line" x="200" y="339">runs before your code · CWE-829</text>
+
+  <rect class="ctl" x="452" y="276" width="238" height="72" rx="7"/>
+  <rect class="ctlacc" x="452" y="276" width="5" height="72" rx="2.5"/>
+  <circle class="glyphC" cx="471" cy="295" r="8"/>
+  <path class="tick" d="M467,295 l3,3.5 l5.5,-6.5"/>
+  <text class="ctlh" x="486" y="301">Lockfile with hashes</text>
+  <text class="line mono" x="466" y="321">pip install --require-hashes</text>
+  <text class="line" x="466" y="339">a hash mismatch blocks it</text>
+
+  <!-- ================= ROW 4 — BUILD (y=364) ================= -->
+  <rect class="hop" x="30" y="364" width="144" height="72" rx="8"/>
+  <text class="hopt" x="44" y="391">4 · BUILD</text>
+  <text class="hops" x="44" y="411">docker build</text>
+  <text class="hops" x="44" y="427">pip install</text>
+
+  <rect class="atk" x="186" y="364" width="232" height="72" rx="7"/>
+  <rect class="atkacc" x="186" y="364" width="5" height="72" rx="2.5"/>
+  <path class="glyphA" d="M205,374 l9,16 l-18,0 z"/>
+  <rect class="bang" x="204" y="380" width="2" height="5"/>
+  <rect class="bang" x="204" y="386.5" width="2" height="2"/>
+  <text class="atkh" x="220" y="389">Stale pins ride in</text>
+  <text class="line mono" x="200" y="409">Jinja2 2.11.3 · urllib3 1.26.4</text>
+  <text class="line" x="200" y="427">known CVEs · CWE-1104 / 1395</text>
+
+  <rect class="ctl" x="452" y="364" width="238" height="72" rx="7"/>
+  <rect class="ctlacc" x="452" y="364" width="5" height="72" rx="2.5"/>
+  <circle class="glyphC" cx="471" cy="383" r="8"/>
+  <path class="tick" d="M467,383 l3,3.5 l5.5,-6.5"/>
+  <text class="ctlh" x="486" y="389">SCA in CI</text>
+  <text class="line mono" x="466" y="409">sca_scan.sh: trivy + pip-audit</text>
+  <text class="line" x="466" y="427">the output is a worklist</text>
+
+  <!-- ================= ROW 5 — IMAGE (y=452) ================= -->
+  <rect class="hop" x="30" y="452" width="144" height="72" rx="8"/>
+  <text class="hopt" x="44" y="479">5 · IMAGE</text>
+  <text class="hops" x="44" y="499">week12-supplychain</text>
+  <text class="hops" x="44" y="515">inherited layers</text>
+
+  <rect class="atk" x="186" y="452" width="232" height="72" rx="7"/>
+  <rect class="atkacc" x="186" y="452" width="5" height="72" rx="2.5"/>
+  <path class="glyphA" d="M205,462 l9,16 l-18,0 z"/>
+  <rect class="bang" x="204" y="468" width="2" height="5"/>
+  <rect class="bang" x="204" y="474.5" width="2" height="2"/>
+  <text class="atkh" x="220" y="477">No inventory</text>
+  <text class="line" x="200" y="497">cannot answer: are we affected?</text>
+  <text class="line" x="200" y="515">transitive deps stay invisible</text>
+
+  <rect class="ctl" x="452" y="452" width="238" height="72" rx="7"/>
+  <rect class="ctlacc" x="452" y="452" width="5" height="72" rx="2.5"/>
+  <circle class="glyphC" cx="471" cy="471" r="8"/>
+  <path class="tick" d="M467,471 l3,3.5 l5.5,-6.5"/>
+  <text class="ctlh" x="486" y="477">SBOM (CycloneDX)</text>
+  <text class="line mono" x="466" y="497">sign.sh → sbom.cdx.json</text>
+  <text class="line" x="466" y="515">component list for IR + SLSA</text>
+
+  <!-- ================= ROW 6 — DEPLOY (y=540) ================= -->
+  <rect class="hop" x="30" y="540" width="144" height="72" rx="8"/>
+  <text class="hopt" x="44" y="567">6 · DEPLOY</text>
+  <text class="hops" x="44" y="587">run in prod</text>
+  <text class="hops" x="44" y="603">the last gate</text>
+
+  <rect class="atk" x="186" y="540" width="232" height="72" rx="7"/>
+  <rect class="atkacc" x="186" y="540" width="5" height="72" rx="2.5"/>
+  <path class="glyphA" d="M205,550 l9,16 l-18,0 z"/>
+  <rect class="bang" x="204" y="556" width="2" height="5"/>
+  <rect class="bang" x="204" y="562.5" width="2" height="2"/>
+  <text class="atkh" x="220" y="565">Unsigned image</text>
+  <text class="line" x="200" y="585">nothing proves who built it</text>
+  <text class="line" x="200" y="603">A08 integrity failure</text>
+
+  <rect class="ctl" x="452" y="540" width="238" height="72" rx="7"/>
+  <rect class="ctlacc" x="452" y="540" width="5" height="72" rx="2.5"/>
+  <circle class="glyphC" cx="471" cy="559" r="8"/>
+  <path class="tick" d="M467,559 l3,3.5 l5.5,-6.5"/>
+  <text class="ctlh" x="486" y="565">Sigstore keyless gate</text>
+  <text class="line mono" x="466" y="585">cosign verify (Fulcio+Rekor)</text>
+  <text class="line mono" x="466" y="603">unsigned → no signatures found</text>
+
+  <!-- ============ THE LESSON ============ -->
+  <rect class="banner" x="30" y="630" width="660" height="72" rx="8"/>
+  <text class="bant" x="48" y="654">"We scanned our code" covers none of this.</text>
+  <text class="banl" x="48" y="675">SAST reads the code you wrote. All six hops above</text>
+  <text class="banl" x="48" y="693">are code you did not — each needs its own control.</text>
+</svg>

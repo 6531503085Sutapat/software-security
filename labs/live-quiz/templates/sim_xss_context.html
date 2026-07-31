@@ -1,0 +1,64 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>One value, four sinks — pick an escaper</h1>
+<p class="lead">The same user input lands in four places at once. Choose an
+escaper and read <b>why</b> each sink is safe or still runs code. &#x2716;
+EXECUTES, &#x25B2; BROKEN and &#x2714; SAFE are three different outcomes.</p>
+
+<label for="inp">User input (the <code>name</code> field)</label>
+<input id="inp" type="text" autocomplete="off" spellcheck="false"
+       aria-describedby="escaped">
+<div class="preset" id="presets" role="group" aria-label="Example payloads"></div>
+
+<fieldset class="xss-context-fs">
+  <legend class="xss-context-leg">Escaper applied to the value</legend>
+  <div class="xss-context-opts">
+    <label class="xss-context-opt" for="esc-none">
+      <input type="radio" name="esc" id="esc-none" value="none" checked> none</label>
+    <label class="xss-context-opt" for="esc-html">
+      <input type="radio" name="esc" id="esc-html" value="html"> HTML entity (&amp; &lt; &gt;)</label>
+    <label class="xss-context-opt" for="esc-attr">
+      <input type="radio" name="esc" id="esc-attr" value="attr"> attribute: quote + entity</label>
+    <label class="xss-context-opt" for="esc-js">
+      <input type="radio" name="esc" id="esc-js" value="js"> JS string (backslash)</label>
+    <label class="xss-context-opt" for="esc-url">
+      <input type="radio" name="esc" id="esc-url" value="url"> URL encode (%xx)</label>
+  </div>
+</fieldset>
+
+<p class="xss-context-esc">After escaping, the one value every sink receives:</p>
+<div class="xss-context-out q" id="escaped"></div>
+<p class="xss-context-sum verdict" id="summary" aria-live="polite"></p>
+<p class="xss-context-note hint" id="takeaway"></p>
+
+<div class="xss-context-grid">
+  <div class="xss-context-sink card">
+    <h3>1 &middot; HTML text node</h3>
+    <div class="xss-context-code q" id="c1"></div>
+    <p class="xss-context-badgeline"><span class="xss-context-badge" id="b1"></span></p>
+    <p class="xss-context-why" id="w1"></p>
+  </div>
+  <div class="xss-context-sink card">
+    <h3>2 &middot; Unquoted attribute</h3>
+    <div class="xss-context-code q" id="c2"></div>
+    <p class="xss-context-badgeline"><span class="xss-context-badge" id="b2"></span></p>
+    <p class="xss-context-why" id="w2"></p>
+  </div>
+  <div class="xss-context-sink card">
+    <h3>3 &middot; Inside href=&quot;&hellip;&quot;</h3>
+    <div class="xss-context-code q" id="c3"></div>
+    <p class="xss-context-badgeline"><span class="xss-context-badge" id="b3"></span></p>
+    <p class="xss-context-why" id="w3"></p>
+  </div>
+  <div class="xss-context-sink card">
+    <h3>4 &middot; JS string in &lt;script&gt;</h3>
+    <div class="xss-context-code q" id="c4"></div>
+    <p class="xss-context-badgeline"><span class="xss-context-badge" id="b4"></span></p>
+    <p class="xss-context-why" id="w4"></p>
+  </div>
+</div>
+
+<script src="/static/sim/xss-context.js?v={{ asset_v }}"></script>
+</body></html>

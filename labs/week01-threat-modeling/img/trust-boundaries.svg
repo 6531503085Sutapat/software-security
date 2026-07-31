@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 300" role="img"
+     aria-label="Three trust zones. The public internet holds the browser. The application tier holds the API server and the auth service. The data tier holds the database and the log store. Data crosses a boundary between each zone; those crossings are where STRIDE threats apply.">
+  <title>Where the trust boundaries are</title>
+  <style>
+    .z    { fill: none; stroke: #b9b4aa; stroke-dasharray: 6 4 }
+    .zl   { font: 600 11px system-ui, sans-serif; fill: #6b7280;
+            letter-spacing: .06em; text-transform: uppercase }
+    .b    { fill: #fffdf9; stroke: #017BC4; stroke-width: 1.5; rx: 6 }
+    .bl   { font: 600 13px system-ui, sans-serif; fill: #16191d; text-anchor: middle }
+    .e    { stroke: #6b7280; stroke-width: 1.6; marker-end: url(#a) }
+    .el   { font: 11px system-ui, sans-serif; fill: #6b7280; text-anchor: middle }
+    .x    { font: 700 11px system-ui, sans-serif; fill: #E35205; text-anchor: middle }
+    .arrow{ fill: #6b7280 }
+    @media (prefers-color-scheme: dark) {
+      .z { stroke: #3a4149 } .zl, .e, .el { stroke: #9aa3ad }
+      .zl, .el { fill: #9aa3ad } .e { stroke: #9aa3ad }
+      .b { fill: #151a20; stroke: #4aa3dd } .bl { fill: #e6e8ea }
+      .arrow { fill: #9aa3ad } .x { fill: #ff7a3d }
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7"
+            markerHeight="7" orient="auto"><path class="arrow" d="M0 0 L8 4 L0 8 z"/></marker>
+  </defs>
+
+  <rect class="z" x="8"   y="46" width="188" height="180" rx="8"/>
+  <rect class="z" x="248" y="46" width="212" height="180" rx="8"/>
+  <rect class="z" x="512" y="46" width="200" height="180" rx="8"/>
+  <text class="zl" x="16"  y="38">Public internet</text>
+  <text class="zl" x="256" y="38">Application tier</text>
+  <text class="zl" x="520" y="38">Data tier</text>
+
+  <rect class="b" x="46"  y="112" width="112" height="48"/>
+  <text class="bl" x="102" y="141">Browser</text>
+  <rect class="b" x="290" y="72"  width="128" height="48"/>
+  <text class="bl" x="354" y="101">API server</text>
+  <rect class="b" x="290" y="160" width="128" height="48"/>
+  <text class="bl" x="354" y="189">Auth service</text>
+  <rect class="b" x="552" y="72"  width="120" height="48"/>
+  <text class="bl" x="612" y="101">Database</text>
+  <rect class="b" x="552" y="160" width="120" height="48"/>
+  <text class="bl" x="612" y="189">Log store</text>
+
+  <path class="e" d="M158 132 L286 100"/>
+  <text class="el" x="222" y="112">HTTP request</text>
+  <path class="e" d="M418 96  L548 96"/>
+  <text class="el" x="483" y="88">SQL</text>
+  <path class="e" d="M418 184 L548 184"/>
+  <text class="el" x="483" y="176">writes</text>
+  <path class="e" d="M354 156 L354 124" />
+  <text class="el" x="392" y="144">verify</text>
+
+  <text class="x" x="222" y="248">boundary 1</text>
+  <text class="x" x="483" y="248">boundary 2</text>
+  <text class="el" x="360" y="274">A threat applies where data CROSSES a boundary — not inside a box.</text>
+</svg>

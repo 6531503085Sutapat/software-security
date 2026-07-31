@@ -1,0 +1,177 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 580" role="img" aria-label="Diagram mapping Week 19's two graded components. Left half: the capstone CTF tournament, 150 points total across six categories drawn from the whole term. Web exploitation covers SQL injection, command injection, stored XSS, IDOR and JWT forgery, worth 60 points, from weeks 4 to 6. API abuse covers BOLA and mass assignment, worth 15 points, from week 10. Memory safety covers a stack overflow ret2win exploit and fuzzing, worth 30 points, from week 11. Supply chain covers finding a vulnerable dependency or unsigned image, worth 10 points, from week 12. Cloud covers an exposed secret, open IAM policy or root Dockerfile, worth 15 points, from week 13. LLM and agentic covers prompt injection and indirect injection, worth 20 points, from week 14. Right half: the term project demo pipeline, a six-step left-to-right chain — threat model, vulnerabilities found, remediation, SBOM plus signed artifact, security CI/CD pipeline, and a 10-minute demo with 5-minute Q&amp;A that is graded. A funnel shape connects all six CTF categories to the vulnerabilities-found and remediation steps of the pipeline, captioned 'for real', making the point that every CTF submission's flag, payload and one-line mitigation are the same find-and-fix moves the project had to perform for real, once, against the team's own system rather than a toy target.">
+<title>Week 19 capstone map: CTF tournament categories versus the project demo pipeline</title>
+<style>
+  .title { fill:#111827; font: 700 15px system-ui, sans-serif; }
+  .subtitle { fill:#6b7280; font: 11px system-ui, sans-serif; }
+  .header { fill:#017BC4; font: 700 13px system-ui, sans-serif; }
+  .subhead { fill:#6b7280; font: 11px system-ui, sans-serif; }
+  .name { fill:#111827; font: 700 12px system-ui, sans-serif; }
+  .sub { fill:#6b7280; font: 11px system-ui, sans-serif; }
+  .pts { fill:#017BC4; font: 700 12px system-ui, sans-serif; }
+  .ptsHi { fill:#E35205; font: 700 12px system-ui, sans-serif; }
+  .cardBlue { fill:#eef5fb; stroke:#017BC4; stroke-width:1.3; }
+  .cardOrange { fill:#fff2ea; stroke:#E35205; stroke-width:1.3; }
+  .barBlue { fill:#017BC4; }
+  .barOrange { fill:#E35205; }
+  .circleBlue { fill:#017BC4; }
+  .circleOrange { fill:#E35205; }
+  .stepNum { fill:#ffffff; font: 700 11px system-ui, sans-serif; }
+  .stepTitle { fill:#111827; font: 700 12px system-ui, sans-serif; }
+  .stepSub { fill:#6b7280; font: 11px system-ui, sans-serif; }
+  .stepSubHi { fill:#E35205; font: 700 11px system-ui, sans-serif; }
+  .pill { fill:#E35205; }
+  .pillText { fill:#ffffff; font: 700 12px system-ui, sans-serif; }
+  .funnel { fill:#017BC4; opacity:0.13; }
+  .funnelCaption { fill:#E35205; font: 700 11px system-ui, sans-serif; letter-spacing:0.5px; }
+  .arrowBlue { stroke:#017BC4; stroke-width:2; fill:none; }
+  .arrowHead { fill:#017BC4; }
+  .arrowHeadOrange { fill:#E35205; }
+  .footer { fill:#6b7280; font: 11px system-ui, sans-serif; }
+  @media (prefers-color-scheme: dark) {
+    .title { fill:#f3f4f6; }
+    .subtitle { fill:#9aa3ad; }
+    .header { fill:#4aa3dd; }
+    .subhead { fill:#9aa3ad; }
+    .name { fill:#f3f4f6; }
+    .sub { fill:#9aa3ad; }
+    .pts { fill:#4aa3dd; }
+    .ptsHi { fill:#ff7a3d; }
+    .cardBlue { fill:rgba(74,163,221,0.12); stroke:#4aa3dd; }
+    .cardOrange { fill:rgba(255,122,61,0.15); stroke:#ff7a3d; }
+    .barBlue { fill:#4aa3dd; }
+    .barOrange { fill:#ff7a3d; }
+    .circleBlue { fill:#4aa3dd; }
+    .circleOrange { fill:#ff7a3d; }
+    .stepNum { fill:#0b1220; }
+    .stepTitle { fill:#f3f4f6; }
+    .stepSub { fill:#9aa3ad; }
+    .stepSubHi { fill:#ff7a3d; }
+    .pill { fill:#ff7a3d; }
+    .pillText { fill:#0b1220; }
+    .funnel { fill:#4aa3dd; opacity:0.18; }
+    .funnelCaption { fill:#ff7a3d; }
+    .arrowBlue { stroke:#4aa3dd; }
+    .arrowHead { fill:#4aa3dd; }
+    .arrowHeadOrange { fill:#ff7a3d; }
+    .footer { fill:#9aa3ad; }
+  }
+</style>
+
+<!-- Title -->
+<text x="360" y="30" text-anchor="middle" class="title">Week 19 Capstone: CTF Categories → Project Demo Pipeline</text>
+<text x="360" y="46" text-anchor="middle" class="subtitle">Two things get graded this week — plan revision for both.</text>
+
+<!-- Left header -->
+<text x="20" y="72" class="header">CTF TOURNAMENT</text>
+<rect x="235" y="58" width="90" height="22" rx="11" class="pill"/>
+<text x="280" y="73" text-anchor="middle" class="pillText">150 PTS</text>
+<text x="20" y="86" class="subhead">150 min · whole term · team-based · leaderboard</text>
+
+<!-- Right header -->
+<text x="400" y="72" class="header">PROJECT DEMO PIPELINE</text>
+<text x="400" y="86" class="subhead">show it end-to-end — scored on Week 19 rubric</text>
+
+<!-- Funnel connecting all CTF categories to Vulnerabilities-found + Remediation -->
+<polygon points="330,100 400,168 400,286 330,498" class="funnel"/>
+<polygon points="400,227 388,220 388,234" class="arrowHeadOrange"/>
+<text x="365" y="203" text-anchor="middle" class="funnelCaption">FOR REAL</text>
+
+<!-- ===================== LEFT: CTF categories ===================== -->
+
+<!-- Row 0: Web exploitation (highest weight) -->
+<rect x="20" y="100" width="310" height="58" rx="6" class="cardOrange"/>
+<text x="30" y="116" class="name">Web exploitation</text>
+<text x="30" y="130" class="sub">SQLi · cmd injection · XSS · IDOR · JWT forge (wk04–06)</text>
+<rect x="30" y="140" width="200" height="8" rx="2" class="barOrange"/>
+<text x="320" y="116" text-anchor="end" class="ptsHi">60 pts</text>
+
+<!-- Row 1: API abuse -->
+<rect x="20" y="168" width="310" height="58" rx="6" class="cardBlue"/>
+<text x="30" y="184" class="name">API abuse</text>
+<text x="30" y="198" class="sub">BOLA + mass assignment (wk10)</text>
+<rect x="30" y="208" width="50" height="8" rx="2" class="barBlue"/>
+<text x="320" y="184" text-anchor="end" class="pts">15 pts</text>
+
+<!-- Row 2: Memory safety -->
+<rect x="20" y="236" width="310" height="58" rx="6" class="cardBlue"/>
+<text x="30" y="252" class="name">Memory safety</text>
+<text x="30" y="266" class="sub">Stack overflow → ret2win · fuzzing (wk11)</text>
+<rect x="30" y="276" width="100" height="8" rx="2" class="barBlue"/>
+<text x="320" y="252" text-anchor="end" class="pts">30 pts</text>
+
+<!-- Row 3: Supply chain -->
+<rect x="20" y="304" width="310" height="58" rx="6" class="cardBlue"/>
+<text x="30" y="320" class="name">Supply chain</text>
+<text x="30" y="334" class="sub">Vulnerable dependency / unsigned image (wk12)</text>
+<rect x="30" y="344" width="33" height="8" rx="2" class="barBlue"/>
+<text x="320" y="320" text-anchor="end" class="pts">10 pts</text>
+
+<!-- Row 4: Cloud -->
+<rect x="20" y="372" width="310" height="58" rx="6" class="cardBlue"/>
+<text x="30" y="388" class="name">Cloud</text>
+<text x="30" y="402" class="sub">Exposed secret · open IAM · root Dockerfile (wk13)</text>
+<rect x="30" y="412" width="50" height="8" rx="2" class="barBlue"/>
+<text x="320" y="388" text-anchor="end" class="pts">15 pts</text>
+
+<!-- Row 5: LLM and agentic -->
+<rect x="20" y="440" width="310" height="58" rx="6" class="cardBlue"/>
+<text x="30" y="456" class="name">LLM &amp; agentic</text>
+<text x="30" y="470" class="sub">Prompt injection · indirect injection/XSS (wk14)</text>
+<rect x="30" y="480" width="67" height="8" rx="2" class="barBlue"/>
+<text x="320" y="456" text-anchor="end" class="pts">20 pts</text>
+
+<!-- ===================== RIGHT: project demo pipeline ===================== -->
+
+<!-- Stage 1: Threat model -->
+<rect x="400" y="100" width="300" height="50" rx="6" class="cardBlue"/>
+<circle cx="418" cy="125" r="13" class="circleBlue"/>
+<text x="418" y="129" text-anchor="middle" class="stepNum">1</text>
+<text x="440" y="121" class="stepTitle">Threat model</text>
+<text x="440" y="136" class="stepSub">attack surface, STRIDE-style</text>
+<polygon points="550,150 544,163 556,163" class="arrowHead"/>
+
+<!-- Stage 2: Vulnerabilities found -->
+<rect x="400" y="168" width="300" height="50" rx="6" class="cardBlue"/>
+<circle cx="418" cy="193" r="13" class="circleBlue"/>
+<text x="418" y="197" text-anchor="middle" class="stepNum">2</text>
+<text x="440" y="189" class="stepTitle">Vulnerabilities found</text>
+<text x="440" y="204" class="stepSub">CWE / OWASP mapped</text>
+<polygon points="550,218 544,231 556,231" class="arrowHead"/>
+
+<!-- Stage 3: Remediation -->
+<rect x="400" y="236" width="300" height="50" rx="6" class="cardBlue"/>
+<circle cx="418" cy="261" r="13" class="circleBlue"/>
+<text x="418" y="265" text-anchor="middle" class="stepNum">3</text>
+<text x="440" y="257" class="stepTitle">Remediation</text>
+<text x="440" y="272" class="stepSub">fixed code, re-tested</text>
+<polygon points="550,286 544,299 556,299" class="arrowHead"/>
+
+<!-- Stage 4: SBOM + signed artifact -->
+<rect x="400" y="304" width="300" height="50" rx="6" class="cardBlue"/>
+<circle cx="418" cy="329" r="13" class="circleBlue"/>
+<text x="418" y="333" text-anchor="middle" class="stepNum">4</text>
+<text x="440" y="325" class="stepTitle">SBOM + signed artifact</text>
+<text x="440" y="340" class="stepSub">supply-chain provenance</text>
+<polygon points="550,354 544,367 556,367" class="arrowHead"/>
+
+<!-- Stage 5: Security CI/CD pipeline -->
+<rect x="400" y="372" width="300" height="50" rx="6" class="cardBlue"/>
+<circle cx="418" cy="397" r="13" class="circleBlue"/>
+<text x="418" y="401" text-anchor="middle" class="stepNum">5</text>
+<text x="440" y="393" class="stepTitle">Security CI/CD pipeline</text>
+<text x="440" y="408" class="stepSub">automated gates</text>
+<polygon points="550,422 544,435 556,435" class="arrowHead"/>
+
+<!-- Stage 6: Demo + Q&A (graded) -->
+<rect x="400" y="440" width="300" height="50" rx="6" class="cardOrange"/>
+<circle cx="418" cy="465" r="13" class="circleOrange"/>
+<text x="418" y="469" text-anchor="middle" class="stepNum">6</text>
+<text x="440" y="461" class="stepTitle">10-min demo + 5-min Q&amp;A</text>
+<text x="440" y="476" class="stepSubHi">(graded)</text>
+
+<!-- ===================== Footer ===================== -->
+<text x="360" y="518" text-anchor="middle" class="footer">Each CTF submission = flag + payload + mitigation.</text>
+<text x="360" y="532" text-anchor="middle" class="footer">Found → proved → fixed — same 3 moves the pipeline grades.</text>
+<text x="360" y="546" text-anchor="middle" class="footer">Not a toy target this time: the stakes are your own system.</text>
+
+</svg>

@@ -9,6 +9,8 @@
 
 ---
 
+![A horizontal bar divided into five point-weighted blocks shows where the 100 exam marks fall: Week 1 threat modeling (15 pts), Week 2 SDLC tooling and CWE/OWASP mapping (5 pts), Weeks 3-6 spot-the-vuln across injection/XSS/auth/crypto (25 pts), Week 4 applied SQL injection flagged as the largest single block (30 pts), and a running-theme secure-design section (25 pts).](img/exam-blueprint.svg)
+
 ## Section A — Concepts (30 pts, 5 each)
 
 A1. Define the **CIA triad** and give one realistic threat against each property.

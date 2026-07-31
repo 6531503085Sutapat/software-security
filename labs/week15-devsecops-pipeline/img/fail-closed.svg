@@ -1,0 +1,193 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 600" role="img" aria-label="Two panels showing the same yes-or-no decision made at two different times. Left panel, build time, the CI gate in security-ci.yml, on a pull request. The pull request fans out to three jobs: Semgrep for SAST, Trivy for SCA and IaC, and Gitleaks for secrets. Step one is the report run, with exit-code 0 or a trailing or-true, so the SARIF file uploads to the Security tab even when the gate is about to fail. Step two is the gate step, with exit-code 1. The two Trivy gate steps filter to severity HIGH and CRITICAL, while Semgrep's --error flag and Gitleaks have no severity filter at all and fail on any finding. Two outcomes follow. Caught: a Dockerfile running as root is DS-0002, rated HIGH, so the gate says no and the build turns red. Slips past: a base image tagged latest is DS-0001, rated MEDIUM, which the HIGH-CRITICAL filter drops, so the build goes green with the defect merged. The lesson on the left is that the threshold, not the scanner, decides what the build is willing to refuse. Right panel, run time, the same decision inside the /admin handler, for a GET request carrying no Authorization header. The fail-open version, insecure_service.py on port 8090, indexes the dictionary with USERS square-bracket token, which raises KeyError, and its except Exception branch returns jsonify with panel UNLOCKED and secret SECRET. The observed response is 200 carrying the per-student flag FLAG-devsecops, and nothing at all is logged, so the bypass is silent, which is OWASP A09. The fail-closed version, secure_service.py on port 8091, uses USERS dot get of token, which returns None instead of raising, and its except Exception as exc branch returns jsonify error forbidden with status 403. The observed response is 403 forbidden, plus a structured log line reading event=authz_failure outcome=deny src_ip and reason=unauthenticated. Every path denies, and the except logs only the exception type, never the message, which is CWE-209, and never the token, which is CWE-532. The two handlers share the same try and except structure: the only difference is one return that gives 200 and one that gives 403. The closing claim across the bottom: one decision, made twice, and both defaults are yes. The gate exits 0 for anything it was not told to fail on; the handler returns 200 for anything that threw. Nobody chose, and that silence is OWASP A10 Mishandling of Exceptional Conditions, CWE-636.">
+<title>Fail open or fail closed: the CI gate and the /admin handler are the same decision at two different times</title>
+<style>
+text   { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.mono  { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.bg    { fill: #ffffff; }
+.h1    { fill: #12232e; font-size: 15.5px; font-weight: 700; }
+.sub   { fill: #6b7280; font-size: 11.5px; }
+.panel { fill: #ffffff; stroke: #c9d4de; stroke-width: 1.2; }
+.pnum  { fill: #017BC4; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+.pt    { fill: #12232e; font-size: 13.5px; font-weight: 700; }
+.ps    { fill: #6b7280; font-size: 11px; }
+.node  { fill: #f2f6f9; stroke: #c9d4de; stroke-width: 1.1; }
+.nt    { fill: #12232e; font-size: 12px; font-weight: 600; }
+.chipt { fill: #017BC4; font-size: 12px; font-weight: 700; }
+.chips { fill: #6b7280; font-size: 10.5px; }
+.arrow { stroke: #9fb8c9; stroke-width: 1.6; fill: none; }
+.ahead { fill: #9fb8c9; }
+.alab  { fill: #6b7280; font-size: 10.5px; }
+.gate  { fill: #e9f2f9; stroke: #017BC4; stroke-width: 1.4; }
+.gt    { fill: #12232e; font-size: 11.5px; font-weight: 700; }
+.gm    { fill: #0a5f96; font-size: 10.5px; }
+.gs    { fill: #4b5563; font-size: 10.5px; }
+.ok    { fill: #ffffff; stroke: #017BC4; stroke-width: 1.8; }
+.bad   { fill: #fdeee4; stroke: #E35205; stroke-width: 1.8; }
+.oklbl { fill: #017BC4; font-size: 10.5px; font-weight: 700; letter-spacing: 0.9px; }
+.bdlbl { fill: #b34205; font-size: 10.5px; font-weight: 700; letter-spacing: 0.9px; }
+.okbig { fill: #017BC4; font-size: 11.5px; font-weight: 700; }
+.bdbig { fill: #b34205; font-size: 11.5px; font-weight: 700; }
+.body  { fill: #1f2933; font-size: 11px; }
+.note  { fill: #6b7280; font-size: 11px; }
+.code  { fill: #1f2933; font-size: 10.5px; }
+.codeg { fill: #6b7280; font-size: 10.5px; }
+.obso  { fill: #b34205; font-size: 10.5px; font-weight: 700; }
+.obsb  { fill: #017BC4; font-size: 10.5px; font-weight: 700; }
+.hdo   { fill: #b34205; font-size: 12.5px; font-weight: 700; }
+.hdb   { fill: #017BC4; font-size: 12.5px; font-weight: 700; }
+.file  { fill: #6b7280; font-size: 10.5px; }
+.tick  { stroke: #017BC4; stroke-width: 2.2; fill: none; stroke-linecap: round; }
+.cross { stroke: #E35205; stroke-width: 2.2; fill: none; stroke-linecap: round; }
+.strip { fill: #f5f8fa; stroke: #c9d4de; stroke-width: 1.2; }
+.st    { fill: #12232e; font-size: 13.5px; font-weight: 700; }
+.sb    { fill: #1f2933; font-size: 11.5px; }
+.tag   { fill: #b34205; font-size: 11.5px; font-weight: 700; }
+@media (prefers-color-scheme: dark) {
+  .bg    { fill: #0f1419; }
+  .h1    { fill: #e8edf2; }
+  .sub   { fill: #9aa3ad; }
+  .panel { fill: #171d24; stroke: #31404d; }
+  .pnum  { fill: #4aa3dd; }
+  .pt    { fill: #e8edf2; }
+  .ps    { fill: #9aa3ad; }
+  .node  { fill: #1e262e; stroke: #31404d; }
+  .nt    { fill: #e8edf2; }
+  .chipt { fill: #4aa3dd; }
+  .chips { fill: #9aa3ad; }
+  .arrow { stroke: #4c6070; }
+  .ahead { fill: #4c6070; }
+  .alab  { fill: #9aa3ad; }
+  .gate  { fill: #12283a; stroke: #4aa3dd; }
+  .gt    { fill: #e8edf2; }
+  .gm    { fill: #7fc2ea; }
+  .gs    { fill: #b7c1cb; }
+  .ok    { fill: #171d24; stroke: #4aa3dd; }
+  .bad   { fill: #3a2213; stroke: #ff7a3d; }
+  .oklbl { fill: #4aa3dd; }
+  .bdlbl { fill: #ff9b63; }
+  .okbig { fill: #4aa3dd; }
+  .bdbig { fill: #ff9b63; }
+  .body  { fill: #dde4ea; }
+  .note  { fill: #9aa3ad; }
+  .code  { fill: #dde4ea; }
+  .codeg { fill: #9aa3ad; }
+  .obso  { fill: #ffbe9a; }
+  .obsb  { fill: #7fc2ea; }
+  .hdo   { fill: #ff9b63; }
+  .hdb   { fill: #4aa3dd; }
+  .file  { fill: #9aa3ad; }
+  .tick  { stroke: #4aa3dd; }
+  .cross { stroke: #ff7a3d; }
+  .strip { fill: #141b22; stroke: #31404d; }
+  .st    { fill: #e8edf2; }
+  .sb    { fill: #dde4ea; }
+  .tag   { fill: #ff9b63; }
+}
+</style>
+
+<rect class="bg" x="0" y="0" width="720" height="600"/>
+
+<text class="h1"  x="24" y="30">Fail closed, or fail open by accident</text>
+<text class="sub" x="24" y="49">The same yes-or-no question, asked at two different times</text>
+
+<!-- ===================== LEFT PANEL : BUILD TIME ===================== -->
+<rect class="panel" x="24" y="68" width="280" height="396" rx="8"/>
+
+<text class="pnum" x="40" y="88">BUILD TIME</text>
+<text class="pt"   x="40" y="107">The CI gate</text>
+<text class="ps"   x="40" y="123">security-ci.yml · on: pull_request</text>
+
+<rect class="node" x="40" y="136" width="248" height="26" rx="5"/>
+<text class="nt" x="164" y="153" text-anchor="middle">Pull request opened</text>
+
+<line class="arrow" x1="164" y1="162" x2="164" y2="171"/>
+<polygon class="ahead" points="158.5,170 169.5,170 164,177"/>
+
+<rect class="node" x="40"  y="178" width="80" height="42" rx="5"/>
+<rect class="node" x="124" y="178" width="80" height="42" rx="5"/>
+<rect class="node" x="208" y="178" width="80" height="42" rx="5"/>
+<text class="chipt" x="80"  y="198" text-anchor="middle">Semgrep</text>
+<text class="chips" x="80"  y="212" text-anchor="middle">SAST</text>
+<text class="chipt" x="164" y="198" text-anchor="middle">Trivy</text>
+<text class="chips" x="164" y="212" text-anchor="middle">SCA + IaC</text>
+<text class="chipt" x="248" y="198" text-anchor="middle">Gitleaks</text>
+<text class="chips" x="248" y="212" text-anchor="middle">secrets</text>
+
+<line class="arrow" x1="52" y1="224" x2="52" y2="238"/>
+<polygon class="ahead" points="46.5,237 57.5,237 52,244"/>
+<text class="alab" x="64" y="232">1 · report run: exit-code "0"</text>
+<text class="alab" x="64" y="245">SARIF uploads even when the gate fails</text>
+
+<rect class="gate" x="40" y="250" width="248" height="72" rx="6"/>
+<text class="gt"       x="52" y="270">2 · Gate step: exit-code: "1"</text>
+<text class="gm mono"  x="52" y="288">Trivy  severity: HIGH,CRITICAL</text>
+<text class="gs"       x="52" y="303">Semgrep --error and Gitleaks: no</text>
+<text class="gs"       x="52" y="316">severity filter — any finding fails.</text>
+
+<line class="arrow" x1="100" y1="322" x2="100" y2="335"/>
+<polygon class="ahead" points="94.5,334 105.5,334 100,341"/>
+<line class="arrow" x1="228" y1="322" x2="228" y2="335"/>
+<polygon class="ahead" points="222.5,334 233.5,334 228,341"/>
+
+<rect class="ok"  x="40"  y="342" width="120" height="76" rx="6"/>
+<rect class="bad" x="168" y="342" width="120" height="76" rx="6"/>
+
+<polyline class="tick" points="50,363 55,368 63,358"/>
+<text class="oklbl"    x="70" y="367">CAUGHT</text>
+<text class="code mono" x="50" y="385">USER root</text>
+<text class="body"      x="50" y="399">DS-0002 HIGH</text>
+<text class="okbig"     x="50" y="414">BUILD FAILS</text>
+
+<line class="cross" x1="178" y1="359" x2="187" y2="368"/>
+<line class="cross" x1="187" y1="359" x2="178" y2="368"/>
+<text class="bdlbl"     x="195" y="367">SLIPS PAST</text>
+<text class="code mono" x="178" y="385">FROM …:latest</text>
+<text class="body"      x="178" y="399">DS-0001 MEDIUM</text>
+<text class="bdbig"     x="178" y="414">BUILD PASSES</text>
+
+<text class="note" x="40" y="438">The threshold, not the scanner, decides</text>
+<text class="note" x="40" y="452">what this build is willing to refuse.</text>
+
+<!-- ===================== RIGHT PANEL : RUN TIME ===================== -->
+<rect class="panel" x="320" y="68" width="376" height="396" rx="8"/>
+
+<text class="pnum" x="336" y="88">RUN TIME</text>
+<text class="pt"   x="336" y="107">The /admin handler</text>
+<text class="ps"   x="336" y="123">GET /admin — no Authorization header</text>
+
+<rect class="bad" x="334" y="132" width="348" height="130" rx="6"/>
+<text class="hdo"       x="346" y="152">FAIL OPEN</text>
+<text class="file mono" x="424" y="152">insecure_service.py  :8090</text>
+<text class="code mono" x="346" y="172">user = USERS[token]        # raises KeyError</text>
+<text class="code mono" x="346" y="188">except Exception:</text>
+<text class="code mono" x="346" y="204">  return jsonify(panel="UNLOCKED", secret=SECRET)</text>
+<text class="obso mono" x="346" y="222">200 {"panel":"UNLOCKED",</text>
+<text class="obso mono" x="346" y="236">     "secret":"FLAG{devsecops_…}"}</text>
+<text class="body"      x="346" y="254">Nothing is logged — the bypass is silent (A09).</text>
+
+<text class="alab" x="508" y="279" text-anchor="middle">same try / except — one different return</text>
+
+<rect class="ok" x="334" y="287" width="348" height="162" rx="6"/>
+<text class="hdb"       x="346" y="307">FAIL CLOSED</text>
+<text class="file mono" x="442" y="307">secure_service.py  :8091</text>
+<text class="code mono" x="346" y="327">user = USERS.get(token)    # None, never raises</text>
+<text class="code mono" x="346" y="343">except Exception as exc:</text>
+<text class="code mono" x="346" y="359">  return jsonify(error="forbidden"), 403</text>
+<text class="obsb mono"  x="346" y="379">403 {"error":"forbidden"}</text>
+<text class="codeg mono" x="346" y="393">event=authz_failure  reason=unauthenticated</text>
+<text class="codeg mono" x="346" y="407">except path → event=authz_error error=&lt;type&gt;</text>
+<text class="body" x="346" y="427">Every path denies. The except logs the error type,</text>
+<text class="body" x="346" y="441">not the message (CWE-209) or the token (CWE-532).</text>
+
+<!-- ===================== THE TIE ===================== -->
+<line class="arrow" x1="164" y1="464" x2="164" y2="482"/>
+<line class="arrow" x1="508" y1="464" x2="508" y2="482"/>
+
+<rect class="strip" x="24" y="482" width="672" height="94" rx="8"/>
+<text class="st" x="44"  y="510">One decision, made twice — and both defaults are yes.</text>
+<text class="sb" x="44"  y="533">The gate exits 0 for anything</text>
+<text class="sb" x="44"  y="548">it was not told to fail on.</text>
+<text class="sb" x="376" y="533">The handler returns 200 for</text>
+<text class="sb" x="376" y="548">anything that threw.</text>
+<text class="tag" x="44" y="569">Nobody chose. That default is A10 / CWE-636 — fail open.</text>
+</svg>
