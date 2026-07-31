@@ -7,6 +7,8 @@
 
 > Each challenge yields a **flag** in the form `FLAG{...}` (or the proof noted). Submit, per challenge: the **flag**, the **payload/command** you used, and a **one-line mitigation**. Partial credit for documented progress without the flag.
 
+![A CTF scoreboard diagram showing the Week 9 midterm practical's four graded categories, their point weights, source labs, the mechanism each flag actually tests, and their link to the Week 8 written exam sections.](img/ctf-categories.svg)
+
 **Targets (started by the instructor):**
 - Injection / Auth: `labs/week04-injection` and `labs/week06-authn-authz` apps (`docker compose up`)
 - XSS: `labs/week05-xss-client-side` app (or OWASP Juice Shop)

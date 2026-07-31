@@ -1,0 +1,117 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>One signature, two forms: (r, s) and (r, n − s)</h1>
+<p class="lead ecdsamal-wrapcode">The lab's bank names a transaction by hashing the <b>signature</b>:
+<code>txid = sha256(str(r) + str(s))</code>. Replace <b>s</b> with <b>n − s</b> and you hold a
+second, equally valid signature for the <b>same</b> message and the <b>same</b> key — with a
+different txid.</p>
+
+<h3>Pick a signature</h3>
+<div class="preset" id="presets" role="group" aria-label="Pick a signature"></div>
+
+<div class="card ecdsamal-card">
+  <h3>The signature you hold</h3>
+  <p class="ecdsamal-msg">message <code>withdraw 100 to attacker</code> &nbsp;·&nbsp;
+     curve <code>secp256k1</code></p>
+  <p class="ecdsamal-lbl">r — malleability never touches r</p>
+  <div class="q" id="rval"></div>
+  <label for="sin">s — edit it freely (decimal; <code>0x…</code> hex is accepted
+     here as a convenience, though the bank's <code>int()</code> wants decimal)</label>
+  <input id="sin" class="ecdsamal-in" type="text" autocomplete="off" spellcheck="false"
+         aria-describedby="snote">
+  <p class="ecdsamal-note" id="snote"></p>
+</div>
+
+<div class="ecdsamal-two">
+  <div class="card ecdsamal-card">
+    <h3>Form A — (r, s)</h3>
+    <p class="ecdsamal-lbl">s</p>
+    <div class="q" id="sa"></div>
+    <p class="ecdsamal-badge" id="badgea"></p>
+    <p class="ecdsamal-lbl">txid = sha256(str(r) + str(s))</p>
+    <div class="q ecdsamal-hex" id="txa"></div>
+  </div>
+  <div class="card ecdsamal-card">
+    <h3>Form B — (r, n − s), the twin</h3>
+    <p class="ecdsamal-lbl">n − s</p>
+    <div class="q" id="sb"></div>
+    <p class="ecdsamal-badge" id="badgeb"></p>
+    <p class="ecdsamal-lbl">txid = sha256(str(r) + str(n − s))</p>
+    <div class="q ecdsamal-hex" id="txb"></div>
+  </div>
+</div>
+
+<div class="card ecdsamal-card">
+  <p class="verdict" id="txverdict" aria-live="polite"></p>
+  <p class="ecdsamal-claim" id="verifyclaim"></p>
+</div>
+
+<h3>Submit them to the bank</h3>
+<p class="lead ecdsamal-wrapcode">Each button replays the same request against a <b>model</b> of both
+banks at once, so the divergence is on one screen. Statuses, bodies and the order the checks run
+in match the lab's apps. The one thing the model stands in for is
+<code>VK.verify()</code>: a pair counts as verifying here exactly when the real bank would accept
+it — a signature it issued, or that signature's twin. Invent an <b>s</b> and you get
+<code>403 bad signature</code>, because <b>malleability reshapes a signature you already hold;
+it does not forge one</b>.</p>
+<div class="preset" id="actions" role="group" aria-label="Submit to the banks"></div>
+
+<div class="ecdsamal-two">
+  <div class="card ecdsamal-card">
+    <h3>Vulnerable bank · port 8102</h3>
+    <p class="ecdsamal-cap">dedup key: <code>sha256(str(r) + str(s))</code></p>
+    <p class="ecdsamal-total" id="totalv"></p>
+    <div id="logv" aria-live="polite"></div>
+  </div>
+  <div class="card ecdsamal-card">
+    <h3>Fixed bank · port 8103</h3>
+    <p class="ecdsamal-cap">same dedup, but <code>s ≤ n // 2</code> is checked first
+       (BIP-62 low-S)</p>
+    <p class="ecdsamal-total" id="totalf"></p>
+    <div id="logf" aria-live="polite"></div>
+  </div>
+</div>
+
+<div class="card ecdsamal-card">
+  <h3>Why it works, in one line each</h3>
+  <ul>
+    <li><b>You must already hold one valid signature.</b> This is the precondition, and it is the
+      part most often skipped. Malleability <i>reshapes</i> a signature into a second valid
+      spelling of the same authorization; it never <i>forges</i> one. Nothing on this page —
+      and nothing in the lab — lets you invent an <b>s</b> and spend someone's money. That is
+      why the contrived presets get <code>403 bad signature</code> from both banks: they are
+      arithmetic, not authorizations.</li>
+    <li><b>Both verify.</b> Verification recovers a point and compares only its
+      <i>x</i>-coordinate to r. Swapping s for n − s negates that point: <i>y</i> flips,
+      <i>x</i> does not. There is no check the bank could add to <i>verification</i> that
+      tells the two apart.</li>
+    <li><b>The txids differ.</b> The id is a hash of the decimal digits of s, and those
+      digits changed completely. Deduplicating on the signature means deduplicating on a
+      spelling, not on a transaction.</li>
+    <li><b>Low-S ends it.</b> n is odd, so exactly one of {s, n − s} is ≤ n // 2. Accept only
+      that one and a (message, key) pair has exactly one acceptable signature — no twin left
+      to file as a second transaction.</li>
+    <li><b>The other fix.</b> Dedup on (message, pubkey) instead. It survives malleability
+      the low-S rule does not cover — non-canonical DER, encoding tricks — because it never
+      asks what the signature looked like.</li>
+  </ul>
+  <p class="hint ecdsamal-wrapcode">Real here: n, n − s, the low-S test, and every txid — the digests match
+    <code>hashlib.sha256((str(r)+str(s)).encode()).hexdigest()</code> exactly. Modelled here:
+    the bank's control flow, including where <code>VK.verify()</code> sits in it. No
+    elliptic-curve verification runs on this page; the two sample presets were verified with
+    python-ecdsa beforehand, in both forms.</p>
+  <p class="hint ecdsamal-wrapcode">Do not paste these sample numbers into your own container. Both apps
+    run <code>SigningKey.generate(...)</code> at startup, so <b>your</b> instance has a
+    different key and will answer <code>403 bad signature</code> to a signature made under
+    someone else's. Get your own pair from <code>GET /sign</code> first — these presets are
+    a captured example to look at, not a payload to replay.</p>
+  <p class="ecdsamal-lbl">n (secp256k1 order)</p>
+  <div class="q" id="nval"></div>
+  <p class="ecdsamal-lbl">n // 2 — the low-S ceiling</p>
+  <div class="q" id="halfval"></div>
+</div>
+
+<script src="/static/sim/ecdsa-malleability.js?v={{ asset_v }}"></script>
+</body></html>

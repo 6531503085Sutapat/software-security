@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 600" role="img" aria-label="Week 6 authentication versus authorization. One HTTP request must pass two different gates. Gate 1, authentication, answers 'who are you' by verifying a token's signature and algorithm. It is broken in vulnerable_app.py: line 55 allows the algorithm 'none', so an unsigned forged token passes, and line 9 hardcodes the weak secret 'secret', so a token an attacker signs with 'secret' is cryptographically identical to a real one. All three tokens shown, an alg:none forgery, a weak-secret forgery, and alice's genuine login token, pass Gate 1. These are CWE-347 and CWE-321. Gate 2, authorization, answers 'may you touch THIS' by comparing the order owner to the caller. It is broken because get_order ignores the current_user result at line 63, so no ownership check runs. The key point: even alice's perfectly valid token, once past Gate 1, reads GET /api/orders/2, which belongs to bob and leaks FLAG_IDOR. That is CWE-639, IDOR. A valid token clears Gate 1 but must not be enough to clear Gate 2. solution_app.py fixes both: Gate 1 pins algorithms to HS256, requires exp and aud (line 50) and uses a strong random secret (line 10) so forged tokens get 401; Gate 2 compares owner to user (line 64) so alice on order 2 gets 403.">
+<title>Authentication vs Authorization: one request, two gates (Week 6)</title>
+<style>
+  text { font-family: system-ui, sans-serif; }
+  .mono { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; }
+  .tx-ink { fill: #1f2937; }
+  .tx-grey { fill: #6b7280; }
+  .tx-blue { fill: #017BC4; }
+  .tx-orange { fill: #E35205; }
+  .card-bg { fill: #ffffff; }
+  .soft-bg { fill: #eef2f6; }
+  .banner-bg { fill: #fdece4; }
+  .fix-bg { fill: #eaf2fa; }
+  .st-blue { stroke: #017BC4; }
+  .st-orange { stroke: #E35205; }
+  .st-grey { stroke: #cbd2da; }
+  .arrow { fill: none; stroke: #6b7280; stroke-width: 2; }
+  .arrow-b { fill: none; stroke: #017BC4; stroke-width: 3; }
+  .arrow-o { fill: none; stroke: #E35205; stroke-width: 3; }
+  .mk-g { fill: #6b7280; }
+  .mk-b { fill: #017BC4; }
+  .mk-o { fill: #E35205; }
+  @media (prefers-color-scheme: dark) {
+    .tx-ink { fill: #e6e9ee; }
+    .tx-grey { fill: #9aa3ad; }
+    .tx-blue { fill: #4aa3dd; }
+    .tx-orange { fill: #ff7a3d; }
+    .card-bg { fill: #20262e; }
+    .soft-bg { fill: #2a3138; }
+    .banner-bg { fill: #3a2a22; }
+    .fix-bg { fill: #1e2a35; }
+    .st-blue { stroke: #4aa3dd; }
+    .st-orange { stroke: #ff7a3d; }
+    .st-grey { stroke: #3a424b; }
+    .arrow { stroke: #9aa3ad; }
+    .arrow-b { stroke: #4aa3dd; }
+    .arrow-o { stroke: #ff7a3d; }
+    .mk-g { fill: #9aa3ad; }
+    .mk-b { fill: #4aa3dd; }
+    .mk-o { fill: #ff7a3d; }
+  }
+</style>
+
+<defs>
+  <marker id="ag" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path class="mk-g" d="M0,0 L7,3 L0,6 Z"/></marker>
+  <marker id="ab" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path class="mk-b" d="M0,0 L7,3 L0,6 Z"/></marker>
+  <marker id="ao" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path class="mk-o" d="M0,0 L7,3 L0,6 Z"/></marker>
+</defs>
+
+<!-- Title -->
+<text x="16" y="30" class="tx-ink" font-size="19" font-weight="700">Two gates, one request &#8212; authentication &#8800; authorization</text>
+<text x="16" y="50" class="tx-grey" font-size="12">Week 6 &#183; vulnerable_app.py &#183; a valid token still must not read localhost:8080/api/orders/2</text>
+
+<!-- ================= TOKENS ================= -->
+<text x="16" y="78" class="tx-grey" font-size="11" font-weight="600">TOKENS ARRIVING</text>
+
+<!-- card 1: alg none forgery -->
+<rect x="16" y="90" width="150" height="60" rx="7" class="card-bg st-orange" stroke-width="1.6"/>
+<text x="24" y="110" class="tx-orange mono" font-size="11" font-weight="700">FORGED &#183; alg:none</text>
+<text x="24" y="128" class="tx-ink" font-size="11">unsigned, sub=bob</text>
+<text x="24" y="144" class="tx-grey" font-size="11">needs no secret</text>
+
+<!-- card 2: weak secret forgery -->
+<rect x="16" y="172" width="150" height="60" rx="7" class="card-bg st-orange" stroke-width="1.6"/>
+<text x="24" y="192" class="tx-orange mono" font-size="11" font-weight="700">FORGED &#183; HS256</text>
+<text x="24" y="210" class="tx-ink mono" font-size="11">key = "secret"</text>
+<text x="24" y="226" class="tx-grey" font-size="11">same token alice gets</text>
+
+<!-- card 3: real alice token -->
+<rect x="16" y="254" width="150" height="60" rx="7" class="card-bg st-blue" stroke-width="1.6"/>
+<text x="24" y="274" class="tx-blue" font-size="11" font-weight="700">REAL &#183; alice login</text>
+<text x="24" y="292" class="tx-ink" font-size="11">signed, sub=alice</text>
+<text x="24" y="308" class="tx-grey" font-size="11">a genuine token</text>
+
+<!-- token arrows into gate 1 -->
+<line x1="166" y1="120" x2="186" y2="130" class="arrow-o" marker-end="url(#ao)"/>
+<line x1="166" y1="202" x2="186" y2="197" class="arrow-o" marker-end="url(#ao)"/>
+<line x1="166" y1="284" x2="186" y2="215" class="arrow-b" marker-end="url(#ab)"/>
+
+<!-- ================= GATE 1 ================= -->
+<rect x="188" y="84" width="166" height="234" rx="9" class="card-bg st-blue" stroke-width="2"/>
+<text x="196" y="106" class="tx-grey" font-size="11" font-weight="700">GATE 1</text>
+<text x="196" y="125" class="tx-blue" font-size="14" font-weight="700">Authentication</text>
+<text x="196" y="141" class="tx-grey" font-size="11">who are you?</text>
+<line x1="196" y1="150" x2="346" y2="150" class="st-grey" stroke-width="1"/>
+<text x="196" y="167" class="tx-ink" font-size="11">verify signature + alg</text>
+<text x="196" y="187" class="tx-orange" font-size="11" font-weight="700">BROKEN</text>
+<text x="196" y="204" class="tx-orange mono" font-size="11">alg:none ok (L55)</text>
+<text x="196" y="221" class="tx-orange mono" font-size="11">SECRET="secret" L9</text>
+<text x="196" y="241" class="tx-ink" font-size="11">&#8594; all 3 pass; can't</text>
+<text x="196" y="256" class="tx-ink" font-size="11">tell forged from real</text>
+<text x="196" y="276" class="tx-grey" font-size="11" font-weight="600">CWE-347 &#183; CWE-321</text>
+
+<!-- gate1 -> gate2 arrow + handoff chip -->
+<line x1="354" y1="201" x2="402" y2="201" class="arrow-b" marker-end="url(#ab)"/>
+<rect x="356" y="192" width="46" height="18" rx="9" class="soft-bg st-blue" stroke-width="1.2"/>
+<text x="379" y="205" class="tx-blue" font-size="10.5" font-weight="700" text-anchor="middle">valid &#10003;</text>
+
+<!-- ================= GATE 2 ================= -->
+<rect x="404" y="84" width="166" height="234" rx="9" class="card-bg st-blue" stroke-width="2"/>
+<text x="412" y="106" class="tx-grey" font-size="11" font-weight="700">GATE 2</text>
+<text x="412" y="125" class="tx-blue" font-size="14" font-weight="700">Authorization</text>
+<text x="412" y="141" class="tx-grey" font-size="11">may you touch THIS?</text>
+<line x1="412" y1="150" x2="562" y2="150" class="st-grey" stroke-width="1"/>
+<text x="412" y="167" class="tx-ink" font-size="11">compare owner==caller</text>
+<text x="412" y="187" class="tx-orange" font-size="11" font-weight="700">BROKEN</text>
+<text x="412" y="204" class="tx-orange mono" font-size="11">current_user()</text>
+<text x="412" y="221" class="tx-orange mono" font-size="11">result ignored L63</text>
+<text x="412" y="241" class="tx-ink" font-size="11">&#8594; owner never</text>
+<text x="412" y="256" class="tx-ink" font-size="11">checked; any id reads</text>
+<text x="412" y="276" class="tx-orange" font-size="11" font-weight="700">CWE-639 &#183; IDOR</text>
+
+<!-- gate2 -> resource arrow + IDOR chip -->
+<line x1="570" y1="201" x2="604" y2="201" class="arrow-o" marker-end="url(#ao)"/>
+<rect x="573" y="192" width="34" height="18" rx="9" class="banner-bg st-orange" stroke-width="1.2"/>
+<text x="590" y="205" class="tx-orange" font-size="10.5" font-weight="700" text-anchor="middle">IDOR</text>
+
+<!-- ================= RESOURCE ================= -->
+<rect x="606" y="150" width="120" height="104" rx="9" class="soft-bg st-orange" stroke-width="1.8"/>
+<text x="614" y="172" class="tx-grey" font-size="10.5" font-weight="600">RESOURCE &#8212; bob's</text>
+<text x="614" y="192" class="tx-ink mono" font-size="12" font-weight="700">/api/orders/2</text>
+<text x="614" y="210" class="tx-ink" font-size="11">owner = bob</text>
+<text x="614" y="226" class="tx-ink" font-size="11">item: Phone</text>
+<text x="614" y="244" class="tx-orange" font-size="11" font-weight="700">leaks FLAG_IDOR</text>
+
+<!-- ================= BANNER ================= -->
+<rect x="16" y="328" width="710" height="48" rx="8" class="banner-bg st-orange" stroke-width="1.4"/>
+<rect x="16" y="328" width="5" height="48" class="st-orange" fill="#E35205"/>
+<text x="30" y="349" class="tx-ink" font-size="12">GATE 1 asks WHO &#8212; forged tokens (alg:none, weak secret) slip through: CWE-347, CWE-321.</text>
+<text x="30" y="367" class="tx-ink" font-size="12">GATE 2 asks MAY-YOU &#8212; even alice's valid token reads /api/orders/2 (bob's): CWE-639 IDOR.</text>
+
+<!-- ================= FIX STRIP ================= -->
+<rect x="16" y="386" width="710" height="176" rx="8" class="fix-bg st-blue" stroke-width="1.4"/>
+<text x="30" y="410" class="tx-ink" font-size="13" font-weight="700">solution_app.py &#8212; deny by default, close BOTH gates</text>
+<line x1="374" y1="424" x2="374" y2="546" class="st-grey" stroke-width="1"/>
+
+<!-- fix col 1 -->
+<text x="30" y="436" class="tx-blue" font-size="12" font-weight="700">GATE 1 fix &#8212; authentication</text>
+<text x="30" y="456" class="tx-ink mono" font-size="11">algorithms=["HS256"]</text>
+<text x="30" y="474" class="tx-ink mono" font-size="11">require exp + aud (L50)</text>
+<text x="30" y="492" class="tx-ink mono" font-size="11">strong random secret (L10)</text>
+<text x="30" y="514" class="tx-orange" font-size="11" font-weight="600">&#8594; forged tokens &#8594; 401</text>
+
+<!-- fix col 2 -->
+<text x="388" y="436" class="tx-blue" font-size="12" font-weight="700">GATE 2 fix &#8212; authorization</text>
+<text x="388" y="456" class="tx-ink mono" font-size="11">if owner != user: 403</text>
+<text x="388" y="474" class="tx-ink mono" font-size="11">checked per object (L64)</text>
+<text x="388" y="492" class="tx-orange" font-size="11" font-weight="600">&#8594; alice on /orders/2 &#8594; 403</text>
+<text x="388" y="514" class="tx-grey" font-size="11">a valid token &#8800; permission</text>
+</svg>

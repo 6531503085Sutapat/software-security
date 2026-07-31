@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 736" role="img"
+     aria-label="A revision map for the final exam, covering weeks 10 to 16. Across the top, three boxes state the spine of the second half. One: a control has to sit at a boundary — the check runs on the server, per request, per object — demonstrated in week 10, where /api/users/3/orders answers 401, then 403, then 200, all decided server-side. Two: a control has to be on by default — the safe path is the only path, not a flag you pass — demonstrated in week 11, where the bounds checks in safe.rs make the stack overflow impossible rather than merely harder. Three: a control has to fail closed — on error it denies and logs the reason, never the secret — demonstrated in week 15, where port 8090 fails open while port 8091 denies and logs, CWE-636. The three boxes are joined by plus signs: all three, or it is not a control. Below, a table gives one row per week: its OWASP or CWE tag, its core idea, and the first-half week it builds on. Week 10, API security, API1 BOLA, API3 mass assignment, API4 unrestricted resource consumption — these are authorization flaws, not input flaws; /api/users/3/orders returns any user's row. It builds on week 6 authorization: deny by default, now enforced per request and per object. Week 11, memory safety and exploitation, CWE-121 and CWE-787, plus CWE-134 format string — untrusted bytes reach the stack through strcpy in parse_input, at offset 72. It builds on week 4 injection: input reaches a sink, and here the sink is the stack. Week 12, supply chain, A03 and A08 with CWE-1357 — you did not write most of your code, and the public look-alike acme-internal-utils version 99.0.0 wins the resolution. It builds on week 2 secure SDLC: a flaw ships unless something scans it, and now that scanner is SCA, an SBOM and cosign. Week 13, cloud and container, A02 with CWE-732 and CWE-798 — the flaw is in the configuration, not the code: Dockerfile.insecure uses the latest tag, runs as root, bakes ENV API_TOKEN, and the IAM policy allows Action star on Resource star. It builds on week 3 cryptography: a key baked into an image is not a secret. Week 14, AI and LLM security, LLM01, LLM02 and LLM05 — the prompt is not a security control; override it and the FLAG comes out. It builds on week 5 cross-site scripting: model output is untrusted input, and must be escaped before it reaches the page. Week 15, DevSecOps gates, A09, A10 and CWE-636 — Semgrep, Trivy and Gitleaks run on every pull request, and port 8090 fails open while port 8091 returns 403. It builds on week 2 tooling again: the same scanners, except now they are allowed to stop the build. Week 16, capstone, all weeks, with a CWE and OWASP mapping required — against your own application: attack, root cause, fix, then SBOM, signature and CI gate. It builds on week 1 threat modelling: the data-flow diagram you drew in week 1 is deliverable number one. Small numbered circles on the week 10, week 11 and week 15 rows mark the week that demonstrates each of the three spine properties.">
+  <title>Final revision map: weeks 10 to 16, and the three properties every control needs</title>
+  <style>
+    .h     { font: 700 15px system-ui, sans-serif; fill: #16191d }
+    .col   { font: 600 11px system-ui, sans-serif; fill: #6b7280; letter-spacing: .06em }
+    .spine { fill: #fffdf9; stroke: #017BC4; stroke-width: 1.8 }
+    .st    { font: 700 12px system-ui, sans-serif; fill: #E35205; letter-spacing: .04em }
+    .sb    { font: 11px system-ui, sans-serif; fill: #16191d }
+    .sw    { font: 600 11px system-ui, sans-serif; fill: #017BC4 }
+    .plus  { font: 700 15px system-ui, sans-serif; fill: #6b7280; text-anchor: middle }
+    .cap   { font: 11.5px system-ui, sans-serif; fill: #6b7280 }
+    .rule  { stroke: #b9b4aa; stroke-width: 1.2 }
+    .sep   { stroke: #ddd8ce; stroke-width: 1 }
+    .card  { fill: #fffdf9; stroke: #017BC4; stroke-width: 1.5 }
+    .wk    { font: 700 12.5px system-ui, sans-serif; fill: #16191d }
+    .tag   { font: 11px system-ui, sans-serif; fill: #6b7280 }
+    .body  { font: 11.5px system-ui, sans-serif; fill: #16191d }
+    .bad   { font: 11.5px system-ui, sans-serif; fill: #E35205 }
+    .bdg   { fill: none; stroke: #E35205; stroke-width: 1.8 }
+    .bdgn  { font: 700 11px system-ui, sans-serif; fill: #E35205; text-anchor: middle }
+    .foot  { font: 11px system-ui, sans-serif; fill: #6b7280 }
+    @media (prefers-color-scheme: dark) {
+      .h     { fill: #e6e8ea }
+      .col   { fill: #9aa3ad }
+      .spine { fill: #151a20; stroke: #4aa3dd }
+      .st    { fill: #ff7a3d }
+      .sb    { fill: #e6e8ea }
+      .sw    { fill: #4aa3dd }
+      .plus  { fill: #9aa3ad }
+      .cap   { fill: #9aa3ad }
+      .rule  { stroke: #3a4149 }
+      .sep   { stroke: #2b3138 }
+      .card  { fill: #151a20; stroke: #4aa3dd }
+      .wk    { fill: #e6e8ea }
+      .tag   { fill: #9aa3ad }
+      .body  { fill: #e6e8ea }
+      .bad   { fill: #ff7a3d }
+      .bdg   { stroke: #ff7a3d }
+      .bdgn  { fill: #ff7a3d }
+      .foot  { fill: #9aa3ad }
+    }
+  </style>
+
+  <text class="h" x="16" y="24">Final revision map — Weeks 10 to 16</text>
+  <text class="col" x="16" y="43">THE SPINE — WHAT MAKES A CONTROL A CONTROL</text>
+
+  <rect class="spine" x="16" y="52" width="216" height="106" rx="6"/>
+  <text class="st" x="28" y="74">1 · AT A BOUNDARY</text>
+  <text class="sb" x="28" y="93">The check runs on the server,</text>
+  <text class="sb" x="28" y="110">per request, per object.</text>
+  <text class="sw" x="28" y="130">W10 · /api/users/3/orders</text>
+  <text class="sw" x="28" y="147">401 → 403 → 200, server-side</text>
+
+  <text class="plus" x="242" y="112">+</text>
+
+  <rect class="spine" x="252" y="52" width="216" height="106" rx="6"/>
+  <text class="st" x="264" y="74">2 · ON BY DEFAULT</text>
+  <text class="sb" x="264" y="93">The safe path is the only</text>
+  <text class="sb" x="264" y="110">path — not a flag you pass.</text>
+  <text class="sw" x="264" y="130">W11 · safe.rs bounds checks:</text>
+  <text class="sw" x="264" y="147">impossible, not just harder</text>
+
+  <text class="plus" x="478" y="112">+</text>
+
+  <rect class="spine" x="488" y="52" width="216" height="106" rx="6"/>
+  <text class="st" x="500" y="74">3 · FAILS CLOSED</text>
+  <text class="sb" x="500" y="93">On error: deny, and log the</text>
+  <text class="sb" x="500" y="110">reason, never the secret.</text>
+  <text class="sw" x="500" y="130">W15 · :8090 fails open,</text>
+  <text class="sw" x="500" y="147">:8091 denies + logs · CWE-636</text>
+
+  <text class="cap" x="16" y="176">All three, or it is not a control. The numbered circles mark the week that shows each.</text>
+
+  <text class="col" x="16" y="200">WEEK  ·  OWASP / CWE</text>
+  <text class="col" x="224" y="200">CORE IDEA  —  WHAT BREAKS</text>
+  <text class="col" x="472" y="200">BUILDS ON THE FIRST HALF</text>
+  <path class="rule" d="M16 208 L704 208"/>
+
+  <rect class="card" x="16" y="220" width="196" height="54" rx="6"/>
+  <text class="wk"   x="27" y="243">W10 API security</text>
+  <text class="tag"  x="27" y="262">API1 · API3 · API4</text>
+  <circle class="bdg" cx="196" cy="247" r="10"/>
+  <text class="bdgn" x="196" y="251">1</text>
+  <text class="body" x="224" y="243">Authorization flaws, not input</text>
+  <text class="bad"  x="224" y="262">flaws: /api/users/3/orders leaks</text>
+  <text class="body" x="472" y="243">W6 authz: deny by default —</text>
+  <text class="body" x="472" y="262">now per request, per object</text>
+
+  <path class="sep" d="M16 282 L704 282"/>
+  <rect class="card" x="16" y="288" width="196" height="54" rx="6"/>
+  <text class="wk"   x="27" y="311">W11 Memory safety</text>
+  <text class="tag"  x="27" y="330">CWE-121 · CWE-787</text>
+  <circle class="bdg" cx="196" cy="315" r="10"/>
+  <text class="bdgn" x="196" y="319">2</text>
+  <text class="body" x="224" y="311">Untrusted bytes reach the stack:</text>
+  <text class="bad"  x="224" y="330">strcpy in parse_input(), offset 72</text>
+  <text class="body" x="472" y="311">W4 injection: input reaches a</text>
+  <text class="body" x="472" y="330">sink; here the sink is the stack</text>
+
+  <path class="sep" d="M16 350 L704 350"/>
+  <rect class="card" x="16" y="356" width="196" height="54" rx="6"/>
+  <text class="wk"   x="27" y="379">W12 Supply chain</text>
+  <text class="tag"  x="27" y="398">A03 · A08 · CWE-1357</text>
+  <text class="body" x="224" y="379">You did not write most of your code.</text>
+  <text class="bad"  x="224" y="398">acme-internal-utils 99.0.0 wins</text>
+  <text class="body" x="472" y="379">W2 SDLC: a flaw ships unless</text>
+  <text class="body" x="472" y="398">scanned — now SCA, SBOM, cosign</text>
+
+  <path class="sep" d="M16 418 L704 418"/>
+  <rect class="card" x="16" y="424" width="196" height="54" rx="6"/>
+  <text class="wk"   x="27" y="447">W13 Cloud &amp; container</text>
+  <text class="tag"  x="27" y="466">A02 · CWE-732 · CWE-798</text>
+  <text class="body" x="224" y="447">Config, not code. Dockerfile.insecure:</text>
+  <text class="bad"  x="224" y="466">root, ENV API_TOKEN, IAM Action:*</text>
+  <text class="body" x="472" y="447">W3 crypto: a key baked into an</text>
+  <text class="body" x="472" y="466">image is not a secret</text>
+
+  <path class="sep" d="M16 486 L704 486"/>
+  <rect class="card" x="16" y="492" width="196" height="54" rx="6"/>
+  <text class="wk"   x="27" y="515">W14 AI / LLM security</text>
+  <text class="tag"  x="27" y="534">LLM01 · LLM02 · LLM05</text>
+  <text class="body" x="224" y="515">The prompt is not a control:</text>
+  <text class="bad"  x="224" y="534">override it and the FLAG comes out</text>
+  <text class="body" x="472" y="515">W5 XSS: model output is</text>
+  <text class="body" x="472" y="534">untrusted input — escape() it</text>
+
+  <path class="sep" d="M16 554 L704 554"/>
+  <rect class="card" x="16" y="560" width="196" height="54" rx="6"/>
+  <text class="wk"   x="27" y="583">W15 DevSecOps gate</text>
+  <text class="tag"  x="27" y="602">A09 · A10 · CWE-636</text>
+  <circle class="bdg" cx="196" cy="587" r="10"/>
+  <text class="bdgn" x="196" y="591">3</text>
+  <text class="body" x="224" y="583">Semgrep, Trivy, Gitleaks on each PR</text>
+  <text class="bad"  x="224" y="602">:8090 fails open, :8091 returns 403</text>
+  <text class="body" x="472" y="583">W2 tooling again: same scanners,</text>
+  <text class="body" x="472" y="602">now allowed to stop the build</text>
+
+  <path class="sep" d="M16 622 L704 622"/>
+  <rect class="card" x="16" y="628" width="196" height="54" rx="6"/>
+  <text class="wk"   x="27" y="651">W16 Capstone</text>
+  <text class="tag"  x="27" y="670">All weeks · CWE + OWASP</text>
+  <text class="body" x="224" y="651">Your own app: attack → root cause</text>
+  <text class="body" x="224" y="670">→ fix, SBOM, signature, CI gate</text>
+  <text class="body" x="472" y="651">W1 threat model: the DFD you</text>
+  <text class="body" x="472" y="670">drew in week 1 is deliverable #1</text>
+
+  <text class="foot" x="16" y="710">Drill: cover the middle column, then name the flaw and which spine property fixes it.</text>
+</svg>

@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 576" role="img" aria-label="Four crypto decisions in the Week 3 lab, each shown as a misuse on the left and its fix on the right. Decision one, password storage: vulnerable_crypto.py calls hashlib.md5 on the password with no salt, which is fast and GPU-friendly, so hashcat -m 0 cracks every hash in hashes.txt; that is CWE-916 and CWE-327. The fix raises the cost per guess by using argon2id through ph.hash, a memory-hard key derivation function with a per-hash salt, and rehashing legacy MD5 records on login. Decision two, cipher mode: AES.new with HARDCODED_KEY in MODE_ECB means the same plaintext block always produces the same ciphertext block and there is no authentication tag, so edits go undetected; that is CWE-327. The fix adds integrity by using AES.new with the key in MODE_GCM, a random twelve-byte nonce and an authentication tag, so flipping one ciphertext byte makes decryption fail. Decision three, random numbers: random.choice over the digits builds a six-digit reset_token with only ten to the sixth possibilities from the Mersenne Twister, whose internal state leaks from its own output; that is CWE-330. The fix makes tokens unguessable with secrets.token_urlsafe, a CSPRNG drawing on operating-system entropy with no recoverable internal state. Decision four, key source: HARDCODED_KEY equals the literal bytes 0123456789abcdef, committed to git and identical in every copy, so one leak breaks all installs; that is CWE-798. The fix injects the key at runtime from os.environ ENC_KEY_HEX, an environment variable or key management service, so the key can be rotated without a code change. The overall lesson: one cipher name answers none of these four questions, and AES-GCM under a hardcoded key is still CWE-798.">
+<title>Four crypto misuses and their fixes: KDF, cipher mode, randomness and key source are separate decisions</title>
+<style>
+  .bg      { fill: #ffffff; }
+  .title   { font: 700 19px system-ui, sans-serif; fill: #1a1d21; }
+  .sub     { font: 400 12px system-ui, sans-serif; fill: #6b7280; }
+  .hbad    { font: 700 12.5px system-ui, sans-serif; fill: #E35205; }
+  .hgood   { font: 700 12.5px system-ui, sans-serif; fill: #017BC4; }
+  .hgut    { font: 700 11px system-ui, sans-serif; fill: #6b7280; }
+  .gut     { font: 700 11px system-ui, sans-serif; fill: #6b7280; }
+  .boxbad  { fill: #fdece5; stroke: #E35205; stroke-width: 1.6; }
+  .boxgood { fill: #e7f2fa; stroke: #017BC4; stroke-width: 1.6; }
+  .code    { font: 700 12px system-ui, sans-serif; fill: #1a1d21; }
+  .det     { font: 400 11px system-ui, sans-serif; fill: #4c5259; }
+  .bgbad   { fill: #E35205; }
+  .bggood  { fill: #017BC4; }
+  .btxt    { font: 700 11px system-ui, sans-serif; fill: #ffffff; }
+  .arrow   { stroke: #6b7280; stroke-width: 2; fill: none; }
+  .ahead   { fill: #6b7280; }
+  .alab    { font: 600 11px system-ui, sans-serif; fill: #6b7280; text-anchor: middle; }
+  .footbox { fill: #f3f4f6; stroke: #d5d9de; stroke-width: 1.2; }
+  .foot1   { font: 700 13px system-ui, sans-serif; fill: #1a1d21; }
+  .foot2   { font: 400 11.5px system-ui, sans-serif; fill: #4c5259; }
+
+  @media (prefers-color-scheme: dark) {
+    .bg      { fill: #12161a; }
+    .title   { fill: #eef2f5; }
+    .sub     { fill: #9aa3ad; }
+    .hbad    { fill: #ff7a3d; }
+    .hgood   { fill: #4aa3dd; }
+    .hgut    { fill: #9aa3ad; }
+    .gut     { fill: #9aa3ad; }
+    .boxbad  { fill: #3a1f14; stroke: #ff7a3d; }
+    .boxgood { fill: #10293a; stroke: #4aa3dd; }
+    .code    { fill: #eef2f5; }
+    .det     { fill: #c2cad2; }
+    .bgbad   { fill: #ff7a3d; }
+    .bggood  { fill: #4aa3dd; }
+    .btxt    { fill: #12161a; }
+    .arrow   { stroke: #9aa3ad; }
+    .ahead   { fill: #9aa3ad; }
+    .alab    { fill: #9aa3ad; }
+    .footbox { fill: #1a1f25; stroke: #39414a; }
+    .foot1   { fill: #eef2f5; }
+    .foot2   { fill: #c2cad2; }
+  }
+</style>
+
+<rect class="bg" x="0" y="0" width="720" height="576"/>
+
+<text class="title" x="20" y="32">&#8220;We used AES&#8221; says nothing.</text>
+<text class="sub" x="20" y="54">OWASP A04 &#183; four independent decisions, four separate fixes.</text>
+
+<text class="hgut" x="20" y="82">DECISION</text>
+<text class="hbad" x="96" y="82">MISUSE &#8212; vulnerable_crypto.py</text>
+<text class="hgood" x="472" y="82">FIX &#8212; solution_skeleton.py</text>
+
+<!-- ROW 1 : password storage -->
+<text class="gut" x="20" y="134">PASSWORD</text>
+<text class="gut" x="20" y="150">STORAGE</text>
+<rect class="boxbad" x="96" y="92" width="288" height="92" rx="7"/>
+<text class="code" x="108" y="116">hashlib.md5(pw.encode())</text>
+<text class="det" x="108" y="136">fast, no salt &#8212; GPU-friendly</text>
+<text class="det" x="108" y="153">hashcat -m 0 cracks hashes.txt</text>
+<rect class="bgbad" x="108" y="160" width="136" height="18" rx="4"/>
+<text class="btxt" x="117" y="173">CWE-916 &#183; CWE-327</text>
+<text class="alab" x="428" y="114">raise cost</text>
+<text class="alab" x="428" y="128">per guess</text>
+<path class="arrow" d="M392 142 H452"/>
+<polygon class="ahead" points="464,142 452,136.5 452,147.5"/>
+<rect class="boxgood" x="472" y="92" width="228" height="92" rx="7"/>
+<text class="code" x="484" y="116">ph.hash(pw)  # argon2id</text>
+<text class="det" x="484" y="136">memory-hard, per-hash salt</text>
+<text class="det" x="484" y="153">rehash legacy MD5 on login</text>
+<rect class="bggood" x="484" y="160" width="124" height="18" rx="4"/>
+<text class="btxt" x="493" y="173">memory-hard KDF</text>
+
+<!-- ROW 2 : cipher mode -->
+<text class="gut" x="20" y="236">CIPHER</text>
+<text class="gut" x="20" y="252">MODE</text>
+<rect class="boxbad" x="96" y="194" width="288" height="92" rx="7"/>
+<text class="code" x="108" y="218">AES.new(HARDCODED_KEY, MODE_ECB)</text>
+<text class="det" x="108" y="238">same block &#8594; same ciphertext</text>
+<text class="det" x="108" y="255">no tag: edits go undetected</text>
+<rect class="bgbad" x="108" y="262" width="76" height="18" rx="4"/>
+<text class="btxt" x="117" y="275">CWE-327</text>
+<text class="alab" x="428" y="216">add</text>
+<text class="alab" x="428" y="230">integrity</text>
+<path class="arrow" d="M392 244 H452"/>
+<polygon class="ahead" points="464,244 452,238.5 452,249.5"/>
+<rect class="boxgood" x="472" y="194" width="228" height="92" rx="7"/>
+<text class="code" x="484" y="218">AES.new(key, MODE_GCM)</text>
+<text class="det" x="484" y="238">random 12-byte nonce + tag</text>
+<text class="det" x="484" y="255">flip one byte &#8594; decrypt fails</text>
+<rect class="bggood" x="484" y="262" width="148" height="18" rx="4"/>
+<text class="btxt" x="493" y="275">authenticated (AEAD)</text>
+
+<!-- ROW 3 : random numbers -->
+<text class="gut" x="20" y="338">RANDOM</text>
+<text class="gut" x="20" y="354">NUMBERS</text>
+<rect class="boxbad" x="96" y="296" width="288" height="92" rx="7"/>
+<text class="code" x="108" y="320">random.choice(&quot;0123456789&quot;)</text>
+<text class="det" x="108" y="340">6-digit reset_token(): 10^6</text>
+<text class="det" x="108" y="357">Mersenne Twister: state leaks</text>
+<rect class="bgbad" x="108" y="364" width="76" height="18" rx="4"/>
+<text class="btxt" x="117" y="377">CWE-330</text>
+<text class="alab" x="428" y="318">make it</text>
+<text class="alab" x="428" y="332">unguessable</text>
+<path class="arrow" d="M392 346 H452"/>
+<polygon class="ahead" points="464,346 452,340.5 452,351.5"/>
+<rect class="boxgood" x="472" y="296" width="228" height="92" rx="7"/>
+<text class="code" x="484" y="320">secrets.token_urlsafe(16)</text>
+<text class="det" x="484" y="340">OS entropy, 128-bit token</text>
+<text class="det" x="484" y="357">no internal state to recover</text>
+<rect class="bggood" x="484" y="364" width="72" height="18" rx="4"/>
+<text class="btxt" x="493" y="377">CSPRNG</text>
+
+<!-- ROW 4 : key source -->
+<text class="gut" x="20" y="440">KEY</text>
+<text class="gut" x="20" y="456">SOURCE</text>
+<rect class="boxbad" x="96" y="398" width="288" height="92" rx="7"/>
+<text class="code" x="108" y="422">HARDCODED_KEY = b&quot;0123...&quot;</text>
+<text class="det" x="108" y="442">committed to git, every copy</text>
+<text class="det" x="108" y="459">one leak breaks all installs</text>
+<rect class="bgbad" x="108" y="466" width="76" height="18" rx="4"/>
+<text class="btxt" x="117" y="479">CWE-798</text>
+<text class="alab" x="428" y="420">inject at</text>
+<text class="alab" x="428" y="434">runtime</text>
+<path class="arrow" d="M392 448 H452"/>
+<polygon class="ahead" points="464,448 452,442.5 452,453.5"/>
+<rect class="boxgood" x="472" y="398" width="228" height="92" rx="7"/>
+<text class="code" x="484" y="422">os.environ[&quot;ENC_KEY_HEX&quot;]</text>
+<text class="det" x="484" y="442">injected at runtime (env/KMS)</text>
+<text class="det" x="484" y="459">rotate without a code change</text>
+<rect class="bggood" x="484" y="466" width="126" height="18" rx="4"/>
+<text class="btxt" x="493" y="479">rotatable secret</text>
+
+<!-- closing argument -->
+<rect class="footbox" x="20" y="506" width="680" height="46" rx="6"/>
+<text class="foot1" x="36" y="527">One cipher name answers none of these four questions.</text>
+<text class="foot2" x="36" y="544">AES-GCM under a hardcoded key is still CWE-798.</text>
+</svg>

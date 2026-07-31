@@ -12,6 +12,8 @@
 |------|-----------|------|-------|
 |      |           |      |       |
 
+![Diagram of one request passing two gates: Gate 1 authentication accepts an alg:none forgery, a weak-secret forgery, and alice's real token, then Gate 2 authorization fails to check ownership so alice's valid token reads bob's /api/orders/2 as IDOR, with the solution_app.py fixes for both.](img/authn-vs-authz.svg)
+
 ## Part 2 — Lecture Questions
 
 Answer in 2–4 sentences each.
@@ -67,6 +69,10 @@ Confirm `/api/orders/1` returns alice's Laptop order. *Deliverable: screenshot o
   curl -s http://localhost:8080/api/orders/2 -H "Authorization: Bearer $TOKEN"   # bob's — leaks!
   ```
 - *Deliverable:* both responses + screenshot of bob's `Phone` order + why the missing ownership check (CWE-639) is the root cause.
+
+```sim
+jwt-forge
+```
 
 **Task 2 — JWT Forgery via alg:none (30 min) 🔏.**
 - *Goal:* impersonate bob with an **unsigned** token (no secret needed).

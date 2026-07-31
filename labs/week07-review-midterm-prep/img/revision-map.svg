@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 592" role="img"
+     aria-label="A revision map of weeks 1 to 6 for the midterm. Across the top, a box labelled Untrusted input has an arrow crossing the boundary towards a dashed vertical line marked TRUST BOUNDARY, and beyond it a box listing the sinks: SQL, shell, browser and database. Below, a table repeats that same shape six times, one row per week. Week 1, threat modelling, A06 and CWE-501: browser to API to database is three zones with two crossings, and the control is to draw the data-flow diagram, run STRIDE at each crossing and rank the top five with one fix each. Week 2, secure SDLC and tooling, A05 and A02: a flaw rides commit, build and run unseen unless something scans it, and the controls are Semgrep for code, Gitleaks for secrets, DAST against the running app and fuzzing the parser. Week 3, cryptography, A04 and CWE-327: passwords cross into storage as MD5 with AES in ECB mode and a fixed key, and the control is argon2id plus AES-GCM with the key from the environment, never in the source. Week 4, injection, A05 with CWE-89 and CWE-78: the routes slash login and slash ping pass raw input to SQL and to a shell, and the control is a parameterised query, no shell, and an allow-list on the host. Week 5, XSS and CSRF, CWE-79 and CWE-352: the slash comments route stores a payload that later runs in another user's browser, and the control is contextual encoding plus a strict Content-Security-Policy, a SameSite cookie and a CSRF token. Week 6, authentication and authorization, A01 with CWE-639 and CWE-347: the route slash api slash orders slash id returns any row and a JWT with alg none claims admin, and the control is deny by default with a server-side owner check and verification of the algorithm and signature. An orange dot on the dashed boundary line marks each control, showing that every week places its control exactly at the crossing.">
+  <title>Weeks 1 to 6 revision map: input crosses a trust boundary, a control sits at the crossing</title>
+  <style>
+    .h    { font: 700 15px system-ui, sans-serif; fill: #16191d }
+    .bnd  { stroke: #E35205; stroke-width: 1.6; stroke-dasharray: 7 5; fill: none }
+    .bndl { font: 700 11px system-ui, sans-serif; fill: #E35205; text-anchor: middle;
+            letter-spacing: .05em }
+    .in   { fill: #fffdf9; stroke: #E35205; stroke-width: 1.8 }
+    .sink { fill: #fffdf9; stroke: #017BC4; stroke-width: 1.8 }
+    .boxl { font: 700 13px system-ui, sans-serif; fill: #16191d; text-anchor: middle }
+    .sinkl{ font: 600 12px system-ui, sans-serif; fill: #16191d; text-anchor: middle }
+    .flow { stroke: #6b7280; stroke-width: 1.8; fill: none; marker-end: url(#ar) }
+    .arrow{ fill: #6b7280 }
+    .rel  { font: 11px system-ui, sans-serif; fill: #6b7280; text-anchor: middle }
+    .col  { font: 600 11px system-ui, sans-serif; fill: #6b7280; letter-spacing: .06em }
+    .rule { stroke: #b9b4aa; stroke-width: 1.2 }
+    .sep  { stroke: #ddd8ce; stroke-width: 1 }
+    .card { fill: #fffdf9; stroke: #017BC4; stroke-width: 1.5 }
+    .wk   { font: 700 12.5px system-ui, sans-serif; fill: #16191d }
+    .tag  { font: 11px system-ui, sans-serif; fill: #6b7280 }
+    .body { font: 11.5px system-ui, sans-serif; fill: #16191d }
+    .bad  { font: 11.5px system-ui, sans-serif; fill: #E35205 }
+    .knot { fill: #E35205 }
+    .foot { font: 11px system-ui, sans-serif; fill: #6b7280 }
+    @media (prefers-color-scheme: dark) {
+      .h     { fill: #e6e8ea }
+      .bnd   { stroke: #ff7a3d }
+      .bndl  { fill: #ff7a3d }
+      .in    { fill: #151a20; stroke: #ff7a3d }
+      .sink  { fill: #151a20; stroke: #4aa3dd }
+      .boxl  { fill: #e6e8ea }
+      .sinkl { fill: #e6e8ea }
+      .flow  { stroke: #9aa3ad }
+      .arrow { fill: #9aa3ad }
+      .rel   { fill: #9aa3ad }
+      .col   { fill: #9aa3ad }
+      .rule  { stroke: #3a4149 }
+      .sep   { stroke: #2b3138 }
+      .card  { fill: #151a20; stroke: #4aa3dd }
+      .wk    { fill: #e6e8ea }
+      .tag   { fill: #9aa3ad }
+      .body  { fill: #e6e8ea }
+      .bad   { fill: #ff7a3d }
+      .knot  { fill: #ff7a3d }
+      .foot  { fill: #9aa3ad }
+    }
+  </style>
+  <defs>
+    <marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7"
+            markerHeight="7" orient="auto"><path class="arrow" d="M0 0 L8 4 L0 8 z"/></marker>
+  </defs>
+
+  <text class="h" x="16" y="24">Midterm revision map — Weeks 1 to 6</text>
+  <text class="bndl" x="461" y="30">TRUST BOUNDARY</text>
+  <path class="bnd" d="M461 38 L461 542"/>
+
+  <rect class="in" x="16" y="58" width="200" height="40" rx="6"/>
+  <text class="boxl" x="116" y="83">Untrusted input</text>
+  <text class="rel" x="336" y="70">crosses the boundary</text>
+  <path class="flow" d="M222 78 L448 78"/>
+  <circle class="knot" cx="461" cy="78" r="5"/>
+  <rect class="sink" x="470" y="58" width="234" height="40" rx="6"/>
+  <text class="sinkl" x="587" y="83">Sink: SQL, shell, browser, DB</text>
+
+  <text class="col" x="16" y="124">WEEK  ·  OWASP / CWE</text>
+  <text class="col" x="228" y="124">WHAT CROSSES</text>
+  <text class="col" x="472" y="124">CONTROL AT THE CROSSING</text>
+  <path class="rule" d="M16 132 L704 132"/>
+
+  <rect class="card" x="16" y="144" width="190" height="54" rx="6"/>
+  <text class="wk"   x="27" y="167">W1 Threat modelling</text>
+  <text class="tag"  x="27" y="186">A06 · CWE-501</text>
+  <text class="body" x="228" y="167">Browser → API → database:</text>
+  <text class="body" x="228" y="186">three zones, two crossings</text>
+  <circle class="knot" cx="461" cy="174" r="4.5"/>
+  <text class="body" x="472" y="167">DFD + STRIDE at each crossing</text>
+  <text class="body" x="472" y="186">rank top 5, one fix each</text>
+
+  <path class="sep" d="M16 206 L704 206"/>
+  <rect class="card" x="16" y="212" width="190" height="54" rx="6"/>
+  <text class="wk"   x="27" y="235">W2 SDLC &amp; tooling</text>
+  <text class="tag"  x="27" y="254">A05 · A02</text>
+  <text class="body" x="228" y="235">A flaw rides commit, build,</text>
+  <text class="bad"  x="228" y="254">run — unseen unless scanned</text>
+  <circle class="knot" cx="461" cy="242" r="4.5"/>
+  <text class="body" x="472" y="235">Semgrep code · Gitleaks secrets</text>
+  <text class="body" x="472" y="254">DAST the app · fuzz the parser</text>
+
+  <path class="sep" d="M16 274 L704 274"/>
+  <rect class="card" x="16" y="280" width="190" height="54" rx="6"/>
+  <text class="wk"   x="27" y="303">W3 Cryptography</text>
+  <text class="tag"  x="27" y="322">A04 · CWE-327</text>
+  <text class="body" x="228" y="303">Passwords cross into storage</text>
+  <text class="bad"  x="228" y="322">as MD5; AES-ECB, fixed key</text>
+  <circle class="knot" cx="461" cy="310" r="4.5"/>
+  <text class="body" x="472" y="303">argon2id + AES-GCM; key from</text>
+  <text class="body" x="472" y="322">env, never in the source</text>
+
+  <path class="sep" d="M16 342 L704 342"/>
+  <rect class="card" x="16" y="348" width="190" height="54" rx="6"/>
+  <text class="wk"   x="27" y="371">W4 Injection</text>
+  <text class="tag"  x="27" y="390">A05 · CWE-89 · CWE-78</text>
+  <text class="body" x="228" y="371">/login and /ping pass raw</text>
+  <text class="bad"  x="228" y="390">input to SQL and to a shell</text>
+  <circle class="knot" cx="461" cy="378" r="4.5"/>
+  <text class="body" x="472" y="371">Parameterised query; no shell,</text>
+  <text class="body" x="472" y="390">allow-list the host</text>
+
+  <path class="sep" d="M16 410 L704 410"/>
+  <rect class="card" x="16" y="416" width="190" height="54" rx="6"/>
+  <text class="wk"   x="27" y="439">W5 XSS &amp; CSRF</text>
+  <text class="tag"  x="27" y="458">CWE-79 · CWE-352</text>
+  <text class="body" x="228" y="439">/comments stores a payload</text>
+  <text class="bad"  x="228" y="458">that runs in another browser</text>
+  <circle class="knot" cx="461" cy="446" r="4.5"/>
+  <text class="body" x="472" y="439">Contextual encoding + CSP;</text>
+  <text class="body" x="472" y="458">SameSite cookie + CSRF token</text>
+
+  <path class="sep" d="M16 478 L704 478"/>
+  <rect class="card" x="16" y="484" width="190" height="54" rx="6"/>
+  <text class="wk"   x="27" y="507">W6 AuthN &amp; AuthZ</text>
+  <text class="tag"  x="27" y="526">A01 · CWE-639 · CWE-347</text>
+  <text class="body" x="228" y="507">/api/orders/&lt;id&gt; returns any</text>
+  <text class="bad"  x="228" y="526">row; alg:none JWT = admin</text>
+  <circle class="knot" cx="461" cy="514" r="4.5"/>
+  <text class="body" x="472" y="507">Deny by default: owner check</text>
+  <text class="body" x="472" y="526">server-side; verify alg + sig</text>
+
+  <text class="foot" x="16" y="572">Drill: cover the right column and name the control.</text>
+</svg>

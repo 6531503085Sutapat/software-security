@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 670" role="img" aria-label="A course-wide lookup table for the capstone. Each row of the OWASP Top 10 (2025) is paired with the week that taught it, the lab file that demonstrated it, and a representative CWE. A01 Broken Access Control, weeks 6 and 10, vulnerable_app.py route slash orders slash 2, CWE-639 and CWE-862, marked deep coverage. A02 Security Misconfiguration, weeks 13 and 2, Dockerfile.insecure and the IAM policy, CWE-732 and CWE-250. A03 Software Supply Chain Failures, weeks 12 and 15, sca_scan.sh over requirements.txt, CWE-1104 and CWE-1357, marked deep coverage. A04 Cryptographic Failures, week 3, vulnerable_crypto.py, CWE-327 and CWE-916. A05 Injection, weeks 4, 5 and 2, the slash login SQL injection and the slash search cross-site scripting, CWE-89, CWE-78 and CWE-79, marked deep coverage. A06 Insecure Design, week 1, the sample-app data-flow diagram and STRIDE, CWE-501. A07 Authentication Failures, week 6, the JWT alg none forgery, CWE-347 and CWE-321. A08 Software and Data Integrity Failures, week 12, sign.sh and the CycloneDX SBOM, CWE-829 and CWE-1395. A09 Security Logging and Alerting Failures, week 15, logging in secure_service.py, CWE-532 and CWE-209. A10 Mishandling of Exceptional Conditions, week 15, the fail-open slash admin route of insecure_service.py, CWE-636. Three further rows sit beyond the web Top 10 but are still graded in the capstone CTF: API1 Broken Object Level Authorisation from week 10 in vulnerable_api.py on port 8080, CWE-639 and CWE-915; memory-safety exploitation from week 11 in vuln.c reaching win() through gets(), CWE-121 and CWE-787; and prompt injection and LLM abuse from week 14 in vulnerable_chatbot.py, LLM01, LLM02 and LLM05. The three categories flagged deep coverage, A01, A03 and A05, had the most lab hours and are where a team's capstone evidence will be strongest.">
+<title>OWASP Top 10 (2025) mapped to the week, the lab and the CWE that taught it</title>
+<style>
+  .bg      { fill: #ffffff; }
+  .ttl     { fill: #1f2430; font: 700 17px system-ui, sans-serif; }
+  .sub     { fill: #6b7280; font: 400 11.5px system-ui, sans-serif; }
+  .colh    { fill: #6b7280; font: 700 11.5px system-ui, sans-serif; }
+  .rule    { stroke: #cbd5e1; stroke-width: 1.2; }
+  .hair    { stroke: #e5e7eb; stroke-width: 1; }
+  .stripe  { fill: #f4f5f7; }
+  .deeprow { fill: #fdf0e9; }
+  .bdg     { fill: #e2f0fa; }
+  .bdgt    { fill: #017BC4; font: 700 11px system-ui, sans-serif; }
+  .bdgd    { fill: #E35205; }
+  .bdgdt   { fill: #ffffff; font: 700 11px system-ui, sans-serif; }
+  .cat     { fill: #1f2430; font: 600 12px system-ui, sans-serif; }
+  .wk      { fill: #017BC4; font: 600 11px system-ui, sans-serif; }
+  .wknote  { fill: #E35205; font: 700 10px system-ui, sans-serif; }
+  .lab     { fill: #1f2430; font: 400 11px system-ui, sans-serif; }
+  .cwe     { fill: #6b7280; font: 600 11px system-ui, sans-serif; }
+  .band    { fill: #eef1f4; }
+  .bandt   { fill: #1f2430; font: 700 11.5px system-ui, sans-serif; }
+  .leg     { fill: #6b7280; font: 400 11px system-ui, sans-serif; }
+  .legk    { fill: #E35205; font: 700 11px system-ui, sans-serif; }
+  @media (prefers-color-scheme: dark) {
+    .bg      { fill: #14171a; }
+    .ttl     { fill: #e6e9ee; }
+    .sub     { fill: #9aa3ad; }
+    .colh    { fill: #9aa3ad; }
+    .rule    { stroke: #39414a; }
+    .hair    { stroke: #262b31; }
+    .stripe  { fill: #1b1f24; }
+    .deeprow { fill: #2e1c12; }
+    .bdg     { fill: #1c3040; }
+    .bdgt    { fill: #4aa3dd; }
+    .bdgd    { fill: #ff7a3d; }
+    .bdgdt   { fill: #14171a; }
+    .cat     { fill: #e6e9ee; }
+    .wk      { fill: #4aa3dd; }
+    .wknote  { fill: #ff7a3d; }
+    .lab     { fill: #e6e9ee; }
+    .cwe     { fill: #9aa3ad; }
+    .band    { fill: #1e242b; }
+    .bandt   { fill: #e6e9ee; }
+    .leg     { fill: #9aa3ad; }
+    .legk    { fill: #ff7a3d; }
+  }
+</style>
+
+<rect class="bg" x="0" y="0" width="720" height="670"/>
+
+<text class="ttl" x="18" y="30">One page for the capstone: category &#8594; week &#8594; lab &#8594; CWE</text>
+<text class="sub" x="18" y="50">Facing an unfamiliar app, work down this column, row by row.</text>
+
+<text class="colh" x="18" y="80">OWASP Top 10 (2025)</text>
+<text class="colh" x="284" y="80">Week</text>
+<text class="colh" x="380" y="80">Lab that showed it</text>
+<text class="colh" x="566" y="80">Representative CWE</text>
+<line class="rule" x1="18" y1="86" x2="702" y2="86"/>
+
+<!-- A01 -->
+<rect class="deeprow" x="18" y="90" width="684" height="38"/>
+<rect class="bdgd" x="18" y="100" width="34" height="18" rx="4"/>
+<text class="bdgdt" x="35" y="113" text-anchor="middle">A01</text>
+<text class="cat" x="60" y="113">Broken Access Control</text>
+<text class="wk" x="284" y="106">W06 &#183; W10</text>
+<text class="wknote" x="284" y="120">deep coverage</text>
+<text class="lab" x="380" y="113">vulnerable_app.py /orders/2</text>
+<text class="cwe" x="566" y="113">CWE-639, CWE-862</text>
+
+<!-- A02 -->
+<rect class="bdg" x="18" y="138" width="34" height="18" rx="4"/>
+<text class="bdgt" x="35" y="151" text-anchor="middle">A02</text>
+<text class="cat" x="60" y="151">Security Misconfiguration</text>
+<text class="wk" x="284" y="151">W13 &#183; W02</text>
+<text class="lab" x="380" y="151">Dockerfile.insecure + IAM</text>
+<text class="cwe" x="566" y="151">CWE-732, CWE-250</text>
+<line class="hair" x1="18" y1="166" x2="702" y2="166"/>
+
+<!-- A03 -->
+<rect class="deeprow" x="18" y="166" width="684" height="38"/>
+<rect class="bdgd" x="18" y="176" width="34" height="18" rx="4"/>
+<text class="bdgdt" x="35" y="189" text-anchor="middle">A03</text>
+<text class="cat" x="60" y="189">Software Supply Chain Failures</text>
+<text class="wk" x="284" y="182">W12 &#183; W15</text>
+<text class="wknote" x="284" y="196">deep coverage</text>
+<text class="lab" x="380" y="189">sca_scan.sh, requirements</text>
+<text class="cwe" x="566" y="189">CWE-1104, CWE-1357</text>
+
+<!-- A04 -->
+<rect class="stripe" x="18" y="204" width="684" height="38"/>
+<rect class="bdg" x="18" y="214" width="34" height="18" rx="4"/>
+<text class="bdgt" x="35" y="227" text-anchor="middle">A04</text>
+<text class="cat" x="60" y="227">Cryptographic Failures</text>
+<text class="wk" x="284" y="227">W03</text>
+<text class="lab" x="380" y="227">vulnerable_crypto.py</text>
+<text class="cwe" x="566" y="227">CWE-327, CWE-916</text>
+
+<!-- A05 -->
+<rect class="deeprow" x="18" y="242" width="684" height="38"/>
+<rect class="bdgd" x="18" y="252" width="34" height="18" rx="4"/>
+<text class="bdgdt" x="35" y="265" text-anchor="middle">A05</text>
+<text class="cat" x="60" y="265">Injection</text>
+<text class="wk" x="284" y="258">W04 &#183; W05 &#183; W02</text>
+<text class="wknote" x="284" y="272">deep coverage</text>
+<text class="lab" x="380" y="265">/login SQLi, /search XSS</text>
+<text class="cwe" x="566" y="265">CWE-89 / 78 / 79</text>
+
+<!-- A06 -->
+<rect class="stripe" x="18" y="280" width="684" height="38"/>
+<rect class="bdg" x="18" y="290" width="34" height="18" rx="4"/>
+<text class="bdgt" x="35" y="303" text-anchor="middle">A06</text>
+<text class="cat" x="60" y="303">Insecure Design</text>
+<text class="wk" x="284" y="303">W01</text>
+<text class="lab" x="380" y="303">sample-app DFD + STRIDE</text>
+<text class="cwe" x="566" y="303">CWE-501</text>
+
+<!-- A07 -->
+<rect class="bdg" x="18" y="328" width="34" height="18" rx="4"/>
+<text class="bdgt" x="35" y="341" text-anchor="middle">A07</text>
+<text class="cat" x="60" y="341">Authentication Failures</text>
+<text class="wk" x="284" y="341">W06</text>
+<text class="lab" x="380" y="341">JWT alg:none forgery</text>
+<text class="cwe" x="566" y="341">CWE-347, CWE-321</text>
+<line class="hair" x1="18" y1="356" x2="702" y2="356"/>
+
+<!-- A08 -->
+<rect class="stripe" x="18" y="356" width="684" height="38"/>
+<rect class="bdg" x="18" y="366" width="34" height="18" rx="4"/>
+<text class="bdgt" x="35" y="379" text-anchor="middle">A08</text>
+<text class="cat" x="60" y="372">Software &amp; Data Integrity</text>
+<text class="cat" x="60" y="386">Failures</text>
+<text class="wk" x="284" y="379">W12</text>
+<text class="lab" x="380" y="379">sign.sh, CycloneDX SBOM</text>
+<text class="cwe" x="566" y="379">CWE-829, CWE-1395</text>
+
+<!-- A09 -->
+<rect class="bdg" x="18" y="404" width="34" height="18" rx="4"/>
+<text class="bdgt" x="35" y="417" text-anchor="middle">A09</text>
+<text class="cat" x="60" y="410">Security Logging &amp;</text>
+<text class="cat" x="60" y="424">Alerting Failures</text>
+<text class="wk" x="284" y="417">W15</text>
+<text class="lab" x="380" y="417">secure_service.py logging</text>
+<text class="cwe" x="566" y="417">CWE-532, CWE-209</text>
+<line class="hair" x1="18" y1="432" x2="702" y2="432"/>
+
+<!-- A10 -->
+<rect class="stripe" x="18" y="432" width="684" height="38"/>
+<rect class="bdg" x="18" y="442" width="34" height="18" rx="4"/>
+<text class="bdgt" x="35" y="455" text-anchor="middle">A10</text>
+<text class="cat" x="60" y="448">Mishandling of Exceptional</text>
+<text class="cat" x="60" y="462">Conditions</text>
+<text class="wk" x="284" y="455">W15</text>
+<text class="lab" x="380" y="455">insecure_service.py /admin</text>
+<text class="cwe" x="566" y="455">CWE-636 (fail open)</text>
+
+<!-- band -->
+<rect class="band" x="18" y="470" width="684" height="30"/>
+<text class="bandt" x="30" y="490">Beyond the web Top 10 &#8212; also graded in the capstone CTF</text>
+
+<!-- API1 -->
+<rect class="bdg" x="18" y="510" width="34" height="18" rx="4"/>
+<text class="bdgt" x="35" y="523" text-anchor="middle">API1</text>
+<text class="cat" x="60" y="523">Broken Object Level Auth</text>
+<text class="wk" x="284" y="523">W10</text>
+<text class="lab" x="380" y="523">vulnerable_api.py :8080</text>
+<text class="cwe" x="566" y="523">CWE-639, CWE-915</text>
+<line class="hair" x1="18" y1="538" x2="702" y2="538"/>
+
+<!-- MEM -->
+<rect class="stripe" x="18" y="538" width="684" height="38"/>
+<rect class="bdg" x="18" y="548" width="34" height="18" rx="4"/>
+<text class="bdgt" x="35" y="561" text-anchor="middle">MEM</text>
+<text class="cat" x="60" y="561">Memory-Safety Exploitation</text>
+<text class="wk" x="284" y="561">W11</text>
+<text class="lab" x="380" y="561">vuln.c &#8212; gets() &#8594; win()</text>
+<text class="cwe" x="566" y="561">CWE-121, CWE-787</text>
+
+<!-- LLM -->
+<rect class="bdg" x="18" y="586" width="34" height="18" rx="4"/>
+<text class="bdgt" x="35" y="599" text-anchor="middle">LLM</text>
+<text class="cat" x="60" y="599">Prompt Injection &amp; LLM Abuse</text>
+<text class="wk" x="284" y="599">W14</text>
+<text class="lab" x="380" y="599">vulnerable_chatbot.py</text>
+<text class="cwe" x="566" y="599">LLM01, LLM02, LLM05</text>
+
+<line class="rule" x1="18" y1="620" x2="702" y2="620"/>
+<text class="leg" x="18" y="638"><tspan class="legk">Orange badge = deep coverage (A01, A03, A05).</tspan> Most lab hours,</text>
+<text class="leg" x="18" y="654">so this is where your capstone evidence will be strongest.</text>
+</svg>

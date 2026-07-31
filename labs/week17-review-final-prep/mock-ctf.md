@@ -5,6 +5,8 @@
 
 > Practice run with **hints**; solutions point back to the labs. No real exam flags.
 
+![Final revision map for weeks 10 to 16: three spine boxes state that a control must sit at a boundary (W10), be on by default (W11) and fail closed (W15), over a table giving each week's core flaw, OWASP or CWE tag, and the first-half week it builds on.](img/revision-map-final.svg)
+
 **Targets:** `labs/week10-api-security`, `labs/week11-memory-safety-exploitation`,
 `labs/week12-supply-chain`, `labs/week13-cloud-container`, `labs/week14-ai-llm-security`
 (+ a callback to the web half).

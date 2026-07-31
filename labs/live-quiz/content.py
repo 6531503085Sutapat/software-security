@@ -405,6 +405,12 @@ def kind_label(kind: str) -> str:
 SIMS = {
     "trust-boundary": "Trust boundaries & threat chaining (Week 1)",
     "sqli-parse": "How concatenation changes the SQL parse tree (Week 4)",
+    "aes-modes": "Why ECB leaks a picture, and what CBC's XOR costs (Week 3)",
+    "ecdsa-malleability": "One signature, two spellings: (r, s) and (r, n − s) (Cryptography, Week 11)",
+    "iam-evaluation": "How AWS actually evaluates a request (Cloud Infrastructure, Lesson 7)",
+    "jwt-forge": "Editing a JWT: base64url is encoding, not sealing (Week 6)",
+    "stack-frame": "What a stack canary detects and what FORTIFY_SOURCE prevents (Week 11)",
+    "xss-context": "One value, four sinks: why escaping is context-dependent (Week 5)",
 }
 
 # Which unit each simulation belongs to. /sim's own copy says "each one is
@@ -416,6 +422,16 @@ SIMS = {
 SIM_SOURCE = {
     "trust-boundary": ("software-security", "week01-threat-modeling"),
     "sqli-parse": ("software-security", "week04-injection"),
+    "aes-modes": ("software-security", "week03-cryptography"),
+    # Course slugs here are the deployed URL slugs ($COURSES in production —
+    # instructor/platform-build/deploy/.env.example), not the repo directory
+    # names. "security-cryptography" and "cloud-infrastructure-security" 404:
+    # the live site is /learn/cryptography and /learn/cloud-security.
+    "ecdsa-malleability": ("cryptography", "week11-signatures-zkp"),
+    "iam-evaluation": ("cloud-security", "lesson07-iam-policy-evaluation"),
+    "jwt-forge": ("software-security", "week06-authn-authz"),
+    "stack-frame": ("software-security", "week11-memory-safety-exploitation"),
+    "xss-context": ("software-security", "week05-xss-client-side"),
 }
 
 
@@ -788,6 +804,80 @@ _TABLE_SEP = re.compile(r"^\s*\|?[\s:|-]+\|[\s:|-]*$")
 # turn a link into script execution; anything unrecognised renders as plain text.
 _SAFE_LINK = re.compile(r"^(https?://|mailto:|/|\#|\./|\.\./)", re.I)
 
+# ── Diagrams ───────────────────────────────────────────────────────────────
+# A worksheet may show a picture: `![alt](img/threat-model.svg)`.
+#
+# WHY A DEDICATED img/ DIRECTORY, AND AN ALLOWLIST OF TYPES
+#   A unit directory holds the lab's source, its compose files, its solutions.
+#   If any file in it could be addressed as an image, this route would become a
+#   way to read `solution_app.py` — the content plane already refuses to serve
+#   that as a document, and it must not hand it back through another door. So an
+#   image resolves ONLY at `<unit>/img/<name>`, and only with a known extension.
+#
+# WHY SVG IS ALLOWED ANYWAY
+#   An SVG can contain <script>. Loaded through <img> a browser will not run it
+#   — that is a hard rule of the img element, not a heuristic. Loaded by
+#   NAVIGATING to the file it will. The renderer only ever emits <img>, but the
+#   URL is guessable, so the route pins `default-src 'none'` on the file
+#   response itself: direct navigation gets the picture and no script either way.
+IMG_TYPES = {".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg",
+             ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif"}
+_IMG_NAME = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
+_IMAGE = re.compile(r"!\[(?P<alt>[^\]]*)\]\((?P<src>[^)\s]+)\)")
+
+
+def unit_image_path(course_slug, unit: str, name: str) -> str | None:
+    """Absolute path of a unit's image, or None if there isn't one to serve.
+
+    THE single authority. The renderer calls it to decide whether to emit an
+    `<img>`; the route calls it to decide whether to hand back bytes. Sharing it
+    is the point: a URL can never be rendered that the route would refuse, and
+    nothing can be served that the renderer would not have linked.
+    """
+    if not name or not _IMG_NAME.match(name):
+        return None
+    if os.path.splitext(name)[1].lower() not in IMG_TYPES:
+        return None
+    c = course(course_slug)
+    if c is None or not unit or not unit_re(c.get("unit", "week")).match(unit):
+        return None
+    if not primary_kind(unit, c["slug"]):        # not a published unit
+        return None
+    root = os.path.realpath(c["root"])
+    p = os.path.realpath(os.path.join(root, unit, "img", name))
+    if not p.startswith(root + os.sep) or not os.path.isfile(p):
+        return None
+    return p
+
+
+def _resolve_repo_image(src: str, ctx: dict | None) -> str | None:
+    """A markdown image source -> the URL that serves it, or None.
+
+    Same filesystem-identity rule as `_resolve_repo_link`: the path is joined
+    onto the document's own directory and the result must land inside this
+    course's `<unit>/img/`. A source that resolves nowhere renders as plain
+    text rather than as a broken picture.
+    """
+    if ctx is None or not src or "://" in src or src.startswith("/"):
+        return None
+    c = course(ctx.get("course"))
+    if c is None:
+        return None
+    try:
+        p = os.path.realpath(os.path.join(ctx["dir"], html.unescape(src)))
+    except (OSError, ValueError, KeyError):
+        return None
+    root = os.path.realpath(c["root"])
+    if not p.startswith(root + os.sep):
+        return None
+    rel = os.path.relpath(p, root).split(os.sep)
+    if len(rel) != 3 or rel[1] != "img":
+        return None
+    unit, _, name = rel
+    if unit_image_path(c["slug"], unit, name) != p:
+        return None
+    return f"/learn/{c['slug']}/{unit}/img/{name}"
+
 
 def _resolve_repo_link(href: str, ctx: dict | None) -> str | None:
     """Map a repo-relative markdown link onto the URL that serves it, or None.
@@ -905,8 +995,36 @@ def _inline(escaped: str, ctx: dict | None = None) -> str:
             holes.append(f"<code>{m.group('code')}</code>")
         return f"\x00{len(holes) - 1}\x00"
 
-    formatted = _fmt(_CODE_OR_CODE_LINK.sub(_stash, escaped), ctx)
-    return re.sub(r"\x00(\d+)\x00", lambda m: holes[int(m.group(1))], formatted)
+    def _stash_img(m):
+        """`![alt](src)`. Stashed rather than formatted for the same reason code
+        spans are: the finished tag must never be re-scanned. `_ITALIC` would
+        otherwise happily find a pair of asterisks spanning an alt attribute and
+        open an <em> inside it."""
+        url = _resolve_repo_image(m.group("src"), ctx)
+        if url is None:
+            # No such picture. Stash the markdown VERBATIM rather than returning
+            # it: left in place, `_fmt`'s link pass matches the `[alt](src)` part,
+            # declines the relative path, and emits `!alt (src)` — a stray bang
+            # in front of half-eaten syntax that reads like a typo in the prose
+            # instead of a missing file.
+            holes.append(m.group(0))
+            return f"\x00{len(holes) - 1}\x00"
+        alt = m.group("alt").replace('"', "&quot;")
+        holes.append(f'<img src="{url}" alt="{alt}" loading="lazy" decoding="async">')
+        return f"\x00{len(holes) - 1}\x00"
+
+    # Code first (so a payload in backticks is never scanned), then images.
+    stashed = _IMAGE.sub(_stash_img, _CODE_OR_CODE_LINK.sub(_stash, escaped))
+    formatted = _fmt(stashed, ctx)
+    # Looped: an image whose alt held a code span carries that code span's
+    # sentinel inside the tag this pass puts back, and one substitution would
+    # leave it visible as a NUL-wrapped integer.
+    for _ in range(4):
+        if "\x00" not in formatted:
+            break
+        formatted = re.sub(r"\x00(\d+)\x00",
+                           lambda m: holes[int(m.group(1))], formatted)
+    return formatted.replace("\x00", "")
 
 
 def _build_link(text: str, href: str, ctx: dict | None) -> str:

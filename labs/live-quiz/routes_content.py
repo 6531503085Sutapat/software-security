@@ -19,6 +19,8 @@ is script on its own.
 
 from __future__ import annotations
 
+import os
+
 from flask import (Blueprint, abort, make_response, redirect, render_template,
                    url_for)
 
@@ -74,6 +76,58 @@ def simulation(slug):
     resp = make_response(render_template(f"sim_{slug.replace('-', '_')}.html",
                                          slug=slug, title=C.SIMS[slug]))
     return _harden(resp, SIM_CSP)
+
+
+@bp.route("/learn/<course_slug>/<unit>/img/<name>")
+def unit_image(course_slug, unit, name):
+    """A diagram belonging to one unit.
+
+    Every decision is `C.unit_image_path`'s — the same call the renderer makes
+    before it emits an <img> — so this route serves exactly the set of files
+    that can be linked, and nothing else. In particular a unit directory's own
+    source (`solution_app.py`, a compose file, a flag) is not reachable: an
+    image lives at `<unit>/img/<name>` or it does not exist.
+
+    The response pins `default-src 'none'` on ITSELF. Through <img> a browser
+    will not run script in an SVG regardless, but this URL is guessable and
+    navigable, and that is the case where it would. `nosniff` stops a .png with
+    HTML in it being re-read as a document.
+    """
+    path = C.unit_image_path(course_slug, unit, name)
+    if path is None:
+        abort(404)
+    try:
+        with open(path, "rb") as fh:
+            body = fh.read()
+    except OSError:
+        # Same reason the document routes 404 rather than 500 on an unreadable
+        # file: an rsync that dropped the mode bit is not the reader's problem
+        # to interpret, and the distinction leaks what exists.
+        abort(404)
+    resp = make_response(body)
+    resp.headers["Content-Type"] = C.IMG_TYPES[os.path.splitext(name)[1].lower()]
+    # `script-src 'none'` is the whole point: an SVG can carry <script>, and a
+    # browser runs it when the file is NAVIGATED to rather than loaded through
+    # <img>. This header is what closes that, and it is the only reason SVG is
+    # on the allowlist at all.
+    #
+    # `style-src 'unsafe-inline'` is deliberate and is NOT the app's usual
+    # no-unsafe-inline rule bending. A diagram carries its own <style> block —
+    # that is how it gets a dark-mode variant — and under a bare
+    # `default-src 'none'` the styles are dropped and the picture renders as
+    # undifferentiated black shapes. Silently: 200, correct bytes, wrong image.
+    # In this document there is no script to escalate to, since script-src is
+    # 'none' above.
+    #
+    # No `sandbox`: it puts the response in an opaque origin and the browser
+    # then refuses to render it as an image at all. Found by loading the page,
+    # not by reading the spec — naturalWidth was 0 with a clean 200 in the log.
+    resp.headers["Content-Security-Policy"] = (
+        "default-src 'none'; script-src 'none'; style-src 'unsafe-inline'")
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["Referrer-Policy"] = "no-referrer"
+    resp.headers["Cache-Control"] = "public, max-age=3600"
+    return resp
 
 
 @bp.route("/sim")

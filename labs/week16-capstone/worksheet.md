@@ -16,6 +16,8 @@
 
 ---
 
+![A capstone lookup table pairing each OWASP Top 10 (2025) category with the week that taught it, the lab file that demonstrated it and a representative CWE, with A01, A03 and A05 marked as the course's deepest coverage.](img/owasp-map.svg)
+
 ## Part 2 — Lecture Questions
 
 Answer as a team (2–4 sentences each).
