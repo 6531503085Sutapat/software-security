@@ -1168,7 +1168,18 @@ def render(md: str, title: str | None = None, ctx: dict | None = None) -> str:
                 # and on the resume path the list is already closed (the blank
                 # line above the code block did it), so the call here is the
                 # no-op that would otherwise throw the count away.
-                resuming = want == "ol" and ol_broken and ol_items > 0
+                #
+                # And resume only if the author AGREES: the number they typed
+                # has to be the one the resumed list would produce. Indentation
+                # alone is a good heuristic but not a proof — an indented note
+                # under the last step of Part 1 keeps the count alive across the
+                # heading-less gap to Part 2, whose "1." would then render as 3.
+                # Written numbers settle it. Nothing is guessed: where the author
+                # left the numbers lazy (every item `1.`) there is no agreement
+                # to find, and the list simply starts over, exactly as before.
+                wrote = int(re.match(r"^\s*(\d+)", line).group(1)) if want == "ol" else 0
+                resuming = (want == "ol" and ol_broken and ol_items > 0
+                            and wrote == ol_items + 1)
                 close_lists(soft=indented(line))
                 list_stack.append(want)
                 if resuming:
