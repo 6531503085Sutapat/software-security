@@ -151,7 +151,23 @@ def snapshot(conn, assessment_id):
 # --- taking ----------------------------------------------------------------
 
 class AttemptError(Exception):
-    """Refusal with a student-safe message — no internals, no hints."""
+    """Refusal with a student-safe message — no internals, no hints.
+
+    TERMINAL by default: raising this means the attempt is over (the code is
+    invalid, the window is closed, time is up). Callers are entitled to close
+    the attempt out. Anything recoverable must be a StaleAnswer instead.
+    """
+
+
+class StaleAnswer(AttemptError):
+    """The POST doesn't match the question that is currently open.
+
+    A double-click, a back-button re-submit, a second tab, a retried request on
+    a phone that lost signal — none of which is a reason to end a graded quiz.
+    It exists because /quiz/take used to catch every AttemptError as time-up and
+    SUBMIT the attempt: one double-click cost a student every remaining question
+    on a graded assessment, and told them "Time is up" while doing it.
+    """
 
 
 def redeem(conn, code, now, rng=None):
@@ -262,9 +278,12 @@ def question_for_student(conn, attempt, now=None):
 def answer(conn, attempt, question_id, *, choice=None, text=None, now):
     """Record an answer and advance. Advance-only: the cursor never goes back.
 
-    A repeat POST for the same question (double-click, refresh) overwrites that
-    answer but does not advance twice — otherwise one stray click silently skips
-    the next question unanswered.
+    A repeat POST for the same question raises StaleAnswer, because the first
+    one already moved the cursor past it — the caller re-renders the question
+    that IS open rather than ending the attempt. (The `already` guard below is
+    the race between two requests arriving before the first UPDATE commits: it
+    overwrites the answer without advancing twice, so one stray click cannot
+    silently skip the next question unanswered.)
     """
     if attempt["submitted_at"]:
         raise AttemptError("You've already submitted this quiz.")
@@ -273,15 +292,18 @@ def answer(conn, attempt, question_id, *, choice=None, text=None, now):
 
     order = json.loads(attempt["order_json"])
     if attempt["cursor"] >= len(order):
-        raise AttemptError("No question is open.")
+        raise StaleAnswer("No question is open.")
 
     expected = conn.execute(
         "SELECT id FROM assessment_questions WHERE assessment_id = ? AND position = ?",
         (attempt["assessment_id"], order[attempt["cursor"]])).fetchone()
     if expected is None or expected["id"] != question_id:
         # Out-of-order POST: a stale form, a duplicate tab, or someone trying to
-        # revisit. Refuse rather than record it against the wrong question.
-        raise AttemptError("That question is no longer open.")
+        # revisit. Refuse rather than record it against the wrong question —
+        # StaleAnswer, so the caller shows the open question again instead of
+        # ending the attempt. Both of these are recoverable by definition: the
+        # student's next GET renders whatever question is actually open.
+        raise StaleAnswer("That question is no longer open.")
 
     already = conn.execute(
         "SELECT 1 FROM answers WHERE attempt_id = ? AND question_id = ?",

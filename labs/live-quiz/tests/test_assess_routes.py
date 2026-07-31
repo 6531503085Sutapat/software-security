@@ -262,3 +262,54 @@ def test_issuing_codes_is_idempotent_over_http(teacher, published):
     rows = {r["student_id"]: r["code"] for r in csv.DictReader(io.StringIO(body))}
     assert rows["65310001"] == codes["65310001"], "printed sheets must stay valid"
     assert "65319999" in rows
+
+
+def test_a_double_click_does_not_end_a_graded_attempt(client, published):
+    """The route half of the StaleAnswer distinction, and the reason this test
+    lives HERE and not only in test_assessment.py: the model raised a distinct,
+    recoverable error all along, and /quiz/take caught every AttemptError alike
+    and SUBMITTED the attempt. Model-level tests cannot see that — deleting the
+    route's handler left them all green.
+
+    Posting the same form twice is not exotic: a double-click, Back-then-resend,
+    a second tab, a phone that retried one POST on a flaky connection. Before the
+    fix, any of those ended a graded quiz with every remaining question
+    unanswered, under the message "Time is up."
+    """
+    _, codes = published
+    html = client.get("/quiz").get_data(as_text=True)
+    client.post("/quiz", data={"csrf_token": _csrf(html), "code": codes["65310001"]})
+
+    page = client.get("/quiz/take").get_data(as_text=True)
+    qid = re.search(r'name="question_id" value="(\d+)"', page).group(1)
+    payload = {"csrf_token": _csrf(page), "question_id": qid}
+    # Question order is shuffled per attempt, so question 1 is an MCQ or the
+    # short answer depending on the seed. Build whichever this one is.
+    if 'name="choice"' in page:
+        payload["choice"] = re.search(r'name="choice" value="(\d+)"', page).group(1)
+    else:
+        payload["text"] = "FLAG{mine}"
+
+    client.post("/quiz/take", data=payload)            # the honest answer
+    assert "2 of 4" in client.get("/quiz/take").get_data(as_text=True)
+
+    client.post("/quiz/take", data=payload)            # the double-click
+    after = client.get("/quiz/take").get_data(as_text=True)
+    assert "Submitted" not in after and "Thank you" not in after, (
+        "a repeat POST ended the attempt — the student just lost the rest of a "
+        "graded quiz")
+    assert "2 of 4" in after, "the student must land back on the open question"
+
+    # and they can still finish and be scored on everything
+    for _ in range(10):
+        page = client.get("/quiz/take").get_data(as_text=True)
+        if "Thank you" in page or "Submitted" in page:
+            break
+        qid = re.search(r'name="question_id" value="(\d+)"', page).group(1)
+        data = {"csrf_token": _csrf(page), "question_id": qid}
+        if 'name="choice"' in page:
+            data["choice"] = re.search(r'name="choice" value="(\d+)"', page).group(1)
+        else:
+            data["text"] = "FLAG{mine}"
+        client.post("/quiz/take", data=data)
+    assert "Thank you" in client.get("/quiz/take").get_data(as_text=True)
