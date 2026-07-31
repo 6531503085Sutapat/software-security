@@ -300,6 +300,17 @@ def test_current_unit_marks_exactly_one_row(monkeypatch, client):
     assert "This week" in html_out
 
 
+# The three courses only appear in C.COURSES when $COURSES is set, which happens
+# on the production host and nowhere else — so a test that walks C.COURSES sees
+# exactly one course in CI and silently guards a third of what it claims to.
+# These content invariants therefore walk THIS repo's own labs/ directory, which
+# is always present in a checkout. The cross-course version of the same rule
+# lives in the curriculum monorepo, which is the one place every course's
+# lessons sit side by side.
+_LABS_ROOT = os.path.normpath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+
+
 # ── no lab may send a student to a port their browser refuses ──────────────
 
 # Chrome, Chromium and Firefox all ship a hard-coded list of ports they will not
@@ -317,8 +328,7 @@ _URL_PORT = re.compile(r"https?://(?:localhost|127\.0\.0\.1|0\.0\.0\.0):(\d+)", 
 
 def _lab_docs():
     """Every student-facing markdown file under a week/lesson directory."""
-    for course in C.COURSES:
-        root = course["root"]
+    for root in [_LABS_ROOT]:
         if not os.path.isdir(root):
             continue
         for dirpath, _dirs, names in os.walk(root):
@@ -356,8 +366,7 @@ def test_published_compose_files_do_not_bind_a_blocked_port():
     compose file publishing a blocked port means the next person to write the
     worksheet is led straight back into the same hole."""
     offenders = []
-    for course in C.COURSES:
-        root = course["root"]
+    for root in [_LABS_ROOT]:
         if not os.path.isdir(root):
             continue
         for dirpath, _dirs, names in os.walk(root):
@@ -381,3 +390,62 @@ def _slurp_text(path):
             return fh.read()
     except OSError:
         return None
+
+
+# ── a graded flag must never appear on a page students read ────────────────
+
+_FLAG_DEFAULT = re.compile(
+    r'(?:os\.environ\.get\(\s*["\'](FLAG_[A-Z0-9_]+)["\']\s*,\s*["\']'
+    r'|(FLAG_[A-Z0-9_]+)\s*[:=]\s*["\']?)(FLAG\{[^"\'\s}]+\})')
+
+
+def _flag_defaults(labs_root):
+    """Every concrete flag value a lab's own code falls back to. That value IS
+    the graded answer for the week — it is what the vulnerable app prints and
+    what the worksheet's deliverable asks the student to capture."""
+    out = {}
+    for dirpath, _dirs, names in os.walk(labs_root):
+        for n in names:
+            if not n.endswith((".py", ".sh", ".tf", ".yml", ".yaml", ".js")):
+                continue
+            text = _slurp_text(os.path.join(dirpath, n))
+            if text is None:
+                continue
+            for m in _FLAG_DEFAULT.finditer(text):
+                out[m.group(3)] = m.group(1) or m.group(2)
+    return out
+
+
+def test_no_graded_flag_value_is_printed_on_a_reading_page():
+    """Six cloud lessons and six cryptography weeks printed the week's own flag
+    on the README a student reads BEFORE doing the lab — three times per page in
+    some — while the deliverable was "the captured flag" and the integrity
+    policy said flags are per-student and sharing one is "a violation for both
+    parties". Nobody could earn that flag honestly, because everyone's was the
+    same string and it was already on the page.
+
+    The check is a cross-reference, not a word list: a value only counts if the
+    lab's own code falls back to it. That is what makes it the answer rather
+    than an illustration — a payload, a worked example or a demo value in a
+    snippet is none of this test's business.
+
+    Removing the value from the page does not make it secret (it is still in the
+    source students clone); it stops the answer being handed to someone who
+    never opened the lab. The real fix is the per-student mint the same
+    paragraph already points at.
+    """
+    offenders = []
+    for root in [_LABS_ROOT]:
+        if not os.path.isdir(root):
+            continue
+        for value, var in _flag_defaults(root).items():
+            for dirpath, _dirs, names in os.walk(root):
+                for n in names:
+                    if not n.endswith(".md"):
+                        continue
+                    path = os.path.join(dirpath, n)
+                    text = _slurp_text(path)
+                    if text and value in text:
+                        offenders.append(f"{os.path.relpath(path)} prints {var}'s value")
+    assert not offenders, (
+        "a graded flag is printed on a page students read: " + "; ".join(sorted(set(offenders))))
