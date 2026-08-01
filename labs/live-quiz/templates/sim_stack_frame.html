@@ -2,7 +2,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
 <body>
-<h1>A stack frame, and what an overflow overwrites</h1>
+<h1>What a stack canary detects, and what FORTIFY_SOURCE prevents</h1>
 <p class="lead">The frame grows <b>down</b>; <code>strcpy</code> writes <b>up</b>, from
 <code>buf[0]</code> towards the saved return address. Set how many bytes are copied
 in, and watch <i>where the check happens</i> — that is the part the hardened build
