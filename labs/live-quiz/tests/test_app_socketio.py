@@ -118,6 +118,58 @@ def test_answer_after_reveal_is_rejected():
     assert GAMES["666666"].players["alice"].score == score_after_first
 
 
+def test_host_join_does_not_create_a_room_for_a_nonexistent_pin():
+    # join_room() ran unconditionally, before checking the pin identified a real game — an
+    # unauthenticated socket could make the server hold an unbounded number of arbitrary Socket.IO
+    # rooms just by emitting host_join with made-up PINs. HOST_SIDS (the actual host-authorization
+    # gate used by on_host_next) was never affected by this, but the room registry growth is real.
+    GAMES.clear()
+    sock = socketio.test_client(app)
+    sock.emit("host_join", {"pin": "NOPE99"})
+    rooms = socketio.server.manager.rooms.get("/", {})
+    assert "NOPE99" not in rooms, "must not create a Socket.IO room for a PIN with no real game"
+
+
+def test_host_join_still_creates_a_room_for_a_real_pin():
+    GAMES.clear()
+    GAMES["333333"] = GameSession("333333", QUESTIONS)
+    sock = socketio.test_client(app)
+    sock.emit("host_join", {"pin": "333333"})
+    rooms = socketio.server.manager.rooms.get("/", {})
+    assert "333333" in rooms, "a real game's PIN must still be joinable as a room"
+
+
+def test_a_stale_socket_cannot_answer_after_its_nickname_is_reclaimed():
+    # Nicknames aren't authenticated (see nickname_matches_roster's own docstring) and are
+    # broadcast to the whole lobby, so anyone can emit player_join with a name they saw there.
+    # game.join() silently hands back the SAME player on a repeat nickname (this is intentional —
+    # a dropped wifi connection must let the real student rejoin), but on_answer_submit must only
+    # trust the MOST RECENT socket to have claimed that nickname, exactly like on_disconnect
+    # already does via CURRENT_SID — not every socket that has ever held it.
+    GAMES.clear()
+    GAMES["444444"] = GameSession("444444", QUESTIONS)
+
+    host = _authed_host_socket("444444")
+    victim = socketio.test_client(app)
+    victim.emit("player_join", {"pin": "444444", "nickname": "alice"})
+
+    attacker = socketio.test_client(app)
+    attacker.emit("player_join", {"pin": "444444", "nickname": "alice"})  # claims the same name
+
+    host.emit("host_next", {"pin": "444444"})
+    host.get_received()  # clear
+
+    # the now-stale original socket must not be able to score as "alice" any more
+    victim.emit("answer_submit", {"pin": "444444", "nickname": "alice", "choice": 1})
+    assert GAMES["444444"].players["alice"].score == 0, \
+        "the stale socket must not have been able to submit an answer"
+
+    # the socket that most recently claimed the nickname is the one that can
+    attacker.emit("answer_submit", {"pin": "444444", "nickname": "alice", "choice": 1})
+    assert GAMES["444444"].players["alice"].score > 0, \
+        "the current socket for the nickname should still be able to answer"
+
+
 def test_nickname_is_sanitized_server_side():
     GAMES.clear()
     GAMES["555555"] = GameSession("555555", QUESTIONS)

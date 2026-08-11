@@ -626,6 +626,9 @@ def on_host_join(data):
     # whose Flask session belongs to the game's actual owner gets bound as its authorized host;
     # `pin in GAME_OWNER` is required explicitly so an unauthenticated socket (current_teacher_id()
     # is None) can never bind to a pin that also happens to have no registered owner.
+    if pin not in GAMES:
+        return  # don't let an arbitrary/unauthenticated socket grow the room registry with
+                # made-up PINs — HOST_SIDS below already rejected these, only join_room() didn't
     join_room(pin)
     if pin in GAME_OWNER and auth.current_teacher_id() == GAME_OWNER[pin]:
         HOST_SIDS[pin] = request.sid
@@ -758,17 +761,17 @@ def _reveal_results(pin):
     if getattr(game, "_revealed_this_round", False):
         return  # already revealed for this round (guards both the timeout path and the
                 # all-answered path from double-firing regardless of which ran first)
-    game._revealed_this_round = True
     q = game.current_question()
-    socketio.emit(
-        "question:results",
-        {
-            "distribution": game.answer_distribution(),
-            "leaderboard": game.leaderboard(),
-            "correct": q["correct"] if q else None,
-        },
-        to=pin,
-    )
+    # Compute the payload BEFORE marking revealed: if this ever raises, the round must stay
+    # "not yet revealed" so a retry (or the timeout path) can still recover it, instead of
+    # being permanently stuck with the flag set but no question:results ever emitted.
+    payload = {
+        "distribution": game.answer_distribution(),
+        "leaderboard": game.leaderboard(),
+        "correct": q["correct"] if q else None,
+    }
+    game._revealed_this_round = True
+    socketio.emit("question:results", payload, to=pin)
 
 
 @socketio.on("answer_submit")
@@ -779,6 +782,14 @@ def on_answer_submit(data):
     if info is None or info[0] != data["pin"]:
         return
     nickname = info[1]
+    # Nicknames aren't authenticated and are broadcast to the lobby, so a second socket can
+    # always claim an in-use nickname (game.join() intentionally allows this — a dropped wifi
+    # connection must let the real student rejoin, see on_player_join). Once that happens,
+    # SID_TO_PLAYER alone can no longer tell the legitimate reconnect apart from someone who
+    # just saw the name in the lobby: only the socket CURRENT_SID currently has on file for
+    # (pin, nickname) — the same check on_disconnect already relies on — may score for it.
+    if CURRENT_SID.get((data["pin"], nickname)) != request.sid:
+        return
     game = GAMES.get(data["pin"])
     if game is None:
         return

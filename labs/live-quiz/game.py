@@ -70,6 +70,10 @@ class GameSession:
         q = self.current_question()
         if q is None:
             raise ValueError("no active question")
+        # isinstance(x, int) also accepts bool (True/False), but that's harmless here —
+        # it just resolves to a valid-or-invalid index like any other int would.
+        if not isinstance(choice_index, int) or not (0 <= choice_index < len(q["options"])):
+            raise ValueError(f"invalid choice_index: {choice_index!r}")
         time_taken = time.time() - self.question_start_time
         correct = choice_index == q["correct"]
         points = score_answer(correct, time_taken, self.time_limit)
@@ -89,7 +93,7 @@ class GameSession:
         q = self.current_question()
         counts = [0] * len(q["options"])
         for choice_index, _ in self.answers_this_round.values():
-            if 0 <= choice_index < len(counts):
+            if isinstance(choice_index, int) and 0 <= choice_index < len(counts):
                 counts[choice_index] += 1
         return counts
 

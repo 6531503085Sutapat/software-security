@@ -59,6 +59,24 @@ def test_forged_csrf_token_rejected(tmp_path, monkeypatch):
     assert r.status_code == 400
 
 
+def test_deleted_teachers_session_no_longer_works(tmp_path, monkeypatch):
+    # login_required used to check only session["teacher_id"] is not None — a session issued
+    # before the account was deleted (or, in the future, disabled) kept working forever, since
+    # nothing ever re-checked the account still exists.
+    appmod, c = _client(tmp_path, monkeypatch)
+    tok = _csrf(c, "/register")
+    c.post("/register", data={"username": "alice", "password": "pw123456",
+                              "invite": "LETMEIN", "csrf_token": tok})
+    assert c.get("/console").status_code == 200  # the session works while the account exists
+
+    conn = appmod.get_db()
+    conn.execute("DELETE FROM teachers WHERE username = 'alice'")
+    conn.commit()
+
+    r = c.get("/console", follow_redirects=False)
+    assert r.status_code in (302, 303) and "/login" in r.headers["Location"]
+
+
 def test_unset_invite_closes_registration(tmp_path, monkeypatch):
     # INVITE_CODE unset ⇒ registration fully closed: no invite value should get through
     appmod, c = _client(tmp_path, monkeypatch, invite="")
