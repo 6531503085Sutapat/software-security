@@ -5,7 +5,7 @@ import hmac
 import secrets
 
 import bcrypt
-from flask import session, redirect, url_for, request
+from flask import current_app, session, redirect, url_for, request
 
 
 def hash_password(pw):
@@ -48,7 +48,15 @@ def current_teacher_id():
 def login_required(view):
     @functools.wraps(view)
     def wrapped(*a, **kw):
-        if current_teacher_id() is None:
+        tid = current_teacher_id()
+        if tid is None:
+            return redirect(url_for("login_page", next=request.path))
+        # A session naming a teacher_id that no longer exists (the account was deleted after
+        # this session was issued) must not keep working just because the cookie is still valid —
+        # nothing else in the request ever re-checks the account is still real.
+        conn = current_app.config["GET_DB"]()
+        if conn.execute("SELECT 1 FROM teachers WHERE id = ?", (tid,)).fetchone() is None:
+            session.clear()
             return redirect(url_for("login_page", next=request.path))
         return view(*a, **kw)
     return wrapped
