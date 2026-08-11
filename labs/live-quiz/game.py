@@ -25,10 +25,11 @@ class Player:
 
 
 class GameSession:
-    def __init__(self, pin, questions, time_limit=TIME_LIMIT):
+    def __init__(self, pin, questions, time_limit=TIME_LIMIT, course_slug=None):
         self.pin = pin
         self.questions = questions
         self.time_limit = time_limit
+        self.course_slug = course_slug
         self.current_index = -1
         self.players = {}
         self.question_start_time = None

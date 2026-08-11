@@ -291,11 +291,34 @@ def entry():
     if request.method == "GET":
         return render_template("submit_entry.html", csrf_token=_csrf(), error=None)
     _check_csrf()
+    raw = request.form.get("code")
+    # Classify BEFORE attempting either table's redeem() — see the mirror of
+    # this in routes_assess.py's quiz_entry() for why: a code colliding
+    # across attempt_codes and submit_codes must never silently authenticate
+    # as whichever side's redeem() this route happens to call.
+    import codes
     try:
-        sub = S.redeem(_db(), request.form.get("code"), _now())
-    except S.SubmitError as exc:
+        kind = codes.find_kind(_db(), raw)
+    except RuntimeError:
+        current_app.logger.exception("codes.find_kind: code in both tables")
+        kind = None
+    if kind == "quiz":
+        # A quiz code typed into this box by mistake. Unlike the /quiz
+        # direction, this rescue's own redeem() CAN still fail (already
+        # submitted, window closed) — that failure must reach the page as
+        # itself, not as this box's generic "not valid".
+        import assessment as A
+        try:
+            att = A.redeem(_db(), raw, _now())
+        except A.AttemptError as quiz_exc:
+            return render_template("submit_entry.html", csrf_token=_csrf(),
+                                   error=str(quiz_exc)), 200
+        session["attempt_id"] = att["id"]
+        return redirect(url_for("assess.quiz_take"))
+    if kind != "submit":
         return render_template("submit_entry.html", csrf_token=_csrf(),
-                               error=str(exc)), 200
+                               error="That code isn't valid."), 200
+    sub = S.redeem(_db(), raw, _now())
     session["submission_id"] = sub["id"]
     return redirect(url_for("submit.workspace"))
 
