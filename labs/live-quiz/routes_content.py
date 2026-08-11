@@ -104,6 +104,9 @@ def unit_image(course_slug, unit, name):
         # file: an rsync that dropped the mode bit is not the reader's problem
         # to interpret, and the distinction leaks what exists.
         abort(404)
+    # `body` is whitelisted image bytes, not attacker-controlled HTML — see the
+    # docstring above; Content-Type/CSP below close the actual risk this rule flags.
+    # nosemgrep: python.flask.security.audit.xss.make-response-with-unknown-content.make-response-with-unknown-content
     resp = make_response(body)
     resp.headers["Content-Type"] = C.IMG_TYPES[os.path.splitext(name)[1].lower()]
     # `script-src 'none'` is the whole point: an SVG can carry <script>, and a

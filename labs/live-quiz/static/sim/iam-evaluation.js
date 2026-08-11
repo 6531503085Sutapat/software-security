@@ -65,6 +65,11 @@
       .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
       .replace(/\\\*/g, "[\\s\\S]*")
       .replace(/\\\?/g, "[\\s\\S]") + "$";
+    // rx is built above by escaping every metacharacter then re-opening only
+    // `*`/`?` as bounded [\s\S]*/[\s\S] runs, not an arbitrary pattern — and this
+    // sim is fully client-side with no network/storage, so a pathological input
+    // can only stall the student's own tab, never another user's.
+    // nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
     return new RegExp(rx).test(value);
   }
 
