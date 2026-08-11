@@ -160,11 +160,13 @@ def get_teacher(conn, teacher_id):
     return conn.execute("SELECT * FROM teachers WHERE id = ?", (teacher_id,)).fetchone()
 
 
-def create_set(conn, teacher_id, title, source_md, now):
+def create_set(conn, teacher_id, title, source_md, now, course_slug=None):
+    import course_scope
+    course = course_scope.check(course_slug)
     cur = conn.execute(
-        "INSERT INTO question_sets (teacher_id, title, source_md, created_at, updated_at)"
-        " VALUES (?,?,?,?,?)",
-        (teacher_id, title, source_md, now, now),
+        "INSERT INTO question_sets (teacher_id, title, source_md, created_at, updated_at, course_slug)"
+        " VALUES (?,?,?,?,?,?)",
+        (teacher_id, title, source_md, now, now, course),
     )
     conn.commit()
     return cur.lastrowid
@@ -184,11 +186,13 @@ def get_set(conn, set_id, owner_id):
     ).fetchone()
 
 
-def update_set(conn, set_id, owner_id, title, source_md, now):
+def update_set(conn, set_id, owner_id, title, source_md, now, course_slug=None):
+    import course_scope
+    course = course_scope.check(course_slug)
     cur = conn.execute(
-        "UPDATE question_sets SET title = ?, source_md = ?, updated_at = ?"
+        "UPDATE question_sets SET title = ?, source_md = ?, updated_at = ?, course_slug = ?"
         " WHERE id = ? AND teacher_id = ?",
-        (title, source_md, now, set_id, owner_id),
+        (title, source_md, now, course, set_id, owner_id),
     )
     conn.commit()
     return cur.rowcount

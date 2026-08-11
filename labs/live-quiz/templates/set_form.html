@@ -28,6 +28,20 @@
                placeholder="e.g. Week 1 — Threat modelling">
       </div>
 
+      {# Which course this set belongs to. Shown only when there is more than one,
+         so the single-course case keeps a form with no redundant choice on it —
+         same convention as assess_new.html's picker. #}
+      {% if courses|length > 1 %}
+      <div class="field field-gap">
+        <label for="course_slug">Course</label>
+        <select class="inp" id="course_slug" name="course_slug" required>
+          {% for c in courses %}
+          <option value="{{ c.slug }}"{% if c.slug == selected_course %} selected{% endif %}>{{ c.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
       <div class="field field-gap">
         <label for="source_md">Markdown item bank</label>
         <textarea class="ta" id="source_md" name="source_md" rows="14"

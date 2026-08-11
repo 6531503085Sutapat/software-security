@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% set section = 'code' %}
+{% block title %}Enter your code — KOSEN·KMITL{% endblock %}
+{% block main %}
+<div class="lx-ground">
+  <div class="lx-wrap">
+    <form class="lx-form" method="post" action="/code"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+      <p class="lx-eyebrow">Weekly quiz or hand in your work</p>
+      <h1 class="lx-h1">Enter your code</h1>
+      <p class="lx-lead">Works for either code on your slip — the quiz code or the
+        submission code. We'll take you to the right place.</p>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {% if error %}<div class="lx-err" id="form-error" role="alert">{{ error }}</div>{% endif %}
+      <div class="lx-field"><label class="lx-label" for="code">Code</label>
+        <input class="lx-input" id="code" name="code"{% if error %} aria-invalid="true" aria-describedby="form-error"{% endif %} autocomplete="off" autocapitalize="characters"
+               spellcheck="false" maxlength="16" required></div>
+      <button class="lx-btn" type="submit">Continue<span aria-hidden="true"> ▸</span></button>
+      <p class="lx-hint">Lost your slip, or the code will not work? Ask your teacher in
+        class — codes can be re-issued.</p>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -44,6 +44,24 @@ def test_cannot_create_game_from_others_set(tmp_path, monkeypatch):
     assert r.status_code == 404                                    # bob can't host alice's set
 
 
+def test_created_game_carries_the_sets_course_slug(tmp_path, monkeypatch):
+    # so player_join can validate a nickname against THAT course's roster, not
+    # some other course's. Raw SQL rather than dbmod.create_set(course_slug=...)
+    # because this test's env only configures "software-security" — going
+    # through course_scope.check() would reject "cryptography" as unknown.
+    # This test is about the read side (host_create -> GameSession) only;
+    # the write side (create_set/update_set validating and storing a real
+    # course_slug) is covered in test_console.py and test_course_scope.py.
+    appmod = _app(tmp_path, monkeypatch)
+    c, sid, csrf = _reg_with_set(appmod, "alice")
+    appmod.get_db().execute(
+        "UPDATE question_sets SET course_slug = ? WHERE id = ?", ("cryptography", sid))
+    appmod.get_db().commit()
+    c.post("/host/create", data={"set_id": sid, "topic": "Week 1", "csrf_token": csrf})
+    pin = next(iter(appmod.GAMES))
+    assert appmod.GAMES[pin].course_slug == "cryptography"
+
+
 def test_create_game_rejects_out_of_range_set_id(tmp_path, monkeypatch):
     appmod = _app(tmp_path, monkeypatch)
     c, _, csrf = _reg_with_set(appmod, "alice")

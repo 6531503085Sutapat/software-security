@@ -24,6 +24,16 @@ def test_join_creates_a_new_player_with_zero_score():
     assert player.score == 0
 
 
+def test_course_slug_defaults_to_none():
+    game = GameSession("123456", QUESTIONS)
+    assert game.course_slug is None
+
+
+def test_course_slug_is_stored_when_given():
+    game = GameSession("123456", QUESTIONS, course_slug="software-security")
+    assert game.course_slug == "software-security"
+
+
 def test_rejoin_with_same_nickname_resumes_existing_score():
     game = GameSession("123456", QUESTIONS)
     game.join("alice")
