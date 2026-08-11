@@ -255,8 +255,37 @@ def quiz_entry():
     if request.method == "GET":
         return render_template("quiz_entry.html", csrf_token=_csrf(), error=None)
     _check_csrf()
+    raw = request.form.get("code")
+    # Classify BEFORE attempting either table's redeem() — not after, and not
+    # only on failure. A code that collides across attempt_codes and
+    # submit_codes (a pre-existing data-integrity bug the generation-time
+    # guard in issue_codes() only prevents going forward, not retroactively)
+    # would otherwise authenticate silently as whichever side's redeem() this
+    # route happens to call — a real student could land in another student's
+    # attempt this way. Mirrors routes_code.py's /code, which never had this
+    # bug because it already classified first.
+    import codes
     try:
-        att = A.redeem(_db(), request.form.get("code"), _now())
+        kind = codes.find_kind(_db(), raw)
+    except RuntimeError:
+        # A code in both tables is a data-integrity bug, not something this
+        # student did. Log it for us; refuse rather than trust either side.
+        current_app.logger.exception("codes.find_kind: code in both tables")
+        kind = None
+    if kind == "submit":
+        # A submit code typed into this box by mistake — the two look
+        # identical (same alphabet, same length) and a student's slip carries
+        # both. submission.redeem() cannot itself fail once find_kind() has
+        # confirmed the code is there — see codes.py.
+        import submission as S
+        sub = S.redeem(_db(), raw, _now())
+        session["submission_id"] = sub["id"]
+        return redirect(url_for("submit.workspace"))
+    if kind != "quiz":
+        return render_template("quiz_entry.html", csrf_token=_csrf(),
+                               error="That code isn't valid."), 200
+    try:
+        att = A.redeem(_db(), raw, _now())
     except A.AttemptError as exc:
         return render_template("quiz_entry.html", csrf_token=_csrf(), error=str(exc)), 200
     session["attempt_id"] = att["id"]

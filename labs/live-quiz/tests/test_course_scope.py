@@ -190,6 +190,21 @@ def test_assignment_into_an_unknown_course_raises_and_writes_nothing(db):
                       ).fetchone()["c"] == before
 
 
+def test_created_set_records_its_course(db):
+    sid = dbmod.create_set(db, _tid(db), "W1", "## T\n1. q a) x ✓ · b) y", now="now")
+    row = db.execute("SELECT course_slug FROM question_sets WHERE id=?", (sid,)).fetchone()
+    assert row["course_slug"] == C.COURSES[0]["slug"]
+
+
+def test_creating_a_set_into_an_unknown_course_raises_and_writes_nothing(db):
+    before = db.execute("SELECT COUNT(*) c FROM question_sets").fetchone()["c"]
+    with pytest.raises(ValueError, match="unknown course"):
+        dbmod.create_set(db, _tid(db), "W1", "## T\n1. q a) x ✓ · b) y", now="now",
+                          course_slug="ghost-course")
+    after = db.execute("SELECT COUNT(*) c FROM question_sets").fetchone()["c"]
+    assert after == before, "a rejected course must not leave a partial row"
+
+
 # ── with several courses configured, they stay apart ────────────────────────
 
 @pytest.fixture
@@ -228,6 +243,15 @@ def test_the_default_course_is_the_first_configured(db, three_courses):
     assert course_scope.check(None) == "alpha"
 
 
+def test_set_can_be_moved_to_a_different_real_course(db, three_courses):
+    sid = dbmod.create_set(db, _tid(db), "W1", "## T\n1. q a) x ✓ · b) y", now="t",
+                            course_slug="alpha")
+    assert dbmod.get_set(db, sid, owner_id=_tid(db))["course_slug"] == "alpha"
+    dbmod.update_set(db, sid, owner_id=_tid(db), title="W1",
+                      source_md="## T\n1. q a) x ✓ · b) y", now="t2", course_slug="beta")
+    assert dbmod.get_set(db, sid, owner_id=_tid(db))["course_slug"] == "beta"
+
+
 # ── the form must not be able to file work under a course that isn't there ──
 
 def test_posted_course_slug_is_validated_not_trusted(db):
@@ -240,8 +264,12 @@ def test_posted_course_slug_is_validated_not_trusted(db):
     with pytest.raises(ValueError, match="unknown course"):
         S.create_assignment(db, teacher_id=_tid(db), title="W", now="n",
                             course_slug="'; DROP TABLE assessments; --")
-    # and the table is still there
+    with pytest.raises(ValueError, match="unknown course"):
+        dbmod.create_set(db, _tid(db), "Q", "## T\n1. q a) x ✓ · b) y", now="n",
+                          course_slug="'; DROP TABLE question_sets; --")
+    # and the tables are still there
     assert db.execute("SELECT COUNT(*) c FROM assessments").fetchone()["c"] == 0
+    assert db.execute("SELECT COUNT(*) c FROM question_sets").fetchone()["c"] == 0
 
 
 def test_empty_string_from_a_form_is_treated_as_unset(db):

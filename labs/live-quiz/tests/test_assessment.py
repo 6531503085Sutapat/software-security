@@ -28,7 +28,11 @@ def conn():
     c = sqlite3.connect(":memory:", check_same_thread=False)
     c.row_factory = sqlite3.Row
     c.execute("PRAGMA foreign_keys = ON")
-    for f in ("schema.sql", "schema_assess.sql"):
+    # schema_submit.sql too: issue_codes() checks codes.is_taken(), which reads
+    # submit_codes as well as attempt_codes — every real deployment applies all
+    # three schemas together (db.py's _SCHEMAS), so a test fixture missing one
+    # is testing a shape that can't actually happen.
+    for f in ("schema.sql", "schema_assess.sql", "schema_submit.sql"):
         with open(os.path.join(HERE, f), encoding="utf-8") as fh:
             c.executescript(fh.read())
     c.execute("INSERT INTO teachers (id, username, password_hash, created_at)"

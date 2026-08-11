@@ -56,6 +56,9 @@ socket.on("join_ok", (data) => {
   $("p-av").textContent = nickname[0] || "?";
   $("p-wait-big").textContent = "You’re in!";
   $("p-wait-sub").textContent = "Watch the big screen — the first question is coming.";
+  // Never blocks joining — see nickname_matches_roster in app.py. Just a nudge
+  // so a mis-typed nickname doesn't silently drop out of the engagement data.
+  $("p-id-warn").hidden = !data.id_mismatch;
 });
 
 socket.on("join_error", (data) => {

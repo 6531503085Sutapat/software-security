@@ -23,6 +23,7 @@ from flask_socketio import SocketIO, join_room, emit
 import auth
 import db as dbmod
 import quiz_loader
+import roster
 from game import GameSession, generate_pin
 
 mimetypes.add_type("font/woff2", ".woff2")
@@ -126,6 +127,13 @@ app.config["UPLOAD_DIR"] = os.environ.get(
 app.config["MAX_CONTENT_LENGTH"] = 24 * 1024 * 1024
 import routes_submit  # noqa: E402
 app.register_blueprint(routes_submit.bp)
+
+# One entry point that accepts either a quiz code or a submission code (/quiz
+# and /submit still work on their own — this just removes the need to know in
+# advance which kind of code you're holding). Registered last: it calls into
+# both blueprints above, so both must already be wired.
+import routes_code  # noqa: E402
+app.register_blueprint(routes_code.bp)
 
 
 @app.route("/")
@@ -403,7 +411,7 @@ def host_create():
     pin = generate_pin()
     while pin in GAMES:  # avoid an extremely unlikely PIN collision
         pin = generate_pin()
-    GAMES[pin] = GameSession(pin, questions)
+    GAMES[pin] = GameSession(pin, questions, course_slug=s["course_slug"])
     GAME_OWNER[pin] = tid
     return render_template("host.html", created_pin=pin)
 
@@ -513,9 +521,11 @@ def _parse_or_none(source_md):
     return topics if total > 0 else None
 
 
-def _set_form(error=None, editing=None, title="", source_md=""):
+def _set_form(error=None, editing=None, title="", source_md="", course_slug=None):
     # Render the create/edit form. `editing` (a set Row) switches the form to edit mode; when
-    # re-rendering after a validation error we echo the submitted title/source so work isn't lost.
+    # re-rendering after a validation error we echo the submitted title/source/course so work
+    # isn't lost. `course_slug` is the value to preselect — the caller's job, not the template's,
+    # since on an edit-error it must be the just-submitted choice, not the set's stored one.
     return render_template(
         "set_form.html",
         csrf_token=_issue_csrf(),
@@ -523,6 +533,8 @@ def _set_form(error=None, editing=None, title="", source_md=""):
         editing=editing,
         title=title,
         source_md=source_md,
+        courses=_content.list_courses(),
+        selected_course=course_slug,
     )
 
 
@@ -559,12 +571,15 @@ def console_set_new():
     _check_csrf()
     title = (request.form.get("title") or "").strip()[:MAX_TITLE_LEN] or "Untitled set"
     source_md = _read_source(request)
+    course_slug = (request.form.get("course_slug") or "").strip() or None
     if _source_too_big(source_md):
-        return _set_form(error="That set is too large (max 100 KB).", title=title, source_md=""), 200
+        return _set_form(error="That set is too large (max 100 KB).", title=title, source_md="",
+                         course_slug=course_slug), 200
     if _parse_or_none(source_md) is None:
         return _set_form(error="That set has no questions the parser can read — check the format.",
-                         title=title, source_md=source_md), 200
-    dbmod.create_set(get_db(), auth.current_teacher_id(), title, source_md, _now())
+                         title=title, source_md=source_md, course_slug=course_slug), 200
+    dbmod.create_set(get_db(), auth.current_teacher_id(), title, source_md, _now(),
+                     course_slug=course_slug)
     return redirect(url_for("console_page"))
 
 
@@ -575,17 +590,22 @@ def console_set_edit(set_id):
     if s is None:
         abort(404)                                   # not this teacher's set (IDOR-safe)
     if request.method == "GET":
-        return _set_form(editing=s, title=s["title"], source_md=s["source_md"])
+        return _set_form(editing=s, title=s["title"], source_md=s["source_md"],
+                         course_slug=s["course_slug"])
     _check_csrf()
     title = (request.form.get("title") or "").strip()[:MAX_TITLE_LEN] or s["title"]
     source_md = _read_source(request)
+    course_slug = (request.form.get("course_slug") or "").strip() or None
     if _source_too_big(source_md):
         return _set_form(error="That set is too large (max 100 KB).",
-                         editing=s, title=title, source_md=s["source_md"]), 200
+                         editing=s, title=title, source_md=s["source_md"],
+                         course_slug=course_slug), 200
     if _parse_or_none(source_md) is None:
         return _set_form(error="That set has no questions the parser can read — check the format.",
-                         editing=s, title=title, source_md=source_md), 200
-    dbmod.update_set(get_db(), set_id, auth.current_teacher_id(), title, source_md, _now())
+                         editing=s, title=title, source_md=source_md,
+                         course_slug=course_slug), 200
+    dbmod.update_set(get_db(), set_id, auth.current_teacher_id(), title, source_md, _now(),
+                     course_slug=course_slug)
     return redirect(url_for("console_page"))
 
 
@@ -611,6 +631,21 @@ def on_host_join(data):
         HOST_SIDS[pin] = request.sid
 
 
+def nickname_matches_roster(conn, course_slug, nickname):
+    """True if `nickname` looks like it belongs, OR there's nothing to check
+    against yet. live-quiz players have no accounts (see roster.py) — the only
+    way to tie a session back to a real student is the player having typed
+    their own Student ID as their nickname, so this can only ever nudge, never
+    gate: a course nobody has issued slips for yet (empty roster) must not
+    block or flag anyone, same principle as the ledger's unmatched-row
+    handling elsewhere in this platform.
+    """
+    enrolled_ids = {r["student_id"] for r in roster.enrolled(conn, course_slug)}
+    if not enrolled_ids:
+        return True
+    return nickname in enrolled_ids
+
+
 @socketio.on("player_join")
 def on_player_join(data):
     game = GAMES.get(data["pin"])
@@ -627,7 +662,8 @@ def on_player_join(data):
     join_room(data["pin"])
     SID_TO_PLAYER[request.sid] = (data["pin"], nickname)
     CURRENT_SID[(data["pin"], nickname)] = request.sid
-    emit("join_ok", {"nickname": nickname})
+    id_mismatch = not nickname_matches_roster(get_db(), game.course_slug, nickname)
+    emit("join_ok", {"nickname": nickname, "id_mismatch": id_mismatch})
     # if a question is already live, show it to this (re)joining player instead of a blank wait
     q = game.current_question()
     if q is not None and not getattr(game, "_revealed_this_round", False):

@@ -110,6 +110,7 @@ def issue_codes(conn, assessment_id, student_ids, now):
     # teacher could forget. The course is read off the assessment rather than
     # taken as an argument, so a slip can never enrol someone into a course other
     # than the one they are being assessed in.
+    import codes
     import roster
     _row = conn.execute(
         "SELECT teacher_id, course_slug FROM assessments WHERE id = ?", (assessment_id,)).fetchone()
@@ -126,8 +127,11 @@ def issue_codes(conn, assessment_id, student_ids, now):
             continue
         while True:
             code = "".join(secrets.choice(CODE_ALPHABET) for _ in range(CODE_LEN))
-            if not conn.execute("SELECT 1 FROM attempt_codes WHERE code = ?",
-                                (code,)).fetchone():
+            # Checked against submit_codes too, not just this table — the two
+            # flows share an alphabet and length, and a code redeemable through
+            # either /quiz or /submit only stays disambiguated by which table
+            # it's in (see codes.py).
+            if not codes.is_taken(conn, code):
                 break
         conn.execute(
             "INSERT INTO attempt_codes (code, assessment_id, student_id, issued_at)"
