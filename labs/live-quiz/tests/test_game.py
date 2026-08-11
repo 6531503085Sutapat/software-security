@@ -102,6 +102,55 @@ def test_submit_answer_for_unknown_player_raises():
         pass
 
 
+def test_submit_answer_rejects_non_integer_choice():
+    # A malformed choice_index must never reach answers_this_round: it would
+    # otherwise survive silently (choice_index == q["correct"] just compares
+    # False, no crash yet) until answer_distribution() later does
+    # `0 <= choice_index < len(counts)`, which raises TypeError for anything
+    # that isn't an int — and that call happens AFTER the round is already
+    # marked revealed (see app.py's _reveal_results), permanently breaking
+    # that round for the whole class.
+    game = GameSession("123456", QUESTIONS)
+    game.join("alice")
+    game.next_question()
+    for bad in (None, "1", [1], {"choice": 1}, 3.5):
+        try:
+            game.submit_answer("alice", bad)
+            assert False, f"expected ValueError for choice_index={bad!r}"
+        except ValueError:
+            pass
+    assert "alice" not in game.answers_this_round
+
+
+def test_submit_answer_rejects_out_of_range_choice():
+    game = GameSession("123456", QUESTIONS)
+    game.join("alice")
+    game.next_question()
+    try:
+        game.submit_answer("alice", len(QUESTIONS[0]["options"]))  # one past the end
+        assert False, "expected ValueError"
+    except ValueError:
+        pass
+    try:
+        game.submit_answer("alice", -1)
+        assert False, "expected ValueError"
+    except ValueError:
+        pass
+
+
+def test_answer_distribution_survives_a_rejected_submission():
+    # Regression for the actual crash: even though submit_answer() now
+    # rejects bad input, answer_distribution() itself must not assume every
+    # stored entry is valid — belt-and-suspenders against any other path
+    # that might populate answers_this_round.
+    game = GameSession("123456", QUESTIONS)
+    game.join("alice")
+    game.next_question()
+    game.answers_this_round["alice"] = (None, 1.0)  # simulate corrupted state directly
+    counts = game.answer_distribution()
+    assert counts == [0] * len(QUESTIONS[0]["options"])
+
+
 def test_all_answered_true_only_when_every_connected_player_has_answered():
     game = GameSession("123456", QUESTIONS)
     game.join("alice")
