@@ -129,6 +129,7 @@ def issue_codes(conn, assignment_id, student_ids, now):
     # teacher could forget. The course is read off the assignment rather than
     # taken as an argument, so a slip can never enrol someone into a course other
     # than the one they are being assessed in.
+    import codes
     import roster
     _row = conn.execute(
         "SELECT teacher_id, course_slug FROM assignments WHERE id = ?", (assignment_id,)).fetchone()
@@ -145,8 +146,9 @@ def issue_codes(conn, assignment_id, student_ids, now):
             continue
         while True:
             code = "".join(secrets.choice(CODE_ALPHABET) for _ in range(CODE_LEN))
-            if not conn.execute("SELECT 1 FROM submit_codes WHERE code = ?",
-                                (code,)).fetchone():
+            # Checked against attempt_codes too — see codes.py and the matching
+            # comment in assessment.issue_codes().
+            if not codes.is_taken(conn, code):
                 break
         conn.execute("INSERT INTO submit_codes (code, assignment_id, student_id,"
                      " issued_at) VALUES (?,?,?,?)", (code, assignment_id, sid, now))

@@ -4,10 +4,23 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from app import app, socketio, GAMES, GAME_OWNER, get_db
+import content as C
 import db as dbmod
+import roster
 from game import GameSession
 
 QUESTIONS = [{"stem": "Q1?", "options": ["a", "b", "c", "d"], "correct": 1}]
+
+
+def _enroll(student_ids, course_slug=None):
+    """Enroll fake students in a real course so a nickname can be checked against
+    a genuine roster, the same way roster.py itself is tested."""
+    slug = course_slug or C.COURSES[0]["slug"]
+    conn = get_db()
+    t = dbmod.get_teacher_by_username(conn, "roster_check_teacher")
+    tid = t["id"] if t else dbmod.create_teacher(conn, "roster_check_teacher", "unused-hash", now="t")
+    roster.enroll(conn, course_slug=slug, teacher_id=tid, student_ids=student_ids, now="t")
+    return slug
 
 
 def _authed_host_socket(pin):
@@ -131,4 +144,53 @@ def test_joining_mid_question_shows_the_active_question():
     shown = [e for e in late.get_received() if e["name"] == "question:show"]
     assert len(shown) == 1  # the latecomer/reconnecter sees the in-progress question, not a blank wait
     assert shown[0]["args"][0]["stem"] == "Q1?"
+
+
+def test_nickname_matching_a_real_enrolled_id_is_not_flagged():
+    GAMES.clear()
+    slug = _enroll(["6631503001", "6631503002"])
+    GAMES["444401"] = GameSession("444401", QUESTIONS, course_slug=slug)
+
+    real = socketio.test_client(app)
+    real.emit("player_join", {"pin": "444401", "nickname": "6631503001"})
+    ok = [e for e in real.get_received() if e["name"] == "join_ok"]
+    assert ok and not ok[0]["args"][0]["id_mismatch"]
+
+
+def test_nickname_not_matching_any_enrolled_id_is_flagged():
+    GAMES.clear()
+    slug = _enroll(["6631503003", "6631503004"])
+    GAMES["444402"] = GameSession("444402", QUESTIONS, course_slug=slug)
+
+    typo = socketio.test_client(app)
+    typo.emit("player_join", {"pin": "444402", "nickname": "some nickname"})
+    ok = [e for e in typo.get_received() if e["name"] == "join_ok"]
+    assert ok and ok[0]["args"][0]["id_mismatch"] is True
+
+
+def test_mismatch_warning_does_not_block_joining():
+    # the whole point is a nudge, not a gate — a mismatched nickname still gets in
+    GAMES.clear()
+    slug = _enroll(["6631503005"])
+    GAMES["444403"] = GameSession("444403", QUESTIONS, course_slug=slug)
+
+    typo = socketio.test_client(app)
+    typo.emit("player_join", {"pin": "444403", "nickname": "definitely not an id"})
+    ok = [e for e in typo.get_received() if e["name"] == "join_ok"]
+    assert ok  # still joined despite the mismatch
+    assert "444403" in GAMES and "definitely not an id" in GAMES["444403"].players
+
+
+def test_no_enrollment_data_skips_validation_entirely(tmp_path):
+    # A course nobody has issued slips for yet must not flag anyone — graceful
+    # degradation, same principle as the ledger's unmatched-row handling. This
+    # exercises nickname_matches_roster directly against a freshly isolated DB
+    # (no enrollments possible) rather than the shared cross-test app DB, which
+    # by this point in the suite already has real enrollments from the tests
+    # above — a real "empty roster" state can't be relied on there.
+    from app import nickname_matches_roster
+
+    conn = dbmod.connect(str(tmp_path / "empty.db"))
+    dbmod.init_db(conn, default_course=C.COURSES[0]["slug"])
+    assert nickname_matches_roster(conn, C.COURSES[0]["slug"], "whatever i typed")
 

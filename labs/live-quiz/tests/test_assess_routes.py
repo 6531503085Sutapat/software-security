@@ -177,6 +177,122 @@ def test_an_unknown_code_is_refused_without_leaking(client, published):
     assert "65310001" not in page
 
 
+def test_a_submit_code_typed_into_quiz_rescues_into_the_workspace(client, appmod, published):
+    # A student's slip carries both codes; typing the wrong one into this box
+    # should land them where they meant to go, not just fail.
+    import submission as S
+    conn = appmod.get_db()
+    tid = conn.execute("SELECT id FROM teachers WHERE username='teach1'").fetchone()["id"]
+    wid = S.create_assignment(conn, teacher_id=tid, title="W", now="2026-08-15T08:00:00")
+    subcodes = S.issue_codes(conn, wid, ["65310099"], "2026-08-15T08:00:00")
+
+    html = client.get("/quiz").get_data(as_text=True)
+    r = client.post("/quiz", data={"csrf_token": _csrf(html), "code": subcodes["65310099"]},
+                    follow_redirects=False)
+    assert r.status_code in (302, 303)
+    assert "/submit/work" in r.headers["Location"]
+
+
+def test_an_already_submitted_quiz_code_keeps_its_real_message_not_a_rescue(client, published):
+    # It IS a quiz code (find_kind says "quiz", not "submit") — just a terminal
+    # one. The rescue-attempt logic must not swallow the real refusal.
+    aid, codes = published
+    code = codes["65310001"]
+    html = client.get("/quiz").get_data(as_text=True)
+    client.post("/quiz", data={"csrf_token": _csrf(html), "code": code})
+    for _ in range(10):
+        page = client.get("/quiz/take").get_data(as_text=True)
+        if "Thank you" in page:
+            break
+        qid = re.search(r'name="question_id" value="(\d+)"', page).group(1)
+        data = {"csrf_token": _csrf(page), "question_id": qid}
+        if 'name="choice"' in page:
+            data["choice"] = re.search(r'name="choice" value="(\d+)"', page).group(1)
+        else:
+            data["text"] = "FLAG{mine}"
+        client.post("/quiz/take", data=data)
+
+    html2 = client.get("/quiz").get_data(as_text=True)
+    page = client.post("/quiz", data={"csrf_token": _csrf(html2), "code": code}).get_data(as_text=True)
+    assert "already submitted" in page.lower()
+
+
+def test_a_terminal_quiz_code_that_also_collides_with_submit_is_refused_generically(
+        client, appmod, published):
+    # Pathological: this code is genuinely a terminal quiz code, but ALSO
+    # exists in submit_codes (the cross-table guard in issue_codes() prevents
+    # this for new codes — see test_codes.py — so it's fabricated by hand
+    # here). find_kind() now runs unconditionally, before either redeem() is
+    # attempted (see the collision-bypass test above), so it catches the
+    # ambiguity itself rather than A.redeem() failing first — the specific
+    # "already submitted" message is no longer reachable here. That's a
+    # deliberate tradeoff: any detected collision refuses the same way
+    # regardless of which side would have failed, matching /code's behavior,
+    # rather than leaking which side happened to be checked first. The
+    # student still gets a clean refusal, not a crash.
+    aid, codes = published
+    code = codes["65310001"]
+    html = client.get("/quiz").get_data(as_text=True)
+    client.post("/quiz", data={"csrf_token": _csrf(html), "code": code})
+    for _ in range(10):
+        page = client.get("/quiz/take").get_data(as_text=True)
+        if "Thank you" in page:
+            break
+        qid = re.search(r'name="question_id" value="(\d+)"', page).group(1)
+        data = {"csrf_token": _csrf(page), "question_id": qid}
+        if 'name="choice"' in page:
+            data["choice"] = re.search(r'name="choice" value="(\d+)"', page).group(1)
+        else:
+            data["text"] = "FLAG{mine}"
+        client.post("/quiz/take", data=data)
+
+    import submission as S
+    conn = appmod.get_db()
+    tid = conn.execute("SELECT id FROM teachers WHERE username='teach1'").fetchone()["id"]
+    wid = S.create_assignment(conn, teacher_id=tid, title="W", now="2026-08-15T08:00:00")
+    conn.execute(
+        "INSERT INTO submit_codes (code, assignment_id, student_id, issued_at)"
+        " VALUES (?, ?, 'x', ?)", (code, wid, "2026-08-15T08:00:00"))
+    conn.commit()
+
+    html2 = client.get("/quiz").get_data(as_text=True)
+    r = client.post("/quiz", data={"csrf_token": _csrf(html2), "code": code})
+    assert r.status_code == 200
+    assert "valid" in r.get_data(as_text=True).lower()
+
+
+def test_a_fresh_colliding_code_does_not_silently_authenticate_into_the_quiz(
+        client, appmod, published):
+    # The case find_kind()'s RuntimeError guard doesn't catch: a code that is
+    # a genuinely fresh, still-redeemable quiz code for one student AND
+    # (fabricated, mirroring test_codes.py) a submit code for a DIFFERENT
+    # student. A.redeem() alone has no way to know the submit_codes row
+    # exists, so it succeeds outright on its own terms. POSTing it to /quiz
+    # must not redirect into a live attempt — the ambiguity must be refused,
+    # not resolved by "whichever table happened to get checked first."
+    aid, codes = published
+    quiz_code = codes["65310001"]
+
+    import submission as S
+    conn = appmod.get_db()
+    tid = conn.execute("SELECT id FROM teachers WHERE username='teach1'").fetchone()["id"]
+    wid = S.create_assignment(conn, teacher_id=tid, title="W", now="2026-08-15T08:00:00")
+    conn.execute(
+        "INSERT INTO submit_codes (code, assignment_id, student_id, issued_at)"
+        " VALUES (?, ?, '65310099', ?)", (quiz_code, wid, "2026-08-15T08:00:00"))
+    conn.commit()
+
+    html = client.get("/quiz").get_data(as_text=True)
+    r = client.post("/quiz", data={"csrf_token": _csrf(html), "code": quiz_code},
+                    follow_redirects=False)
+    assert r.status_code not in (302, 303), (
+        "a colliding code must not silently redirect into a live quiz attempt")
+    still_untouched = conn.execute(
+        "SELECT 1 FROM attempts WHERE assessment_id = ? AND student_id = '65310001'",
+        (aid,)).fetchone()
+    assert still_untouched is None, "no attempt should have been created for the ambiguous code"
+
+
 def test_take_without_a_session_bounces_to_the_entry_form(client):
     r = client.get("/quiz/take")
     assert r.status_code == 302 and "/quiz" in r.headers["Location"]

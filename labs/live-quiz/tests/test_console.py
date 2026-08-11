@@ -1,5 +1,7 @@
-import os, sys, importlib, re
+import os, sys, importlib, json, re
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+import pytest
 
 SET_MD = "## Week 1\n1. 2+2? a) 3 · b) 4 ✓ · c) 5 · d) 6\n"
 
@@ -10,6 +12,28 @@ def _app(tmp_path, monkeypatch):
     import app as appmod; importlib.reload(appmod)
     appmod.app.config["TESTING"] = True
     return appmod
+
+
+@pytest.fixture
+def two_courses_app(tmp_path, monkeypatch):
+    """Configure two real courses (alpha, beta) and reload app+content to pick
+    them up — the single-course default makes "which course" indistinguishable
+    from "the only course", so proving the picker actually routes needs two.
+    Reloads content back to the single-course default on teardown so later
+    tests (in this file or others sharing the process) see the normal default."""
+    roots = {}
+    for slug in ("alpha", "beta"):
+        d = tmp_path / slug / "week01-x"
+        d.mkdir(parents=True)
+        (d / "worksheet.md").write_text("# x\n")
+        roots[slug] = str(tmp_path / slug)
+    monkeypatch.setenv("COURSES", json.dumps(
+        [{"slug": s, "title": s.title(), "root": r} for s, r in roots.items()]))
+    import content as contentmod
+    importlib.reload(contentmod)
+    yield _app(tmp_path, monkeypatch)
+    monkeypatch.delenv("COURSES", raising=False)
+    importlib.reload(contentmod)
 
 
 def _register(appmod, name="alice"):
@@ -148,3 +172,80 @@ def test_create_from_file_upload(tmp_path, monkeypatch):
                    content_type="multipart/form-data", follow_redirects=False)
     assert r.status_code in (302, 303)                                     # created -> redirect
     assert b"FromFile" in alice.get("/console").get_data()
+
+
+# ── course picker ────────────────────────────────────────────────────────────
+
+def test_new_set_form_hides_course_picker_with_a_single_course(tmp_path, monkeypatch):
+    # the default deployment has exactly one course — no redundant choice on the form
+    appmod = _app(tmp_path, monkeypatch)
+    alice = _register(appmod, "alice")
+    html = alice.get("/console/sets/new").get_data(as_text=True)
+    assert 'name="course_slug"' not in html
+
+
+def test_new_set_form_shows_course_picker_when_multiple_courses_configured(two_courses_app):
+    alice = _register(two_courses_app, "alice")
+    html = alice.get("/console/sets/new").get_data(as_text=True)
+    assert 'name="course_slug"' in html
+    assert 'value="alpha"' in html and 'value="beta"' in html
+
+
+def test_posted_course_slug_is_stored_on_a_new_set(two_courses_app):
+    appmod = two_courses_app
+    alice = _register(appmod, "alice")
+    alice.post("/console/sets/new",
+               data={"title": "W1", "source_md": SET_MD, "course_slug": "beta",
+                     "csrf_token": _tok(alice)})
+    set_id = _alice_set_id(appmod)
+    alice_id = appmod.dbmod.get_teacher_by_username(appmod.get_db(), "alice")["id"]
+    assert appmod.dbmod.get_set(appmod.get_db(), set_id, alice_id)["course_slug"] == "beta"
+
+
+def test_editing_a_set_can_change_its_course(two_courses_app):
+    appmod = two_courses_app
+    alice = _register(appmod, "alice")
+    alice.post("/console/sets/new",
+               data={"title": "W1", "source_md": SET_MD, "course_slug": "alpha",
+                     "csrf_token": _tok(alice)})
+    set_id = _alice_set_id(appmod)
+    alice.post(f"/console/sets/{set_id}/edit",
+               data={"title": "W1", "source_md": SET_MD, "course_slug": "beta",
+                     "csrf_token": _tok(alice)})
+    alice_id = appmod.dbmod.get_teacher_by_username(appmod.get_db(), "alice")["id"]
+    assert appmod.dbmod.get_set(appmod.get_db(), set_id, alice_id)["course_slug"] == "beta"
+
+
+def test_edit_form_preselects_the_sets_current_course(two_courses_app):
+    appmod = two_courses_app
+    alice = _register(appmod, "alice")
+    alice.post("/console/sets/new",
+               data={"title": "W1", "source_md": SET_MD, "course_slug": "beta",
+                     "csrf_token": _tok(alice)})
+    set_id = _alice_set_id(appmod)
+    html = alice.get(f"/console/sets/{set_id}/edit").get_data(as_text=True)
+    assert re.search(r'value="beta"[^>]*selected', html) or \
+        re.search(r'selected[^>]*value="beta"', html)
+    assert "selected" not in re.search(r'<option value="alpha"[^>]*>', html).group()
+
+
+def test_edit_error_reechoes_the_just_submitted_course_not_the_stored_one(two_courses_app):
+    # A validation error (unparseable source_md here) must not lose the teacher's
+    # in-progress course change: the re-rendered form preselects what they just
+    # picked (beta), and the DB row — untouched by a rejected submission — still
+    # says what it said before (alpha).
+    appmod = two_courses_app
+    alice = _register(appmod, "alice")
+    alice.post("/console/sets/new",
+               data={"title": "W1", "source_md": SET_MD, "course_slug": "alpha",
+                     "csrf_token": _tok(alice)})
+    set_id = _alice_set_id(appmod)
+    r = alice.post(f"/console/sets/{set_id}/edit",
+                   data={"title": "W1", "source_md": "no questions here",
+                         "course_slug": "beta", "csrf_token": _tok(alice)})
+    html = r.get_data(as_text=True)
+    assert r.status_code == 200 and b"no questions" in r.get_data().lower()
+    assert re.search(r'value="beta"[^>]*selected', html) or \
+        re.search(r'selected[^>]*value="beta"', html)
+    alice_id = appmod.dbmod.get_teacher_by_username(appmod.get_db(), "alice")["id"]
+    assert appmod.dbmod.get_set(appmod.get_db(), set_id, alice_id)["course_slug"] == "alpha"
