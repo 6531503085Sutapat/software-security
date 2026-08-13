@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img"
+     aria-label="A triangle connecting three properties. Confidentiality, at the top: only the right people can read it. Integrity, at bottom left: no one can silently change it. Availability, at bottom right: it's there when you need it.">
+  <title>The CIA triad</title>
+  <style>
+    .b    { fill: #fffdf9; stroke: #017BC4; stroke-width: 1.5; rx: 6 }
+    .bl   { font: 600 13px system-ui, sans-serif; fill: #16191d; text-anchor: middle }
+    .el   { font: 11px system-ui, sans-serif; fill: #6b7280; text-anchor: middle }
+    .tri  { stroke: #6b7280; stroke-width: 1.6 }
+    @media (prefers-color-scheme: dark) {
+      .el   { fill: #9aa3ad }
+      .tri  { stroke: #9aa3ad }
+      .b    { fill: #151a20; stroke: #4aa3dd } .bl { fill: #e6e8ea }
+    }
+  </style>
+  <path class="tri" d="M260 92 L190 300"/>
+  <path class="tri" d="M380 92 L450 300"/>
+  <path class="tri" d="M225 326 L415 326"/>
+  <rect class="b" x="225" y="40"  width="190" height="52"/>
+  <text class="bl" x="320" y="71">Confidentiality</text>
+  <rect class="b" x="35"  y="300" width="190" height="52"/>
+  <text class="bl" x="130" y="331">Integrity</text>
+  <rect class="b" x="415" y="300" width="190" height="52"/>
+  <text class="bl" x="510" y="331">Availability</text>
+  <text class="el" x="320" y="24">Only the right people can read it</text>
+  <text class="el" x="130" y="372">No one can silently change it</text>
+  <text class="el" x="510" y="372">It's there when you need it</text>
+  <text class="el" x="320" y="406">Every incident breaks at least one of these — the sim below asks you to name it.</text>
+</svg>

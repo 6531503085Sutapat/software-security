@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>Does this PR pass the gate?</h1>
+<p class="lead">Toggle findings on or off and watch security-ci.yml's real
+severity:HIGH,CRITICAL filter decide — the same 3 real attacks and 2 decoys
+from Break the Build.</p>
+<div class="wrap">
+  <div class="card">
+    <div id="findings"></div>
+    <div class="preset" id="presets"></div>
+  </div>
+  <div class="card">
+    <h3>Pipeline result</h3>
+    <p class="verdict" id="verdict"></p>
+    <p id="explain"></p>
+  </div>
+</div>
+<script src="/static/sim/gate-check.js?v={{ asset_v }}"></script>
+</body></html>

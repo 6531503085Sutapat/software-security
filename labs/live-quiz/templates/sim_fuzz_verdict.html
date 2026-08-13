@@ -1,0 +1,25 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>What actually crashes <code>harness.c</code></h1>
+<p class="lead">Type bytes — or pick a preset — and watch the real check run,
+one byte at a time. This is <code>LLVMFuzzerTestOneInput</code>, computed
+here, not a fuzzer's guesswork animated for show.</p>
+<div class="wrap">
+  <div class="card">
+    <label for="bytes">Input bytes (<span id="size">0</span> total)</label>
+    <input type="text" id="bytes" value="" autocomplete="off" spellcheck="false" placeholder="type here">
+    <div class="preset" id="presets"></div>
+    <div class="fuzz-verdict-cells" id="cells"></div>
+    <p class="hint">Each cell is one <code>if</code> in the source — green once that
+      byte matches, and the chain stops the moment one doesn't.</p>
+  </div>
+  <div class="card">
+    <h3>Verdict</h3>
+    <p class="verdict" id="verdict"></p>
+    <p id="explain"></p>
+  </div>
+</div>
+<script src="/static/sim/fuzz-verdict.js?v={{ asset_v }}"></script>
+</body></html>

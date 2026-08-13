@@ -53,27 +53,38 @@ Software Security · Nutthakorn Chalaemwongwan
 
 ## Attack vectors
 
-- **Typosquatting** — `reqeusts` vs `requests`
-- **Dependency confusion** — public pkg shadows internal name
+- **Typosquatting** — `reqeusts` vs `requests`; the malicious package's `setup.py` runs **at install time**, before any of your code runs — you don't have to import it to be owned
+- **Dependency confusion** (**CWE-1357**) — public pkg shadows internal name
 - **Malicious updates** — compromised maintainer
 - **Transitive risk** — deps of deps you never chose
 
-<!-- Define dependency confusion clearly (it's the game): if your internal pkg "acme-utils" isn't scoped, a public "acme-utils" with a higher version number can get pulled instead. Transitive = you vet your 10 deps, but they pull 800 you never saw. ~5 min. -->
+<!-- Define dependency confusion clearly (it's the game): if your internal pkg "acme-utils" isn't scoped, a public "acme-utils" with a higher version number can get pulled instead. Transitive = you vet your 10 deps, but they pull 800 you never saw. Stress the install-time-execution point — it's why "I never imported it" isn't a defense, and it's exactly what the lab's PWNED.txt marker proves. ~5 min. -->
+
+---
+
+## Try it — which package actually installs?
+
+Set both versions and the index mode. The resolver's real rule decides.
+
+```sim
+resolver-confusion
+```
+
+<!-- Let them find the uncomfortable case themselves: merged mode with the private version numerically HIGHER also happens to be "safe" — but say explicitly that this is not a defense, just luck, since the attacker picks their own version number and will publish something higher. The only real fix in this sim is switching to single-index mode. Ties directly to Task 2 and Task 4's defense #2. ~4 min. -->
 
 ---
 
 ## SCA — find vulnerable deps
 
 ```bash
-npm audit
-docker run --rm -v "$PWD:/src" aquasec/trivy fs /src
-owasp/dependency-check --scan /src --format HTML
+docker run --rm -v "$PWD:/src" aquasec/trivy fs /src   # this lab's Python deps
+pip-audit                                                          # vs PyPI advisories
 ```
 
 - Produces CVEs + fix versions
-- CWE-1104 (unmaintained), CWE-829 (untrusted inclusion)
+- CWE-1104 (unmaintained), CWE-829 (untrusted inclusion), **CWE-1395** (known-vulnerable 3rd-party dependency)
 
-<!-- Hands-on tooling (ties to W2 SCA). Run trivy live on the project — it lists CVEs + the fixed version. Q6 of the quiz asks for one real vulnerable dependency they found + remediation. ~4 min. -->
+<!-- Hands-on tooling (ties to W2 SCA). This lab is pure Python — no npm project — so it's trivy fs + pip-audit, not npm audit/dependency-check. Run trivy live on the project — it lists CVEs + the fixed version. Q6 of the quiz asks for one real vulnerable dependency they found + remediation. ~4 min. -->
 
 ---
 
@@ -90,14 +101,26 @@ owasp/dependency-check --scan /src --format HTML
 ## Signing with Cosign (keyless)
 
 ```bash
-trivy image --format cyclonedx -o sbom.json myapp:lab   # SBOM
-cosign sign myapp:lab                                   # sign (OIDC)
-cosign verify myapp:lab                                 # verify
+IMG=week12-supplychain:lab
+docker run --rm -v "$PWD:/src" -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy:latest image --format cyclonedx \
+  --output /src/sbom.cdx.json "$IMG"                          # SBOM
+docker run --rm -e COSIGN_EXPERIMENTAL=1 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  gcr.io/projectsigstore/cosign:latest sign --yes "$IMG"       # sign (OIDC)
+docker run --rm -e COSIGN_EXPERIMENTAL=1 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  gcr.io/projectsigstore/cosign:latest verify \
+  --certificate-identity-regexp ".*" \
+  --certificate-oidc-issuer-regexp ".*" "$IMG"                 # verify
 ```
 
 - Unsigned/tampered image → verification fails
+- **Every step needs the docker-socket mount** (trivy has to reach the local image, not just a local dir) — the SBOM step is a common copy-paste failure if it's dropped
+- **`cosign verify` needs the two `--certificate-*-regexp` flags** in keyless mode — without them it errors, it doesn't just "fail closed"
+- Keyless signing is backed by **Fulcio** (short-lived cert authority) + **Rekor** (public transparency log) — no long-lived private key sitting on disk to leak (**CWE-321**)
 
-<!-- Demo the sign→verify loop. Keyless (Sigstore) = identity-based signing via OIDC, no key to leak. The deploy gate: refuse any image that doesn't verify → a tampered artifact can't ship. This is the lab's defend step. ~4 min. -->
+<!-- Demo the sign→verify loop. sign.sh runs both tools dockerized — match that here, not a bare local binary. Keyless (Sigstore) = identity-based signing via OIDC through Fulcio, logged in Rekor, no key to leak — name both by name, worksheet Q4 grades on the vocabulary. The deploy gate: refuse any image that doesn't verify → a tampered artifact can't ship. This is the lab's defend step. ~4 min. -->
 
 ---
 
@@ -114,13 +137,22 @@ cosign verify myapp:lab                                 # verify
 
 ## Defenses
 
-- Pin versions + lockfiles; scope internal registries
+- **`pip install --require-hashes`** — a substituted package's hash won't match; install refuses
+- **Single `--index-url`, not `--extra-index-url`** — one trusted index; the resolver won't "shop around" and pick a higher-versioned public package over your internal one
 - Verify signatures before deploy (admission policy)
 - Generate + store SBOMs per release
 - 2FA/MFA on dev/CI/cloud accounts; least privilege
 - Automate SCA in CI (next week)
 
-<!-- The payoff checklist. Pin + scope kills dependency confusion; verify-before-deploy kills tampered artifacts; MFA on maintainer/CI accounts kills the xz/CircleCI vector. "Automate in CI" sets up W15. ~4 min. -->
+<!-- The payoff checklist, now with the exact flags Task 4 grades. --require-hashes and single-index-url are what actually stops dependency confusion — "pin + scope" alone is too vague to reconstruct on the exam. Verify-before-deploy kills tampered artifacts; MFA on maintainer/CI accounts kills the xz/CircleCI vector. "Automate in CI" sets up W15. ~4 min. -->
+
+---
+
+## The whole journey, one dependency
+
+![Six hops a dependency crosses from a public registry into production, each with its own attack and the control that answers it: registry (typosquatting → one trusted index), resolver (dependency confusion → scope the namespace), fetch (compromised maintainer → lockfile with hashes), build (stale pins → SCA in CI), image (no inventory → SBOM), deploy (unsigned image → Sigstore keyless gate). "We scanned our code" covers none of this — SAST reads the code you wrote, all six hops are code you didn't.](img/supply-chain.svg)
+
+<!-- The synthesis slide — everything from the last five slides (SAST/SCA, SBOM, Cosign, the defenses checklist) is one column each in this diagram, chained in the order a real dependency actually travels. Walk it left to right ONE time, don't re-teach each hop — the point is showing they were never separate tools, they're six links in the same chain. Land on the closing line before moving to the game. ~5 min. -->
 
 ---
 
@@ -135,12 +167,12 @@ cosign verify myapp:lab                                 # verify
 
 ## Deliverable
 
-> 📋 **Worksheet 12** — `labs/week12-supply-chain/worksheet.md` (Part 3) · **kickoff:** `bash sca_scan.sh` (trivy fs + pip-audit)
+> 📋 **Worksheet 12** — `labs/week12-supply-chain/worksheet.md` (Parts 1–4) · **kickoff:** `bash sca_scan.sh` (trivy fs + pip-audit)
 
-- SCA report + remediation plan
-- SBOM file + sign/verify transcript
-- One-paragraph SLSA self-assessment (which level + why)
-- **+ Audit the AI / EiPE / Prompt Problem** (see worksheet)
+- SCA report + remediation plan (Part 3)
+- SBOM file + sign/verify transcript (Part 3)
+- One-paragraph SLSA self-assessment + XZ Utils case analysis (Part 4)
+- **+ Audit the AI / EiPE / Prompt Problem** (required, after Part 4 — see worksheet)
 
 <!-- The SLSA self-assessment is the thinking part — they place their own build on the ladder and justify it. AI-resilient tasks count. -->
 

@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 350" role="img"
+     aria-label="Six STRIDE categories, each mapped to the property it violates. Spoofing violates authentication. Tampering violates integrity. Repudiation violates non-repudiation. Information disclosure violates confidentiality. Denial of service violates availability. Elevation of privilege violates authorization.">
+  <title>STRIDE: six ways trust can break</title>
+  <style>
+    .badge       { fill: #017BC4 }
+    .badgeletter { font: 700 20px system-ui, sans-serif; fill: #ffffff; text-anchor: middle }
+    .stl         { font: 600 14px system-ui, sans-serif; fill: #16191d }
+    .spl         { font: 11px system-ui, sans-serif; fill: #6b7280 }
+    .cap         { font: 11px system-ui, sans-serif; fill: #6b7280; text-anchor: middle }
+    @media (prefers-color-scheme: dark) {
+      .stl { fill: #e6e8ea }
+      .spl, .cap { fill: #9aa3ad }
+      .badge { fill: #4aa3dd }
+      .badgeletter { fill: #0b0d10 }
+    }
+  </style>
+  <circle class="badge" cx="46"  cy="60"  r="26"/>
+  <text class="badgeletter" x="46" y="67">S</text>
+  <text class="stl" x="86" y="55">Spoofing</text>
+  <text class="spl" x="86" y="73">&#8594; Authentication</text>
+
+  <circle class="badge" cx="406" cy="60"  r="26"/>
+  <text class="badgeletter" x="406" y="67">T</text>
+  <text class="stl" x="446" y="55">Tampering</text>
+  <text class="spl" x="446" y="73">&#8594; Integrity</text>
+
+  <circle class="badge" cx="46"  cy="170" r="26"/>
+  <text class="badgeletter" x="46" y="177">R</text>
+  <text class="stl" x="86" y="165">Repudiation</text>
+  <text class="spl" x="86" y="183">&#8594; Non-repudiation</text>
+
+  <circle class="badge" cx="406" cy="170" r="26"/>
+  <text class="badgeletter" x="406" y="177">I</text>
+  <text class="stl" x="446" y="165">Information disclosure</text>
+  <text class="spl" x="446" y="183">&#8594; Confidentiality</text>
+
+  <circle class="badge" cx="46"  cy="280" r="26"/>
+  <text class="badgeletter" x="46" y="287">D</text>
+  <text class="stl" x="86" y="275">Denial of service</text>
+  <text class="spl" x="86" y="293">&#8594; Availability</text>
+
+  <circle class="badge" cx="406" cy="280" r="26"/>
+  <text class="badgeletter" x="406" y="287">E</text>
+  <text class="stl" x="446" y="275">Elevation of privilege</text>
+  <text class="spl" x="446" y="293">&#8594; Authorization</text>
+
+  <text class="cap" x="360" y="332">Each letter names one way trust can break — the next section walks all six through one real endpoint.</text>
+</svg>

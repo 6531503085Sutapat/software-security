@@ -1,0 +1,33 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>Which fields actually get stored?</h1>
+<p class="lead">Edit the JSON body <code>POST /api/users</code> would receive.
+Toggle between this week's two real <code>create_user()</code> implementations
+and watch which fields survive into the stored user.</p>
+<div class="wrap">
+  <div class="card">
+    <label for="body">Request body (JSON)</label>
+    <textarea id="body" class="mass-assign-body" rows="6" spellcheck="false"></textarea>
+    <p class="mass-assign-err hint" id="err" hidden></p>
+    <div class="preset" id="presets"></div>
+    <fieldset class="mass-assign-mode">
+      <legend>Server implementation</legend>
+      <label class="mass-assign-radio">
+        <input type="radio" name="mode" id="mode-vuln" checked> <code>vulnerable_api.py</code> — <code>user.update(body)</code>
+      </label>
+      <label class="mass-assign-radio">
+        <input type="radio" name="mode" id="mode-fixed"> <code>solution_api.py</code> — allow-list
+      </label>
+    </fieldset>
+  </div>
+  <div class="card">
+    <h3>Stored user object</h3>
+    <div class="mass-assign-result" id="result"></div>
+    <p class="verdict" id="verdict"></p>
+    <p id="explain"></p>
+  </div>
+</div>
+<script src="/static/sim/mass-assign.js?v={{ asset_v }}"></script>
+</body></html>

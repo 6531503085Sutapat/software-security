@@ -26,16 +26,9 @@ Pre-Midterm · Weeks 1–6
 
 ## Map of the half
 
-| Wk | Topic | One-line |
-|---|---|---|
-| 1 | Threat modeling | think like an attacker; STRIDE |
-| 2 | SDLC & tooling | SAST/DAST/SCA/fuzzing; shift left |
-| 3 | Crypto | KDFs, AEAD; avoid ECB/MD5 |
-| 4 | Injection | data ≠ code; parameterize |
-| 5 | XSS | encode per context; CSP |
-| 6 | Auth & access | authorize every request |
+![A revision map of weeks 1 to 6: untrusted input crosses a trust boundary toward a sink, and every week places its control exactly at that crossing. Week 1 threat modeling: draw the DFD, run STRIDE at each crossing. Week 2 SDLC/tooling: Semgrep, Gitleaks, DAST and fuzzing catch what rides through commit/build/run unseen. Week 3 crypto: argon2id + AES-GCM with the key from the environment, not MD5/ECB with a fixed key. Week 4 injection: a parameterized query, no shell, an allow-list on the host. Week 5 XSS/CSRF: contextual encoding, a strict CSP, SameSite plus a real CSRF token. Week 6 auth: deny by default, a server-side owner check, and verifying the JWT's algorithm and signature.](img/revision-map.svg)
 
-<!-- Fast recap — cold-call one student per row to give the one-liner from memory. Don't lecture; it's retrieval practice. ~10 min. -->
+<!-- Fast recap — cold-call one student per row to give the one-liner from memory. Don't lecture; it's retrieval practice. Same unifying shape as Week 1's own trust-boundary concept: input crosses, a control sits at the crossing — the map makes that pattern visible across all 6 weeks at once, not just stated per week. ~10 min. -->
 
 ---
 
@@ -52,16 +45,16 @@ Categories × point values:
 
 ## 🧪 Mock CTF
 
-Same format as Week 9:
+Same format as Week 9, **6 challenges**, ~150 min:
 
 - Injection (SQLi / command)
-- XSS (reflected/stored/DOM)
+- XSS (**stored** only — reflected/DOM aren't in this mock)
 - Auth / IDOR / JWT
-- Crypto (crack a hash / ECB oracle)
+- Crypto (crack a hash — the ECB oracle is a Week 3 *lab* task, not part of this mock)
 
 > No surprises on exam day.
 
-<!-- Run the EXACT Week 9 format/timing (see mock-ctf.md) so the real CTF feels familiar. Circulate; offer hints that cost points. The point is calibration: they should leave knowing what they can/can't do. ~90 min. -->
+<!-- Run the EXACT Week 9 format (see mock-ctf.md) so the real CTF feels familiar — but the TIMING is 150 min per AGENDA.md and mock-ctf.md itself, not 90; get this wrong on stage and the room's schedule breaks by an hour. Circulate; offer hints that cost points. The point is calibration: they should leave knowing what they can/can't do. ~150 min. -->
 
 ---
 

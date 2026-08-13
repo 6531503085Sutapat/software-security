@@ -1,0 +1,34 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>Three layers, watched one at a time</h1>
+<p class="lead">Type a message to HelpBot and pick which of this week's two
+real chatbots handles it. Every step below is that file's actual logic,
+run here — not a description of it.</p>
+<div class="wrap">
+  <div class="card">
+    <label for="msg">Message to HelpBot</label>
+    <input type="text" id="msg" autocomplete="off" spellcheck="false">
+    <div class="preset" id="presets"></div>
+    <fieldset class="mass-assign-mode">
+      <legend>Chatbot</legend>
+      <label class="mass-assign-radio">
+        <input type="radio" name="mode" id="mode-vuln" checked> <code>vulnerable_chatbot.py</code>
+      </label>
+      <label class="mass-assign-radio">
+        <input type="radio" name="mode" id="mode-guard"> <code>guarded_chatbot.py</code>
+      </label>
+    </fieldset>
+  </div>
+  <div class="card">
+    <h3>What ran</h3>
+    <div id="steps"></div>
+    <p class="verdict" id="verdict"></p>
+    <p id="explain"></p>
+    <h3>Rendered on the page</h3>
+    <div class="q" id="rendered"></div>
+  </div>
+</div>
+<script src="/static/sim/prompt-guard.js?v={{ asset_v }}"></script>
+</body></html>

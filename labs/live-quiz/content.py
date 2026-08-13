@@ -404,6 +404,16 @@ def kind_label(kind: str) -> str:
 # prose, and because the body is matched whole against this dict.
 SIMS = {
     "trust-boundary": "Trust boundaries & threat chaining (Week 1)",
+    "cia-triad": "Classify the incident: which CIA property took the hit? (Week 1)",
+    "path-traversal": "The /upload endpoint: same input, opposite outcomes (Week 1)",
+    "stride-drill": "Name the threat: STRIDE applied to one endpoint (Week 1)",
+    "fuzz-verdict": "What actually crashes harness.c, computed live (Week 2)",
+    "triage-drill": "Which bug is this really? Raw findings, deduplicated (Week 2)",
+    "resolver-confusion": "Which package actually installs? Computed live (Week 12)",
+    "mass-assign": "Which fields actually get stored? (Week 10)",
+    "iam-scope": "Two findings, one statement: Action vs Resource wildcards (Week 13)",
+    "prompt-guard": "Three layers, watched one at a time (Week 14)",
+    "gate-check": "Does this PR pass the gate? (Week 15)",
     "sqli-parse": "How concatenation changes the SQL parse tree (Week 4)",
     "aes-modes": "Why ECB leaks a picture, and what CBC's XOR costs (Week 3)",
     "ecdsa-malleability": "One signature, two spellings: (r, s) and (r, n − s) (Cryptography, Week 11)",
@@ -421,6 +431,16 @@ SIMS = {
 # the route both read.
 SIM_SOURCE = {
     "trust-boundary": ("software-security", "week01-threat-modeling"),
+    "cia-triad": ("software-security", "week01-threat-modeling"),
+    "path-traversal": ("software-security", "week01-threat-modeling"),
+    "stride-drill": ("software-security", "week01-threat-modeling"),
+    "fuzz-verdict": ("software-security", "week02-sdlc-tooling"),
+    "triage-drill": ("software-security", "week02-sdlc-tooling"),
+    "resolver-confusion": ("software-security", "week12-supply-chain"),
+    "mass-assign": ("software-security", "week10-api-security"),
+    "iam-scope": ("software-security", "week13-cloud-container"),
+    "prompt-guard": ("software-security", "week14-ai-llm-security"),
+    "gate-check": ("software-security", "week15-devsecops-pipeline"),
     "sqli-parse": ("software-security", "week04-injection"),
     "aes-modes": ("software-security", "week03-cryptography"),
     # Course slugs here are the deployed URL slugs ($COURSES in production —
@@ -487,6 +507,8 @@ def list_weeks(course_slug: str | None = None) -> list[dict]:
         primary = primary or (available[0] if available else None)
         primary_file = (PUBLIC_FILES.get(primary) if primary != "slides"
                         else None)
+        # Independent of `primary` on purpose — see BADGE_ORDER's docstring.
+        assessment = next((k for k in BADGE_ORDER if k in available), None)
         title = None
         if primary_file:
             title = _title_of(os.path.join(d, primary_file))
@@ -506,8 +528,8 @@ def list_weeks(course_slug: str | None = None) -> list[dict]:
             "number": int(num[:2]),
             "number_label": _num_label(num),
             "unit_label": c.get("unit_label", "Week"),
-            "badge": PRIMARY_BADGE.get(primary, ""),
-            "graded": PRIMARY_BADGE.get(primary, "") in GRADED_BADGES,
+            "badge": PRIMARY_BADGE.get(assessment, ""),
+            "graded": PRIMARY_BADGE.get(assessment, "") in GRADED_BADGES,
             "title": title,
             "short_title": short_title(title),
             "primary": primary,
@@ -590,7 +612,30 @@ PRIMARY_BADGE = {
 # REVIEW (weeks 7, 17) genuinely is not graded — those are mock CTFs for practice.
 GRADED_BADGES = {"LAB", "EXAM", "CTF"}
 
-PRIMARY_ORDER = ("worksheet", "mock-ctf", "exam", "ctf", "scrimmage", "readme")
+#     GRADED assessment kinds always win when present: these weeks never carry
+#     a worksheet.md alongside them (PUBLIC_FILES' comment — "non-lab weeks,
+#     this is their primary material"), so putting "slides" after them changes
+#     nothing for exam/review/practical/capstone weeks.
+#
+# "slides" sits ahead of "worksheet" so an ordinary lab week opens on the
+# CONCEPT explanation, not the hands-on task list — a bare "Week N" link was
+# landing students straight on Task 3's docker commands with no lecture
+# content in sight. The worksheet is one click away either way (learn_doc.html's
+# crumb links every OTHER available kind) — see BADGE_ORDER below for why this
+# alone does not touch grading.
+PRIMARY_ORDER = ("mock-ctf", "exam", "ctf", "scrimmage", "slides", "worksheet", "readme")
+
+# What a week's badge/graded status is ABOUT — deliberately not PRIMARY_ORDER.
+# list_weeks() used to key PRIMARY_BADGE off `primary` directly, on the
+# assumption that "the document that opens" and "the thing this week grades
+# you on" were the same fact. Adding "slides" to PRIMARY_ORDER broke that
+# assumption silently: every ordinary week's primary became "slides", "slides"
+# has no entry in PRIMARY_BADGE, and the LAB/GRADED badge vanished from the
+# course index for every week 1-6/10-15 with no error anywhere — caught only by
+# test_worksheets_are_marked_graded's `assert labs`. This is the old
+# PRIMARY_ORDER, kept as its own constant so the two questions ("what opens"
+# vs "what is this week graded on") can change independently from here on.
+BADGE_ORDER = ("worksheet", "mock-ctf", "exam", "ctf", "scrimmage", "readme")
 
 
 def current_unit(course_slug: str | None = None) -> str | None:
@@ -1358,7 +1403,21 @@ def render_document(slug: str, kind: str, course_slug: str | None = None) -> dic
         # A deck is a Marp source, not prose: drop the frontmatter and the
         # lecturer's own speaker notes before anything else looks at it.
         md = strip_slide_chrome(md)
-        src_dir = os.path.dirname(_p) if _p else os.path.realpath(c["root"])
+        # The WEEK'S OWN unit dir (where its img/ actually lives), not the
+        # physically separate slides/ dir the .md source lives in. Using
+        # os.path.dirname(_p) here (slides/) meant every relative image or
+        # link in a deck silently failed: slides/ isn't even inside
+        # c["root"] (labs/), so _resolve_repo_image/_resolve_repo_link's
+        # root-containment check rejected it before the img/-shape check
+        # ever ran, and the raw `![alt](src)` markdown rendered verbatim.
+        # No prior deck had ever referenced an image, so this had never
+        # fired — caught by week01's first one.
+        #
+        # `slug` itself, not `_m.group(1)` (unit_re's capture is only the
+        # digits, "01" — the join target this fix needs is the whole
+        # directory name, "week01-threat-modeling", which `slug` already is).
+        src_dir = (os.path.realpath(os.path.join(c["root"], slug))
+                  if _m else os.path.realpath(c["root"]))
     else:
         src = os.path.join(c["root"], slug, PUBLIC_FILES[kind])
         title = _title_of(src) or slug

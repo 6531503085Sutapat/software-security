@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 300" role="img"
+     aria-label="A shift from the old model to Secure by Design. Old model: ship fast, patch later — bugs found after ship, fixed one instance at a time. Secure by Design: design out the bug class — safe by default, it's the vendor's job, designed out before code exists. Design flaws aren't coding slips, mapped to OWASP A06: Insecure Design. Driven by CISA policy and an industry push toward memory-safe languages, covered more in Week 11.">
+  <title>Secure by Design: the shift from patch-later to design-out</title>
+  <style>
+    .z    { fill: none; stroke: #b9b4aa; stroke-dasharray: 6 4 }
+    .zl   { font: 600 11px system-ui, sans-serif; fill: #6b7280;
+            letter-spacing: .06em; text-transform: uppercase }
+    .b    { fill: #fffdf9; stroke: #017BC4; stroke-width: 1.5; rx: 6 }
+    .bl   { font: 600 13px system-ui, sans-serif; fill: #16191d; text-anchor: middle }
+    .e    { stroke: #6b7280; stroke-width: 1.6; marker-end: url(#a) }
+    .el   { font: 11px system-ui, sans-serif; fill: #6b7280; text-anchor: middle }
+    .x    { font: 700 11px system-ui, sans-serif; fill: #E35205; text-anchor: middle }
+    .arrow{ fill: #6b7280 }
+    @media (prefers-color-scheme: dark) {
+      .z { stroke: #3a4149 } .zl, .e, .el { stroke: #9aa3ad }
+      .zl, .el { fill: #9aa3ad } .e { stroke: #9aa3ad }
+      .b { fill: #151a20; stroke: #4aa3dd } .bl { fill: #e6e8ea }
+      .arrow { fill: #9aa3ad } .x { fill: #ff7a3d }
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7"
+            markerHeight="7" orient="auto"><path class="arrow" d="M0 0 L8 4 L0 8 z"/></marker>
+  </defs>
+  <rect class="z" x="20"  y="60" width="290" height="170" rx="8"/>
+  <rect class="z" x="410" y="60" width="290" height="170" rx="8"/>
+  <text class="zl" x="28"  y="52">Old model</text>
+  <text class="zl" x="418" y="52">Secure by design</text>
+  <rect class="b" x="50"  y="100" width="230" height="56"/>
+  <text class="bl" x="165" y="133">Ship fast, patch later</text>
+  <rect class="b" x="440" y="100" width="230" height="56"/>
+  <text class="bl" x="555" y="133">Design out the bug class</text>
+  <path class="e" d="M310 128 L410 128"/>
+  <text class="el" x="165" y="178">bugs found after ship</text>
+  <text class="el" x="165" y="196">fixed one instance at a time</text>
+  <text class="el" x="555" y="178">safe by default — vendor's job</text>
+  <text class="el" x="555" y="196">designed out before code exists</text>
+  <text class="x" x="360" y="250">Design flaws aren't coding slips &#8594; A06: Insecure Design</text>
+  <text class="el" x="360" y="270">CISA push · memory-safe languages push the industry this way (more in Wk 11).</text>
+  <text class="el" x="360" y="286">Today's lab: argue whether your fix closes the class or just this instance.</text>
+</svg>

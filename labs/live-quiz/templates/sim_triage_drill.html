@@ -1,0 +1,23 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>Which bug is this really?</h1>
+<p class="lead">Seven raw findings from an actual <code>bash scan.sh</code> run
+against <code>vulnerable-repo/</code>. All are genuine — the real triage skill
+here is mapping overlapping rule hits back to the ONE bug underneath, the
+exercise Task 3's triage table asks you to do yourself.</p>
+<div class="card">
+  <div class="cia-triad-head">
+    <span class="cia-triad-progress">Finding <b id="qn">1</b> of <span id="total">7</span></span>
+    <span class="cia-triad-score">Score: <b id="score">0</b>/<span id="total2">7</span></span>
+  </div>
+  <p class="triage-drill-meta"><span id="tool"></span> · <code id="rule"></code> · <code id="loc"></code></p>
+  <p class="q" id="snippet"></p>
+  <div class="triage-drill-answers" id="answers"></div>
+  <p class="cia-triad-explain" id="explain"></p>
+  <button class="cia-triad-next" id="next" type="button">Next finding →</button>
+  <p class="cia-triad-done" id="done">✓ All 7 raw findings triaged — down to 5 real bugs.</p>
+</div>
+<script src="/static/sim/triage-drill.js?v={{ asset_v }}"></script>
+</body></html>

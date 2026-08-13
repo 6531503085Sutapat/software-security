@@ -182,7 +182,7 @@ Cumulative, emphasis on Weeks 10–16. Closed book unless stated otherwise. Blue
 Team-based. From `labs/week19-final-ctf-capstone/ctf.md` and README, and AGENDA.md:
 
 - **Capstone CTF tournament** (0:00–2:30, 150 min): **150 pts across 12 challenges**, team-based, leaderboard, sandbox targets only, targets started by the instructor. For each challenge the submission table wants three things — the **flag** (or noted proof), the **payload or command**, and a **one-line mitigation**. Difficulty rises with points; first-blood bonus is at the instructor's discretion.
-- **Graded final project demos** (2:30–4:00, 90 min): each team presents its secured build end-to-end — threat model → vulnerabilities → remediation → SBOM + signed artifact → CI pipeline — as a 10-minute demo + 5-minute Q&A, scored by rubric (`project/README.md`, `project/REPORT-TEMPLATE.md`).
+- **Graded final project demos** (2:30–4:00, 90 min): each team presents its secured build end-to-end — threat model → vulnerabilities → remediation → SBOM + signed artifact → CI pipeline — as a pre-recorded video walkthrough submitted before the session (graded asynchronously by rubric) plus a 3-minute live Q&A, not a re-demo (`project/README.md`, `project/REPORT-TEMPLATE.md`, `AGENDA.md` §*Week 19*).
 
 Flags in Week 19 are submitted via the CTF Form / Classroom (SUBMISSION.md). The final (W18 written + W19 CTF) is worth **25%** of the course mark (course specification §4); the term project is a separate 15%, with each member's mark scaled by peer contribution.
 

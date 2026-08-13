@@ -16,16 +16,13 @@
 - Explain why parameterized queries defeat injection.
 - Apply input validation and output handling correctly.
 
-## ⚔️ Signature game — "SQLi Boss Fight" (DVWA / Juice Shop)
-```bash
-# DVWA
-docker run --rm -it -p 80:80 vulnerables/web-dvwa
-# OR Juice Shop
-docker run --rm -p 3000:3000 bkimminich/juice-shop
-```
-1. Extract data via SQLi (e.g. `' OR 1=1 -- `, UNION-based).
-2. Achieve command injection on a vulnerable endpoint.
-3. **Fix:** rewrite the endpoints with prepared statements / parameterized APIs and allow-list validation; re-test to confirm the payloads now fail.
+## ⚔️ Signature game — "SQLi Boss Fight"
+Four hits against this week's own app — no filters to bypass, the app has none:
+1. **Hit #1 — Auth bypass** via SQLi (e.g. `alice'--`).
+2. **Hit #2 — UNION dump:** steal every username and password.
+3. **Hit #3 — Command injection** on `/ping`.
+4. **Hit #4 — Unrestricted upload** with no type checks.
+5. **Boss defeated:** run `solution_app.py`, prove all four attacks now fail, and cite the exact fix line for each.
 
 ## Run the local target
 ```bash

@@ -14,6 +14,11 @@ h3{font-size:.85rem;margin:1rem 0 .3rem;text-transform:uppercase;
 .wrap{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(240px,1fr);gap:1rem}
 @media (max-width:760px){.wrap{grid-template-columns:1fr}}
 .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:.9rem}
+/* Referenced by sim_trust_boundary.html since that template's first commit but
+   never defined — two stacked .card divs sat flush with zero gap. Found while
+   building path-traversal's own stacked pair, which reuses this class rather
+   than inventing a third name for "space above the second card". */
+.card-gap{margin-top:1rem}
 svg{width:100%;height:auto;display:block}
 .zone{fill:none;stroke:var(--line);stroke-dasharray:6 4}
 .zonelabel{font-size:10px;fill:var(--mut);text-transform:uppercase;letter-spacing:.06em}
@@ -51,6 +56,9 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em}
 label{display:block;margin:.5rem 0 .2rem;font-size:.8rem;color:var(--mut)}
 input[type=text]{width:100%;font:inherit;padding:.4rem .5rem;border:1px solid var(--line);
                  border-radius:6px;background:var(--bg);color:var(--fg)}
+textarea{width:100%;font:inherit;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+         font-size:.85rem;padding:.5rem .6rem;border:1px solid var(--line);border-radius:6px;
+         background:var(--bg);color:var(--fg);resize:vertical}
 .preset{display:flex;flex-wrap:wrap;gap:.35rem;margin:.4rem 0}
 .preset button{font-size:.78rem}
 
@@ -404,3 +412,167 @@ input.jwt-forge-in{font-size:.95rem;padding:.4rem .5rem}
 .xss-context-badge.broken{color:var(--fg);border-style:dashed}
 .xss-context-badge.safe{color:var(--blue)}
 .xss-context-why{margin:.35rem 0 0;font-size:.95rem;line-height:1.5}
+
+/* ── cia-triad (Week 1, software-security): guess-first quiz shell ──
+   Shared with stride-drill below — both are the same "scenario, guess, reveal"
+   shape, so the shell (head/scenario/explain/next/done) is one set of classes.
+   Only the answer-grid itself differs (3 labelled options vs 6 single letters),
+   which is why .cia-triad-answers and .stride-drill-answers are separate. */
+.cia-triad-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.4rem .9rem;
+  margin-bottom:.7rem}
+.cia-triad-progress,.cia-triad-score{font-size:.78rem;color:var(--mut);
+  text-transform:uppercase;letter-spacing:.04em}
+.cia-triad-scenario{font-size:1.05rem;font-weight:600;line-height:1.4;margin:0 0 .8rem;max-width:70ch}
+.cia-triad-answers{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:.5rem;margin-bottom:.6rem}
+.cia-triad-opt{font-size:.92rem;padding:.55rem .7rem}
+.cia-triad-opt.is-correct,.stride-drill-opt.is-correct,.triage-drill-opt.is-correct{
+  border-color:var(--blue);color:var(--blue);background:rgba(1,123,196,.12)}
+.cia-triad-opt.is-wrong,.stride-drill-opt.is-wrong,.triage-drill-opt.is-wrong{
+  border-color:var(--orange);color:var(--orange);background:rgba(227,82,5,.12)}
+.cia-triad-opt.is-dim,.stride-drill-opt.is-dim,.triage-drill-opt.is-dim{opacity:.45}
+.cia-triad-opt:focus-visible,.stride-drill-opt:focus-visible,.triage-drill-opt:focus-visible{
+  outline:3px solid var(--blue);outline-offset:2px}
+.cia-triad-explain{min-height:1.4em;margin:.3rem 0 .8rem;max-width:70ch}
+.cia-triad-next{margin-top:.2rem;font-weight:700}
+.cia-triad-done{display:none;margin:0;font-weight:700}
+.cia-triad-done.is-shown{display:block}
+/* Set on .card once the last question is answered and "next" is clicked, so
+   the spent quiz collapses to just the done message — otherwise the final
+   answered-and-disabled question stays on screen under it, looking unfinished. */
+.quiz-finished .cia-triad-head,
+.quiz-finished .cia-triad-scenario,
+.quiz-finished .cia-triad-answers,
+.quiz-finished .stride-drill-answers,
+.quiz-finished .triage-drill-answers,
+.quiz-finished .triage-drill-meta,
+.quiz-finished .q,
+.quiz-finished .cia-triad-explain,
+.quiz-finished .cia-triad-next{display:none}
+
+/* ── stride-drill (Week 1, software-security): six-letter answer grid ── */
+.stride-drill-answers{display:grid;grid-template-columns:repeat(6,1fr);gap:.5rem;margin-bottom:.6rem}
+@media (max-width:480px){.stride-drill-answers{grid-template-columns:repeat(3,1fr)}}
+.stride-drill-opt{font-size:1.15rem;font-weight:800;padding:.6rem 0;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+/* ── path-traversal (Week 1, software-security): /upload write vs /files read ──
+   Diagram reuses the shared DFD primitives (.box/.edge/.boxlabel/.edgelabel)
+   trust-boundary.js established above — only the boundary line and the two
+   dynamic outcome marks are new, since neither existed as a shared shape. */
+.path-traversal-resolved{margin:.6rem 0 0;font-size:.85rem;color:var(--mut)}
+.path-traversal-resolved code{color:var(--fg);font-weight:700}
+.path-traversal-boundary{stroke:var(--orange);stroke-width:1.4;stroke-dasharray:6 5}
+.path-traversal-boundarylabel{font-size:9px;fill:var(--orange);text-transform:uppercase;
+  letter-spacing:.06em}
+/* Write side: orange only when THIS input actually escaped uploads/. Blue
+   (not orange) when it lands inside — nothing visibly wrong happened, which is
+   deliberate: the write path runs the identical unchecked code either way, and
+   crying "bad" on an ordinary filename would undersell that point rather than
+   sharpen it. The explanation text carries the "unchecked regardless" nuance;
+   the mark only reports this input's actual outcome. */
+.path-traversal-dot.is-ok{fill:var(--blue)}
+.path-traversal-dot.is-bad{fill:var(--orange)}
+.path-traversal-marklabel{font-size:9px;fill:var(--orange)}
+/* Read side is always styled .is-ok: safe_join makes BOTH outcomes (served,
+   blocked) correct behaviour for this endpoint, for any input — the glyph
+   (tick vs cross), not the colour, is what tells them apart. */
+.path-traversal-badge.is-ok{fill:var(--card);stroke:var(--blue);stroke-width:1.5}
+.path-traversal-glyph{fill:none;stroke:var(--blue);stroke-width:1.6;stroke-linecap:round}
+
+/* ── triage-drill (Week 2, software-security): raw finding → real bug ──
+   Answer-grid shares .is-correct/.is-wrong/.is-dim/:focus-visible with
+   cia-triad/stride-drill above (see that block); only the grid geometry and
+   the finding-meta line are new, since 5 phrase-length labels need width
+   single letters don't. */
+.triage-drill-meta{font-size:.78rem;color:var(--mut);margin:0 0 .3rem}
+.triage-drill-meta code{color:var(--fg)}
+.triage-drill-answers{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+  gap:.5rem;margin-bottom:.6rem}
+.triage-drill-opt{font-size:.85rem;padding:.55rem .7rem;text-align:left}
+
+/* ── fuzz-verdict (Week 2, software-security): harness.c, computed live ──
+   Four cells = the four `if` checks in LLVMFuzzerTestOneInput, in source
+   order. is-pass/is-fail/is-unreached mirror path-traversal's "report only
+   what happened" stance — is-oob is new because this sim has a third,
+   distinct outcome (the read itself, not its result, is the bug). */
+.fuzz-verdict-cells{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin:.6rem 0}
+.fuzz-verdict-cell{border:1px solid var(--line);border-radius:6px;padding:.45rem .3rem;
+  text-align:center;background:var(--bg)}
+.fuzz-verdict-lbl{font-size:.68rem;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.fuzz-verdict-val{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.1rem;
+  font-weight:700;margin-top:.15rem}
+.fuzz-verdict-cell.is-pass{border-color:var(--blue)}
+.fuzz-verdict-cell.is-pass .fuzz-verdict-val{color:var(--blue)}
+.fuzz-verdict-cell.is-fail,.fuzz-verdict-cell.is-unreached{opacity:.5}
+.fuzz-verdict-cell.is-oob{border-color:var(--orange);border-width:2px;background:rgba(227,82,5,.10)}
+.fuzz-verdict-cell.is-oob .fuzz-verdict-val{color:var(--orange)}
+
+/* ── resolver-confusion (Week 12, software-security): which index wins ──
+   Fieldset/radio pattern follows iam-evaluation's .iam-evaluation-fs/-opt
+   above; only the two source cards and their is-picked state are new. */
+.resolver-confusion-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.6rem}
+.resolver-confusion-card{border:1px solid var(--line);border-radius:8px;padding:.6rem .7rem;background:var(--bg)}
+.resolver-confusion-card h3{margin-top:0}
+.resolver-confusion-name{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.82rem;
+  margin:0 0 .4rem;color:var(--fg)}
+.resolver-confusion-card.is-picked{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue) inset}
+.resolver-confusion-card input[type=text]{margin:0}
+.resolver-confusion-mode{border:0;padding:0;margin:.8rem 0 0;min-width:0}
+.resolver-confusion-mode legend{padding:0;font-size:.85rem;color:var(--mut);
+  text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.resolver-confusion-radio{display:flex;align-items:center;gap:.4rem;margin:.4rem 0 0;font-size:.9rem}
+.resolver-confusion-radio input{width:1.05rem;height:1.05rem}
+
+/* ── mass-assign (Week 10, software-security): which fields bind ──
+   Mode fieldset/radio reuses resolver-confusion's pattern verbatim (same
+   shape: two named server implementations, pick one). Only the JSON
+   textarea and the resulting key/value row list are new. */
+.mass-assign-body{min-height:7rem}
+.mass-assign-err{color:var(--orange);margin:.4rem 0 0}
+.mass-assign-mode{border:0;padding:0;margin:.8rem 0 0;min-width:0}
+.mass-assign-mode legend{padding:0;font-size:.85rem;color:var(--mut);
+  text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.mass-assign-radio{display:flex;align-items:center;gap:.4rem;margin:.4rem 0 0;font-size:.88rem}
+.mass-assign-radio input{width:1.05rem;height:1.05rem;flex:0 0 auto}
+.mass-assign-result{display:flex;flex-direction:column;gap:.3rem;margin-bottom:.5rem}
+.mass-assign-row{display:flex;justify-content:space-between;gap:.6rem;padding:.3rem .5rem;
+  border-radius:5px;border:1px solid var(--line);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:.8rem;background:var(--bg)}
+.mass-assign-key{color:var(--mut)}
+.mass-assign-row.is-fromclient{border-color:var(--line)}
+.mass-assign-row.is-serverset{border-color:var(--blue);color:var(--blue)}
+.mass-assign-row.is-serverset .mass-assign-key{color:var(--blue)}
+.mass-assign-row.is-smuggled{border-color:var(--orange)}
+.mass-assign-row.is-smuggled .mass-assign-key,.mass-assign-row.is-smuggled .mass-assign-val{color:var(--orange);font-weight:700}
+
+/* ── iam-scope (Week 13, software-security): Action/Resource wildcards ──
+   Reuses mass-assign's textarea/error classes verbatim (same JSON-editing
+   shape); only the per-field finding rows are new. */
+.iam-scope-finding{display:flex;align-items:center;gap:.5rem;padding:.4rem .55rem;
+  border-radius:5px;border:1px solid var(--line);margin-bottom:.35rem;font-size:.88rem}
+.iam-scope-finding.is-bad{border-color:var(--orange);background:rgba(227,82,5,.08)}
+.iam-scope-finding.is-ok{border-color:var(--blue)}
+.iam-scope-badge{font-weight:700;flex:0 0 auto}
+.iam-scope-finding.is-bad .iam-scope-badge{color:var(--orange)}
+.iam-scope-finding.is-ok .iam-scope-badge{color:var(--blue)}
+
+/* ── prompt-guard (Week 14, software-security): guardrail pipeline steps ──
+   Mode fieldset reuses mass-assign's radio pattern; the step list is new
+   because this is the first sim with a MULTI-STAGE pipeline to narrate
+   (guardrail -> model -> redact -> escape), not a single verdict. */
+.prompt-guard-step{display:flex;flex-direction:column;gap:.1rem;padding:.4rem .5rem;
+  border-radius:5px;border:1px solid var(--line);margin-bottom:.35rem;background:var(--bg)}
+.prompt-guard-steplbl{font-size:.7rem;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.prompt-guard-stepval{font-size:.85rem;word-break:break-word}
+.prompt-guard-step.is-blocked{border-color:var(--blue)}
+.prompt-guard-step.is-bad{border-color:var(--orange);background:rgba(227,82,5,.08)}
+.prompt-guard-step.is-fixed{border-color:var(--blue)}
+
+/* ── gate-check (Week 15, software-security): findings vs the CI gate ── */
+.gate-check-row{display:flex;align-items:flex-start;gap:.55rem;padding:.45rem .5rem;
+  border:1px solid var(--line);border-radius:6px;margin-bottom:.4rem;cursor:pointer}
+.gate-check-row input{width:1.1rem;height:1.1rem;margin-top:.15rem;flex:0 0 auto}
+.gate-check-text{font-size:.88rem}
+.gate-check-meta{color:var(--mut);font-size:.76rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}

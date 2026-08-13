@@ -1,0 +1,32 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>The <code>/upload</code> endpoint, live</h1>
+<p class="lead">Type a filename — or pick a preset — and watch what actually
+happens on both sides of this endpoint. The path is computed for real, not
+looked up from a table.</p>
+<div class="wrap">
+  <div class="card">
+    <svg id="dfd" viewBox="0 0 460 230" role="img"
+         aria-label="Data flow diagram: browser crosses the Internet-to-app trust boundary to a Flask app, which writes to and reads from an uploads folder"></svg>
+    <label for="fn">Filename sent to <code>POST /upload</code></label>
+    <input type="text" id="fn" value="profile.jpg" autocomplete="off" spellcheck="false">
+    <div class="preset" id="presets"></div>
+    <p class="path-traversal-resolved">resolves on disk to <code id="resolved"></code></p>
+  </div>
+  <div>
+    <div class="card">
+      <h3>Write — <code>POST /upload</code></h3>
+      <p class="verdict" id="wverdict"></p>
+      <p id="wexplain"></p>
+    </div>
+    <div class="card card-gap">
+      <h3>Read — <code>GET /files/&lt;name&gt;</code></h3>
+      <p class="verdict" id="rverdict"></p>
+      <p id="rexplain"></p>
+    </div>
+  </div>
+</div>
+<script src="/static/sim/path-traversal.js?v={{ asset_v }}"></script>
+</body></html>
