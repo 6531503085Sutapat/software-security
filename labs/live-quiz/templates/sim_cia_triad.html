@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>Classify the incident</h1>
+<p class="lead">Confidentiality, Integrity, or Availability — which one took the
+<b>primary</b> hit? Guess before the explanation reveals; most real incidents
+brush more than one property, so the reasoning is the point, not the letter.</p>
+<div class="card">
+  <div class="cia-triad-head">
+    <span class="cia-triad-progress">Incident <b id="qn">1</b> of <span id="total">6</span></span>
+    <span class="cia-triad-score">Score: <b id="score">0</b>/<span id="total2">6</span></span>
+  </div>
+  <p class="cia-triad-scenario" id="scenario"></p>
+  <div class="cia-triad-answers" id="answers"></div>
+  <p class="cia-triad-explain" id="explain"></p>
+  <button class="cia-triad-next" id="next" type="button">Next incident →</button>
+  <p class="cia-triad-done" id="done">✓ All six classified — that's the CIA triad, done for good.</p>
+</div>
+<script src="/static/sim/cia-triad.js?v={{ asset_v }}"></script>
+</body></html>

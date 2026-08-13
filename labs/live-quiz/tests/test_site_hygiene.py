@@ -89,11 +89,19 @@ def test_repo_relative_links_are_rewritten_not_merely_dropped():
     text, so on its own it would still pass if resolution stopped working. This
     asserts the useful half: the link a student needs is a LINK, and it goes
     somewhere that answers 200.
+
+    Renders the worksheet specifically, not `w["primary"]` — content.PRIMARY_ORDER
+    now prefers slides for an ordinary week, so `primary` is no longer where
+    SUBMISSION.md gets linked from (that's still the worksheet, per
+    test_course_root_docs_resolve_and_serve's own docstring). Weeks without a
+    worksheet (exam/review/practical/capstone) fall back to `primary`, same as
+    before, so this still exercises every week's default reading.
     """
     slug = _course()
     linked = set()
     for w in C.list_weeks(slug):
-        doc = C.render_document(w["slug"], w["primary"], slug)
+        kind = "worksheet" if "worksheet" in w["available"] else w["primary"]
+        doc = C.render_document(w["slug"], kind, slug)
         linked.update(re.findall(r'href="(/learn/[^"]*/doc/[^"]*)"', doc["html"]))
     assert f"/learn/{slug}/doc/submission" in linked, (
         "no worksheet linked SUBMISSION.md as a resolved URL — either the "
