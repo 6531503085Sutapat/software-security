@@ -34,6 +34,14 @@ Software Security · Nutthakorn Chalaemwongwan
 
 ---
 
+## The whole term, one lookup table
+
+![The OWASP Top 10 (2025), each row paired with the week that taught it, the lab file that demonstrated it, and a representative CWE — A01 Broken Access Control (weeks 6, 10, deep coverage), A02 Security Misconfiguration (weeks 13, 2), A03 Software Supply Chain Failures (weeks 12, 15, deep coverage), A04 Cryptographic Failures (week 3), A05 Injection (weeks 4, 5, 2, deep coverage), A06 Insecure Design (week 1), A07 Authentication Failures (week 6), A08 Integrity Failures (week 12), A09 Logging Failures (week 15), A10 Mishandling Exceptional Conditions (week 15) — plus three categories beyond the web Top 10 still graded in the capstone CTF: API1 BOLA (week 10), memory-safety exploitation (week 11), and prompt injection (week 14).](img/owasp-map.svg)
+
+<!-- The self-assessment tool for this session: which categories does YOUR capstone actually demonstrate, and which week's lab is the closest precedent to borrow from? The three "deep coverage" rows (A01/A03/A05) had the most lab hours — that's where a team's evidence will be strongest, and a useful nudge for teams still choosing what to build around. ~4 min. -->
+
+---
+
 ## Demo format (today, ungraded)
 
 - 10-min demo + 5-min Q&A
