@@ -504,3 +504,19 @@ input.jwt-forge-in{font-size:.95rem;padding:.4rem .5rem}
 .fuzz-verdict-cell.is-fail,.fuzz-verdict-cell.is-unreached{opacity:.5}
 .fuzz-verdict-cell.is-oob{border-color:var(--orange);border-width:2px;background:rgba(227,82,5,.10)}
 .fuzz-verdict-cell.is-oob .fuzz-verdict-val{color:var(--orange)}
+
+/* ── resolver-confusion (Week 12, software-security): which index wins ──
+   Fieldset/radio pattern follows iam-evaluation's .iam-evaluation-fs/-opt
+   above; only the two source cards and their is-picked state are new. */
+.resolver-confusion-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.6rem}
+.resolver-confusion-card{border:1px solid var(--line);border-radius:8px;padding:.6rem .7rem;background:var(--bg)}
+.resolver-confusion-card h3{margin-top:0}
+.resolver-confusion-name{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.82rem;
+  margin:0 0 .4rem;color:var(--fg)}
+.resolver-confusion-card.is-picked{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue) inset}
+.resolver-confusion-card input[type=text]{margin:0}
+.resolver-confusion-mode{border:0;padding:0;margin:.8rem 0 0;min-width:0}
+.resolver-confusion-mode legend{padding:0;font-size:.85rem;color:var(--mut);
+  text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.resolver-confusion-radio{display:flex;align-items:center;gap:.4rem;margin:.4rem 0 0;font-size:.9rem}
+.resolver-confusion-radio input{width:1.05rem;height:1.05rem}
