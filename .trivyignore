@@ -1,0 +1,10 @@
+# image-size@1.2.1 (transitive dep of pptxgenjs, slides/pptx/) — DoS via an
+# infinite loop in the ICNS/JXL/HEIF parsers. No fixed image-size release
+# exists yet (both advisories cover every version up to and including the
+# latest, 2.0.2). Accepted: this tool runs only at build time, regenerating
+# our own decks from locally-authored SVG/PNG — it never parses ICNS, JXL, or
+# HEIF, and never touches attacker-controlled or networked input.
+# https://github.com/advisories/GHSA-w3rx-r6r6-pgpr
+# https://github.com/advisories/GHSA-5p2g-fcmc-qvqq
+CVE-2025-71329
+CVE-2025-71330
