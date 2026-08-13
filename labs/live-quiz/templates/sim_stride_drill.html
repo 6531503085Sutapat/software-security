@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>Name the threat</h1>
+<p class="lead">Six findings on the same <code>/upload</code> endpoint from the
+worked example. Guess the STRIDE letter before it's revealed — that is the
+whole exercise Task 2 of the worksheet asks you to repeat on your own DFD.</p>
+<div class="card">
+  <div class="cia-triad-head">
+    <span class="cia-triad-progress">Finding <b id="qn">1</b> of <span id="total">6</span> — on <code>/upload</code></span>
+    <span class="cia-triad-score">Score: <b id="score">0</b>/<span id="total2">6</span></span>
+  </div>
+  <p class="cia-triad-scenario" id="scenario"></p>
+  <div class="stride-drill-answers" id="answers"></div>
+  <p class="cia-triad-explain" id="explain"></p>
+  <button class="cia-triad-next" id="next" type="button">Next finding →</button>
+  <p class="cia-triad-done" id="done">✓ Full STRIDE pass done — 5–6 threats, from ONE endpoint.</p>
+</div>
+<script src="/static/sim/stride-drill.js?v={{ asset_v }}"></script>
+</body></html>

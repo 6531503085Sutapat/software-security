@@ -14,6 +14,11 @@ h3{font-size:.85rem;margin:1rem 0 .3rem;text-transform:uppercase;
 .wrap{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(240px,1fr);gap:1rem}
 @media (max-width:760px){.wrap{grid-template-columns:1fr}}
 .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:.9rem}
+/* Referenced by sim_trust_boundary.html since that template's first commit but
+   never defined — two stacked .card divs sat flush with zero gap. Found while
+   building path-traversal's own stacked pair, which reuses this class rather
+   than inventing a third name for "space above the second card". */
+.card-gap{margin-top:1rem}
 svg{width:100%;height:auto;display:block}
 .zone{fill:none;stroke:var(--line);stroke-dasharray:6 4}
 .zonelabel{font-size:10px;fill:var(--mut);text-transform:uppercase;letter-spacing:.06em}
@@ -404,3 +409,67 @@ input.jwt-forge-in{font-size:.95rem;padding:.4rem .5rem}
 .xss-context-badge.broken{color:var(--fg);border-style:dashed}
 .xss-context-badge.safe{color:var(--blue)}
 .xss-context-why{margin:.35rem 0 0;font-size:.95rem;line-height:1.5}
+
+/* ── cia-triad (Week 1, software-security): guess-first quiz shell ──
+   Shared with stride-drill below — both are the same "scenario, guess, reveal"
+   shape, so the shell (head/scenario/explain/next/done) is one set of classes.
+   Only the answer-grid itself differs (3 labelled options vs 6 single letters),
+   which is why .cia-triad-answers and .stride-drill-answers are separate. */
+.cia-triad-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.4rem .9rem;
+  margin-bottom:.7rem}
+.cia-triad-progress,.cia-triad-score{font-size:.78rem;color:var(--mut);
+  text-transform:uppercase;letter-spacing:.04em}
+.cia-triad-scenario{font-size:1.05rem;font-weight:600;line-height:1.4;margin:0 0 .8rem;max-width:70ch}
+.cia-triad-answers{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:.5rem;margin-bottom:.6rem}
+.cia-triad-opt{font-size:.92rem;padding:.55rem .7rem}
+.cia-triad-opt.is-correct,.stride-drill-opt.is-correct{
+  border-color:var(--blue);color:var(--blue);background:rgba(1,123,196,.12)}
+.cia-triad-opt.is-wrong,.stride-drill-opt.is-wrong{
+  border-color:var(--orange);color:var(--orange);background:rgba(227,82,5,.12)}
+.cia-triad-opt.is-dim,.stride-drill-opt.is-dim{opacity:.45}
+.cia-triad-opt:focus-visible,.stride-drill-opt:focus-visible{
+  outline:3px solid var(--blue);outline-offset:2px}
+.cia-triad-explain{min-height:1.4em;margin:.3rem 0 .8rem;max-width:70ch}
+.cia-triad-next{margin-top:.2rem;font-weight:700}
+.cia-triad-done{display:none;margin:0;font-weight:700}
+.cia-triad-done.is-shown{display:block}
+/* Set on .card once the last question is answered and "next" is clicked, so
+   the spent quiz collapses to just the done message — otherwise the final
+   answered-and-disabled question stays on screen under it, looking unfinished. */
+.quiz-finished .cia-triad-head,
+.quiz-finished .cia-triad-scenario,
+.quiz-finished .cia-triad-answers,
+.quiz-finished .stride-drill-answers,
+.quiz-finished .cia-triad-explain,
+.quiz-finished .cia-triad-next{display:none}
+
+/* ── stride-drill (Week 1, software-security): six-letter answer grid ── */
+.stride-drill-answers{display:grid;grid-template-columns:repeat(6,1fr);gap:.5rem;margin-bottom:.6rem}
+@media (max-width:480px){.stride-drill-answers{grid-template-columns:repeat(3,1fr)}}
+.stride-drill-opt{font-size:1.15rem;font-weight:800;padding:.6rem 0;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+/* ── path-traversal (Week 1, software-security): /upload write vs /files read ──
+   Diagram reuses the shared DFD primitives (.box/.edge/.boxlabel/.edgelabel)
+   trust-boundary.js established above — only the boundary line and the two
+   dynamic outcome marks are new, since neither existed as a shared shape. */
+.path-traversal-resolved{margin:.6rem 0 0;font-size:.85rem;color:var(--mut)}
+.path-traversal-resolved code{color:var(--fg);font-weight:700}
+.path-traversal-boundary{stroke:var(--orange);stroke-width:1.4;stroke-dasharray:6 5}
+.path-traversal-boundarylabel{font-size:9px;fill:var(--orange);text-transform:uppercase;
+  letter-spacing:.06em}
+/* Write side: orange only when THIS input actually escaped uploads/. Blue
+   (not orange) when it lands inside — nothing visibly wrong happened, which is
+   deliberate: the write path runs the identical unchecked code either way, and
+   crying "bad" on an ordinary filename would undersell that point rather than
+   sharpen it. The explanation text carries the "unchecked regardless" nuance;
+   the mark only reports this input's actual outcome. */
+.path-traversal-dot.is-ok{fill:var(--blue)}
+.path-traversal-dot.is-bad{fill:var(--orange)}
+.path-traversal-marklabel{font-size:9px;fill:var(--orange)}
+/* Read side is always styled .is-ok: safe_join makes BOTH outcomes (served,
+   blocked) correct behaviour for this endpoint, for any input — the glyph
+   (tick vs cross), not the colour, is what tells them apart. */
+.path-traversal-badge.is-ok{fill:var(--card);stroke:var(--blue);stroke-width:1.5}
+.path-traversal-glyph{fill:none;stroke:var(--blue);stroke-width:1.6;stroke-linecap:round}
