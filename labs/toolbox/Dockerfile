@@ -15,6 +15,7 @@
 FROM silkeh/clang:19
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        gcc make \
         gdb \
         python3 python3-pip \
         nmap sqlmap \

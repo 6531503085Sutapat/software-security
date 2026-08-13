@@ -11,8 +11,8 @@ Covers **Weeks 1–6**. Individual, in the sandbox. Flags = points.
 
 ## Format
 A timed capture-the-flag with graded challenges across:
-- **Injection** (SQLi / command injection) — DVWA / Juice Shop.
-- **XSS** (reflected/stored/DOM) — Juice Shop.
+- **Injection** (SQLi / command injection) — this course's own apps, not DVWA.
+- **XSS** (stored only) — this course's own week05 app, not Juice Shop.
 - **Auth / access control** (IDOR, weak JWT forgery).
 - **Cryptography** (crack a weak hash / break an ECB oracle).
 

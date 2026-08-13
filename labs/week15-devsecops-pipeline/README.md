@@ -17,9 +17,9 @@
 - Understand vulnerability management and coordinated disclosure, framed by **CISA "Secure by Design"**.
 
 ## 🔴🔵 Signature game — "Break the Build" (Red vs Blue)
-Use the repo's own pipeline as the template: [`.github/workflows/security-ci.yml`](../../.github/workflows/security-ci.yml).
+Use this lab's own pipeline template as the starting point: [`security-ci.yml`](security-ci.yml) (wiring steps in [`README-pipeline.md`](README-pipeline.md)).
 - **Blue team** builds the gate:
-  1. Add **SAST** (Semgrep), **SCA + image scan** (Trivy), and **secret scanning** (Gitleaks) jobs.
+  1. Add **SAST** (Semgrep), **SCA + IaC** (Trivy), and **secret scanning** (Gitleaks) jobs.
   2. Configure the build to **fail** on HIGH/CRITICAL findings; upload SARIF to the GitHub Security tab.
   3. Add structured security logging + an alert on auth failures; ensure errors **fail closed**, not open.
 - **Red team** submits PRs trying to sneak a vuln/secret past the gate.

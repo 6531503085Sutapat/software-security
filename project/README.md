@@ -13,7 +13,7 @@ Take a small web/API application (provided starter, or your own with instructor 
 3. **Remediated code** — the fixes, in a branch with clear commits referencing each finding.
 4. **Supply-chain hardening** — generate an **SBOM** (CycloneDX) and **sign the release artifact** with Cosign.
 5. **Security CI pipeline** — a GitHub Actions workflow running SAST + SCA + secret scanning that fails on high-severity findings.
-6. **Demo** — a short live walkthrough: attack → root cause → fix (WIP demo in the **Week 16** capstone studio; graded final demo in **Week 19**). Expect a couple of unscripted follow-up questions from the instructor during the graded demo (e.g. *"why this fix and not X?"*) — a live viva check that the team genuinely did the work, same spirit as the AIR-Sec viva spot-checks used elsewhere in the course.
+6. **Demo** — attack → root cause → fix: a **short live walkthrough** at the **Week 16** capstone studio (WIP, ungraded); for **Week 19**, a **pre-recorded video walkthrough submitted before the session** (graded asynchronously on this rubric) plus a **3-minute live Q&A**. Expect a couple of unscripted follow-up questions from the instructor during the Week 19 Q&A (e.g. *"why this fix and not X?"*) — a live viva check that the team genuinely did the work, same spirit as the AIR-Sec viva spot-checks used elsewhere in the course.
 
 ## Suggested timeline
 
