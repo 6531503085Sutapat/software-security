@@ -58,16 +58,16 @@ Software Security · Nutthakorn Chalaemwongwan
 
 ## JWT pitfalls
 
-```text
-header.payload.signature
-```
-
 - `alg: none` accepted → forge any token
 - Weak/guessable HMAC secret → re-sign
 - Not checking `exp` / `aud` / signature at all
 - Sensitive data in payload (it's only base64!)
 
-<!-- Decode a JWT live (jwt.io) to show the payload is just base64 — NOT encrypted. The `alg:none` attack is the JWT Forgery game: server trusts the header's claimed algorithm. Emphasize: never put secrets in the payload. ~7 min. -->
+```sim
+jwt-forge
+```
+
+<!-- The sim IS the "decode a JWT live" demo — edit the payload, watch base64url decode instantly (not encrypted), then flip alg to none and watch a server that trusts the header accept it. Emphasize: never put secrets in the payload. This is the JWT Forgery game, live. ~7 min. -->
 
 ---
 
@@ -92,6 +92,14 @@ GET /api/orders/2   → someone else's  😱
 - Vertical (become admin) vs horizontal (other users)
 
 <!-- The worked example — this is the IDOR Treasure Hunt. The server authenticated you but never checked the object BELONGS to you. Horizontal = peer data; vertical = privilege escalation. ~6 min. -->
+
+---
+
+## One request, two gates
+
+![One HTTP request must pass two gates. Gate 1, authentication: verify the token's signature and algorithm — broken by alg:none and a weak hardcoded secret, so a forged token passes. Gate 2, authorization: does the caller own THIS object — broken because the ownership check never runs. The key point: even a perfectly valid, genuine token clears Gate 1 but must not be enough to clear Gate 2 on its own — alice's own valid login token can still read bob's order if Gate 2 is missing.](img/authn-vs-authz.svg)
+
+<!-- The thesis of the whole week, made concrete: JWT pitfalls broke Gate 1, IDOR broke Gate 2, and they're independent failures — fixing one doesn't fix the other. This is why "Defenses" lists both "verify JWT" and "check ownership" as separate bullets, not one fix. ~4 min. -->
 
 ---
 

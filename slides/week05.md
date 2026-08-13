@@ -85,6 +85,19 @@ Software Security · Nutthakorn Chalaemwongwan
 
 ---
 
+## Try it — one value, four sinks
+
+The same input, landing in an HTML text node, an unquoted attribute, an
+`href="…"`, and a `<script>` string — at once. Pick an escaper, see which sinks it actually protects.
+
+```sim
+xss-context
+```
+
+<!-- Live payoff for "context matters" — one escaper is right for some of the 4 sinks and wrong for others, computed live rather than asserted (3 verdicts: EXECUTES / BROKEN / SAFE — a wrecked script tag is not "safe" either). Ties straight into the Defenses slide's "encode per context." ~4 min. -->
+
+---
+
 ## CSRF — riding the user's session
 
 - Browser auto-sends cookies → attacker forges a state-changing request
@@ -92,6 +105,14 @@ Software Security · Nutthakorn Chalaemwongwan
 - `SameSite=Strict` alone stops the cookie from *attaching* cross-site — it does **not** stop a request from being *accepted* if the endpoint never checks authorization in the first place (today's lab proves this)
 
 <!-- Contrast with XSS: CSRF needs no script on the page — it abuses the browser auto-attaching cookies. Example: a hidden form that POSTs a comment. Don't let "SameSite fixes CSRF" stand unqualified — this week's own fixed_app.py sets SameSite=Strict+HttpOnly+Secure and the CSRF PoC still works, because /comments never checks a session or token at all. ~5 min. -->
+
+---
+
+## Same cookie, opposite directions
+
+![Two stacked panels comparing stored XSS with CSRF, using the same attacker/server/victim actors. Stored XSS: attacker posts a script, the victim loads it, it runs in the victim's origin and steals the cookie (no HttpOnly) — fixed by output encoding, not SameSite, since the payload is already same-origin. CSRF: the victim visits the attacker's page, which auto-submits a form; the browser attaches the cookie itself and the server can't tell the victim never meant to send it — fixed by SameSite plus a CSRF token the server actually checks, not HttpOnly, since no script ever reads the cookie.](img/xss-and-csrf.svg)
+
+<!-- The step-by-step version of the bullets just covered — walk both panels left to right once. Land on the footnote: fixed_app.py kills the XSS but the CSRF still works, because encoding an output and checking a token are two unrelated fixes. ~4 min. -->
 
 ---
 

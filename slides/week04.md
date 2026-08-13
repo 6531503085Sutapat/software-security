@@ -63,6 +63,18 @@ Software Security · Nutthakorn Chalaemwongwan
 
 ---
 
+## Try it — watch the parse tree change
+
+Type an input. See exactly where the quote breaks out of the string.
+
+```sim
+sqli-parse
+```
+
+<!-- Live payoff for "the quote lands inside the string and breaks out" — the sim renders the actual token boundaries shifting as they type, so the break-out is something they watch happen, not a claim on a slide. ~4 min. -->
+
+---
+
 ## Auth bypass — anatomy of one payload
 
 Inject into the **username** field:
@@ -165,6 +177,14 @@ The classic *chain*, attacker uploads `shell.php`:
 - Least-privilege DB accounts
 
 <!-- The payoff. #1 message: parameterization makes data STAY data — the DB never parses it as SQL. For shells, pass an argv array, not a string. Least-privilege limits blast radius if they still get in. ~5 min. -->
+
+---
+
+## One value, three interpreters
+
+![One untrusted request value reaches three different interpreters — SQL (CWE-89, fixed by a parameterized query), the OS shell (CWE-78, fixed by an argument vector with shell=False), and a filesystem write (CWE-434, fixed by an extension allow-list). One input filter cannot guard three grammars — the fix belongs at the sink that parses the value, not at the source.](img/injection-sinks.svg)
+
+<!-- Synthesis slide — the SAME untrusted value from request.args/request.files is what feeds all three attacks just covered. Land on the closing line: escaping quotes does nothing to a semicolon in a shell, and a safe filename does nothing to SQL. Sets up "Defenses" as three separate fixes, not one. ~4 min. -->
 
 ---
 
