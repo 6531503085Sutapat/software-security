@@ -71,17 +71,16 @@ ph = PasswordHasher(); hash = ph.hash("correct horse battery staple")
 
 ## Worked example: why ECB leaks
 
-```text
-plaintext blocks:   [AAAA][AAAA][BBBB][AAAA]
-AES-ECB ciphertext: [ X  ][ X  ][ Y  ][ X  ]   ← same block → same cipher
-```
-
 - ECB encrypts each block independently → **patterns survive**
 - The classic "ECB penguin": the image is still recognizable encrypted
-- **CBC isn't the fix either** — no integrity check means an attacker can flip bits in the ciphertext and the corresponding plaintext bits flip predictably (try it in the `aes-modes` sim: flip a bit in a `sess=...;admin=0;...` token)
+- **CBC isn't the fix either** — no integrity check means an attacker can flip bits in the ciphertext and the corresponding plaintext bits flip predictably
 - Fix: an **authenticated** mode (**AES-GCM**) with a random nonce — confidentiality *and* integrity together
 
-<!-- The visual that makes ECB "click". Walk the block mapping: identical plaintext → identical ciphertext, so structure leaks. Point at the aes-modes sim (Task 1) instead of an image — it has both an ECB-penguin-style panel AND a live CBC-malleability demo (flip a ciphertext bit, watch the plaintext bit flip). Don't stop at "ECB bad, GCM good" — CBC's lack of integrity is the middle step that makes AEAD's *value* click. This is exactly the ECB oracle they break in the lab. ~6 min. -->
+```sim
+aes-modes
+```
+
+<!-- The visual that makes ECB "click" — an ECB-penguin-style panel AND a live CBC-malleability demo (flip a ciphertext bit, watch the plaintext bit flip in a sess=...;admin=0;... token) in one sim. Don't stop at "ECB bad, GCM good" — CBC's lack of integrity is the middle step that makes AEAD's *value* click. This is exactly the ECB oracle they break in the lab. ~6 min. -->
 
 ---
 
@@ -129,6 +128,14 @@ hashcat -m 0 hashes.txt rockyou.txt
 - **CWE-798** — hardcoded key
 
 <!-- Quick reference; they map lab findings to these. ~1 min. -->
+
+---
+
+## Four decisions, four fixes
+
+![Four crypto misuses and their fixes: password storage (md5 to argon2id), cipher mode (hardcoded-key ECB to GCM with a nonce and auth tag), randomness (random.choice to secrets.token_urlsafe), and key source (hardcoded key to an environment variable). One cipher name answers none of these four questions — AES-GCM under a hardcoded key is still CWE-798.](img/crypto-misuse.svg)
+
+<!-- Synthesis slide — the four separate concepts from the last several slides (KDF, cipher mode, RNG, key source) are one decision each in vulnerable_crypto.py, not one big "use better crypto" fix. Land on the closing line: picking AES-GCM doesn't save you if the key is still hardcoded. ~4 min. -->
 
 ---
 

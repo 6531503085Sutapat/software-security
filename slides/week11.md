@@ -37,15 +37,14 @@ Software Security · Nutthakorn Chalaemwongwan
 
 ## The stack frame
 
-```text
-[ buffer ][ saved registers ][ return address ]
-                                    ↑ overwrite this
-```
-
 - `gets`/`strcpy`/unchecked `memcpy` → overflow
 - Overwrite return address → redirect execution
 
-<!-- The worked example — draw the stack on the board. A local buffer sits BELOW the saved return address; writing past the buffer marches upward into the return address. Control the return address = control where the CPU jumps next. This is THE concept of the week. ~8 min. -->
+```sim
+stack-frame
+```
+
+<!-- The worked example — the sim IS the board drawing, live. A local buffer sits BELOW the saved return address; writing past the buffer marches upward into the return address. Control the return address = control where the CPU jumps next. This is THE concept of the week. ~8 min. -->
 
 ---
 
@@ -92,6 +91,14 @@ afl-fuzz -i seeds -o out -- ./vuln @@                                  # AFL++
 - On **this lab's hardened build, FORTIFY fires first** — `*** buffer overflow detected ***: terminated`. The canary never gets a chance to speak. Verify the order yourself before teaching it as "canary catches it" — that's the wrong answer this lab's own materials were rewritten to correct.
 
 <!-- THE key correction this slide needed: FORTIFY_SOURCE checks at the copy call, before the function even returns — so on the hardened build it always wins the race against the canary, which only checks at return time. This lab's own interactive sim literally calls "the canary detects it" the week's most reliable wrong answer — don't teach it. NX is a real mitigation but not for THIS exploit (ret2win, no injected shellcode) — say so explicitly rather than implying all four defenses equally harden the one attack just demonstrated. Worksheet Q4 grades naming all four (canary/PIE/NX/FORTIFY) + what each defeats — FORTIFY must be on this slide. ~5 min. -->
+
+---
+
+## From strcpy to shell — where each mitigation cuts the chain
+
+![A vertical attack chain from fuzzing finding the crash, to the unchecked strcpy overflow, to the overwritten return address, to a ret2win shell. Three mitigations cut this chain at different links: FORTIFY_SOURCE aborts at copy time, before any overwrite — this hardened build traps here, which students often misread as the canary. The stack canary only detects the smash at return, after the copy already happened. ASLR/PIE randomizes addresses so the fixed win() address is wrong. NX/DEP stops the OTHER exploitation path (injected shellcode), not this one.](img/exploit-chain.svg)
+
+<!-- Walk it top to bottom exactly once — this is the whole week's argument as one picture: which mitigation actually stops THIS exploit, and in what order they'd fire if more than one were present. Land on the same correction as the last slide: FORTIFY wins the race against the canary, every time, on this build. ~4 min. -->
 
 ---
 
