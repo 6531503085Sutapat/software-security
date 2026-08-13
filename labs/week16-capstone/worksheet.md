@@ -2,7 +2,7 @@
 
 > **Course:** Software Security (KOSEN69) · Week 16
 > **Aligned to:** All prior weeks + OWASP Top 10 (2025) — https://owasp.org/Top10/2025/ ; CWE mapping required throughout.
-> **Signature game:** practice **CTF tournament** (web · API · supply-chain · LLM) previewing Week 19, plus cross-team peer review.
+> **Signature game:** practice **CTF tournament** (web · API · binary · supply-chain · cloud · LLM) previewing Week 19, plus cross-team peer review.
 
 > ⚠️ **Ethics note:** This is a **project studio**, not an exploit lab. Demo your attack → root cause → fix **only** against your own term-project application (the [term project](../../project/README.md)) or the provided practice-CTF targets. The graded final presentation + full CTF tournament are in **Week 19**; this week is the work-in-progress warm-up.
 
@@ -33,6 +33,11 @@ Answer as a team (2–4 sentences each).
 ## Part 3 — Project Checklist & Demo Rubric
 
 > Replaces the hands-on exploit lab. Bring the deliverables below to the studio; run the 10-min demo + 5-min Q&A; complete a peer review of another team.
+>
+> **Note:** the 10-min-demo + 5-min-Q&A clock below is today's own live rehearsal format — it is not
+> what Week 19 does. **Week 19 itself has since moved to a different format:** each team submits a
+> pre-recorded video walkthrough before the session (graded asynchronously on the project rubric),
+> and the in-class slot is a **3-minute live Q&A**, not a re-demo (`AGENDA.md` §*Week 19*).
 
 ### A) Deliverables checklist (bring all six)
 
@@ -68,7 +73,7 @@ Answer as a team (2–4 sentences each).
 | Pipeline / fail-closed | None → gate fails closed on HIGH/CRITICAL |
 | Demo & Q&A | Unclear → confident, handles tough questions |
 
-> Practice CTF: a short scrimmage mixing web, API, supply-chain, and LLM challenges from Weeks 1–15. Record flags captured and which week's technique each used — this previews the Week 19 final.
+> Practice CTF: a short scrimmage mixing web, API, binary, supply-chain, cloud, and LLM challenges from Weeks 1–15. Record flags captured and which week's technique each used — this previews the Week 19 final.
 
 ---
 

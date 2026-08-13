@@ -64,8 +64,8 @@ algorithm, a strong secret and required claims — never a longer list of ids to
 | 0:00–0:10 | Weekly quiz + recap | ~10-min retrieval quiz on Week 5 (XSS & client-side risks); today's agenda | Individual quiz, lowest 1–2 dropped |
 | 0:10–0:55 | Core concept | Authentication vs. authorisation; sessions and JWT structure (`header.payload.signature`); why authorisation must be re-checked server-side on every object access; walk `/api/orders/<oid>` in `vulnerable_app.py` and show `current_user()` being called but its result ignored (identity proven, ownership never decided) | Lecture + live coding on the projector |
 | 0:55–1:05 | Break | | |
-| 1:05–1:35 | Deep dive + real cases | IDOR / broken access control (CWE-639); JWT forgery two ways — `alg:none` (CWE-347) and a weak/guessable secret (CWE-321); privilege escalation to `admin` via a forged `sub`; two brief real cases: the 2022 Optus breach (enumerable identifiers on a poorly-authorised API) and the Peloton API IDOR disclosure | Lecture + short discussion: "what single check would have stopped this?" |
-| 1:35–1:55 | Defences | Deny-by-default ownership checks on every access (RBAC/ABAC); pin the JWT algorithm (no `none`) and verify the signature; strong random secret + key management; require `exp` and `aud` claims; where a framework helps and where it does not | Lecture with code-diff (`vulnerable_app.py` → `solution_app.py`) |
+| 1:05–1:35 | Deep dive + real cases | IDOR / broken access control (CWE-639); JWT forgery two ways — `alg:none` (CWE-347) and a weak/guessable secret (CWE-321); privilege/identity escalation — impersonate another regular user (`bob`) via a forged `sub`, horizontal not vertical/admin; two brief real cases: the 2022 Optus breach (enumerable identifiers on a poorly-authorised API) and the Peloton API IDOR disclosure | Lecture + short discussion: "what single check would have stopped this?" |
+| 1:35–1:55 | Defences | Deny-by-default ownership checks on every access (this lab's fix is a flat ownership equality check — `order["owner"] != user` — not RBAC/ABAC); pin the JWT algorithm (no `none`) and verify the signature; strong random secret + key management; require `exp` and `aud` claims; where a framework helps and where it does not | Lecture with code-diff (`vulnerable_app.py` → `solution_app.py`) |
 | 1:55–2:00 | Brief the game | "IDOR Treasure Hunt + JWT Forgery" — loot orders that aren't yours, mint a token you were never given, then defend the app so both fail | Instruction |
 
 **Checks for understanding during lecture**
@@ -114,10 +114,6 @@ could not land the exploit.
 ## 7. Materials
 
 - Lab: `labs/week06-authn-authz/` — `vulnerable_app.py`, `solution_app.py`, `docker-compose.yml`, `worksheet.md`, `attack.md`, `README.md`
-  (**Instructor note:** `README.md` line 3 currently tags this lab `CWE-639 (IDOR), CWE-287`,
-  which is stale — `worksheet.md`'s header and the `CWE` comments in `vulnerable_app.py`/
-  `solution_app.py` all agree on CWE-639, CWE-347, CWE-321, which is what this plan's Standards
-  row above uses. Trust the worksheet/code, not the README, until the README is corrected.)
 - Slides: `slides/week06.md`
 - Optional secondary target / proxy: OWASP Juice Shop (`bkimminich/juice-shop`, `-p 3000:3000`); Burp Suite (browser proxy to `127.0.0.1:8080` to intercept/replay)
 - Reference: OWASP Authorization Cheat Sheet; OWASP JSON Web Token Cheat Sheet (linked in the lab `README.md`)
@@ -135,7 +131,7 @@ could not land the exploit.
 | Stale `$TOKEN` after switching to the fixed app | The fixed app's tokens carry `exp`/`aud`; an old vulnerable-app token replayed against `solution_app.py` yields 401 and can look like the exploit "still works" — have students re-run Task 0 to mint a fresh token after every restart |
 | Juice Shop optional target won't start | `bkimminich/juice-shop` is a large image needing port 3000 free; pull it before class only if students will actually use it |
 | Per-student flags not seeded | Flags come from `instructor/seed_flags.py` into `.env` (`FLAG_IDOR`, `FLAG_JWT`); without seeding the app falls back to placeholder flags that are not attributable — seed before class if flags are graded |
-| A student finishes Tasks 1–3 early | Extension: forge a `sub: admin` token (via `alg:none` or the weak secret) to reach `/api/admin` and read `FLAG_JWT`; or write the regression test that proves the ownership check and algorithm pin stay fixed |
+| A student finishes Tasks 1–3 early | Extension: against the still-running `vulnerable_app.py` (Task 5 hasn't switched it over yet), forge a `sub: admin` token (via `alg:none` or the weak secret) to reach `/api/admin` and read `FLAG_JWT` — this route does not exist in `solution_app.py`, so don't offer it after the Task 5 switchover; or write the regression test that proves the ownership check and algorithm pin stay fixed |
 | A student cannot land any exploit | Pair them for Task 1 (IDOR, `curl`-only), then require they land Task 2 or 3 alone; mark the mechanism explanation, not the keystrokes |
 | Copy-paste of a classmate's token/payload | Per-student flags make submitted evidence attributable; viva spot-check the pair |
 

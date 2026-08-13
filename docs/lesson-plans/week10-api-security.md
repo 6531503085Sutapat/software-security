@@ -63,11 +63,11 @@ hammered for free.
 | Time | Block | Content | Method |
 |---|---|---|---|
 | 0:00–0:10 | Weekly quiz + recap | ~10-min retrieval quiz; recap the web half (injection, XSS, auth/IDOR) and bridge IDOR → BOLA; today's agenda | Individual quiz, lowest 1–2 dropped |
-| 0:10–0:55 | Core concepts | Why APIs are different: machine-to-machine, no browser safety net (no SameSite/CSP); object ids everywhere → IDOR/BOLA; clients can send any field → mass assignment; the OWASP API Security Top 10. Worked example: `GET /api/vehicle/1001/location` (yours) vs `1002` (someone else's) — BOLA (API1) | Lecture + live `curl` on the projector |
+| 0:10–0:55 | Core concepts | Why APIs are different: machine-to-machine, no browser safety net (no SameSite/CSP); object ids everywhere → IDOR/BOLA; clients can send any field → mass assignment; the OWASP API Security Top 10. Worked example: `GET /api/users/2/orders` (yours) vs `/api/users/3/orders` (someone else's) — BOLA (API1), no ownership check exists at all | Lecture + live `curl` on the projector |
 | 0:55–1:05 | Break | | |
 | 1:05–1:35 | Deep dive + real cases | Mass assignment (API3) — client sets `role`/`credit` the server blindly binds; API2 broken authentication, API4 unrestricted resource consumption (no rate limit), excessive data exposure. Real cases: a named API authorization breach (worksheet Part 4 asks students to research the Optus / T-Mobile BOLA/IDOR incidents), then the deck's "legitimate feature + missing authz → RCE" example (WordPress 404-template editor); short discussion "what would have stopped this?" | Lecture + short discussion |
 | 1:35–1:55 | Defences | Object-level authorization on every request (ownership check); allow-list request schemas / bind only intended fields, return DTOs; rate limiting and quotas; schema validation (OpenAPI / GraphQL types) | Lecture with before/after code |
-| 1:55–2:00 | Brief the game | **"crAPI Raid"** — exploit BOLA + mass assignment in the crAPI target, then Round 2 = add authorization checks, schema validation and rate limiting | Instruction |
+| 1:55–2:00 | Brief the game | **"crAPI Raid"** — exploit BOLA + mass assignment against this week's own local app (:8080/:8081), then read `solution_api.py` and cite the fix line (Task 5, not student-authored); crAPI itself is Task 4, an optional 20-min bonus with no fix step and no grading weight | Instruction |
 
 **Checks for understanding during lecture**
 - After the core concept: cold-call *"the server knows who I am — why does it still leak user 1002's data?"* (it never checks the object belongs to the caller).

@@ -11,7 +11,7 @@
 
 **Targets (started by the instructor):**
 - Injection / Auth: `labs/week04-injection` and `labs/week06-authn-authz` apps (`docker compose up`)
-- XSS: `labs/week05-xss-client-side` app (or OWASP Juice Shop)
+- XSS: `labs/week05-xss-client-side` app
 - Crypto: `labs/week03-cryptography` (`hashes.txt`, the ECB oracle)
 
 ---

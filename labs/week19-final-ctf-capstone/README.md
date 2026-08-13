@@ -17,7 +17,7 @@ Each team presents their secured build end-to-end:
 - Threat model → vulnerabilities found → remediation
 - SBOM + signed artifact
 - Security CI/CD pipeline
-- 10-minute demo + 5-minute Q&A (graded)
+- Submit a recorded video walkthrough **before the session** (graded asynchronously on the rubric); **3-minute live Q&A** per team on the day (not a live demo slot)
 
 ## Bring
 Everything from the [term project](../../project/README.md): threat model, vuln report (CWE/OWASP mapped), fixed code, SBOM, signed artifact, CI pipeline.

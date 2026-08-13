@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 470" role="img" aria-label="Exam blueprint for the Week 8 written midterm: 100 points total, covering Weeks 1 through 6, 120 minutes, closed or open note at the instructor's choice. A single bar is divided left to right into five weighted blocks sized by points. Block one: Threat Modeling, STRIDE and Trust Boundaries, from Week 1, 15 points. Block two: SDLC Tooling and CWE OWASP Mapping, from Week 2, 5 points. Block three: Spot the Vulnerability across Injection, Cross-Site Scripting, Authentication and Cryptography, from Weeks 3 through 6, 25 points. Block four: Applied SQL Injection, requiring both the attack payload and the parameterised fix, from Week 4, 30 points — the largest single block on the exam, flagged because students consistently under-prepare for it. Block five: Secure Design short answers on least privilege, defense in depth and fail closed, a running theme across the course, 25 points. The exam pairs with the Week 9 hands-on CTF practical.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 470" role="img" aria-label="Exam blueprint for the Week 8 written midterm: 100 points total, covering Weeks 1 through 6, 120 minutes, closed or open note at the instructor's choice. A single bar is divided left to right into five weighted blocks sized by points. Block one: Threat Modeling, STRIDE and Trust Boundaries, from Week 1, 15 points. Block two: SDLC Tooling and CWE OWASP Mapping, from Week 2, 5 points. Block three: Spot the Vulnerability across Injection, Cross-Site Scripting, Authentication and Cryptography, from Weeks 3 through 6, 25 points. Block four: Applied SQL Injection, requiring the attack payload and one-line reasoning for each — no fix credit, that's Section D's job — from Week 4, 30 points — the largest single block on the exam, flagged because students consistently under-prepare for it. Block five: Secure Design short answers on least privilege, defense in depth and fail closed, a running theme across the course, 25 points. The exam pairs with the Week 9 hands-on CTF practical.">
   <title>Week 8 written midterm — exam blueprint by points and source week</title>
   <style>
     .title{font:700 15px system-ui,sans-serif;fill:#1f2937;}
@@ -111,7 +111,7 @@
   <text x="424" y="359" class="chipTextOrange">WEEK 4</text>
   <text x="424" y="381" class="calloutHead">Applied SQL Injection</text>
   <text x="424" y="398" class="calloutBody">30 of 100 pts — the largest single block</text>
-  <text x="424" y="413" class="calloutNote">Payload AND parameterised fix both required (C1–C5).</text>
+  <text x="424" y="413" class="calloutNote">Payload AND reasoning required — no fix credit (C1–C5).</text>
   <text x="424" y="427" class="calloutNote">Students often under-prepare here — practice it.</text>
 
   <!-- Footer -->
