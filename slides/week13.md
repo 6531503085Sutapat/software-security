@@ -55,7 +55,11 @@ Software Security · Nutthakorn Chalaemwongwan
 - `Resource:"*"` → **CWE-732** (incorrect permission assignment); `Action:"*"` → **CWE-269** (improper privilege management) — they're graded as two distinct findings on the *same* policy, not one
 - Fix: scope to one bucket + one action, add a `Condition` (e.g. `s3:prefix`) — not just a narrower ARN
 
-<!-- The worked example — this `*:*` policy is the Misconfig Hunt round 1 and the quiz. If a credential with this leaks, the attacker owns everything. This is 100% manual review — Trivy's config scanner does not parse standalone IAM JSON at all, say so explicitly so students don't wait for a scanner to flag it. Ask the class to rewrite it as read-only on one bucket, with a Condition. Least privilege = smallest possible blast radius. ~6 min. -->
+```sim
+iam-scope
+```
+
+<!-- The worked example — this `*:*` policy is the Misconfig Hunt round 1 and the quiz. If a credential with this leaks, the attacker owns everything. This is 100% manual review — Trivy's config scanner does not parse standalone IAM JSON at all, say so explicitly so students don't wait for a scanner to flag it. The sim scores Action and Resource independently, live, so "two findings, not one" is something they watch instead of a claim on a slide. Least privilege = smallest possible blast radius. ~6 min. -->
 
 ---
 
@@ -102,6 +106,14 @@ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 - Don't run privileged; limit service-account tokens
 
 <!-- Awareness only (K8s is its own course). Key takeaways: a privileged pod ≈ host root; mounted service-account tokens are a lateral-movement prize. Keep it brief. ~3 min. -->
+
+---
+
+## Same app, shipped twice
+
+![The same app as two container images side by side, insecure vs hardened, six layers compared: mutable :latest tag vs a pinned digest, a baked-in secret vs runtime injection, root user vs distroless non-root, COPY-everything vs a minimal context, world-writable permissions vs read-only, and an unpinned pip install vs a discarded build stage. Below both, the same argument one layer up: the wildcard IAM policy vs the scoped one. The conclusion: Trivy flags only three of the seven defects shown here — the tag, the root user, and the secret. COPY .., chmod 777, the unpinned install, and the IAM JSON all need manual review; there is no rule for any of them.](img/container-hardening.svg)
+
+<!-- The whole lab's argument as one picture — walk it row by row once, landing on the Trivy split at the bottom: 3 rows have a rule ID to cite, 4 don't. That 3-of-7 (or "3 of 6" container-only, per the earlier slide) split is Task 1's actual grading rubric, not trivia. ~5 min. -->
 
 ---
 

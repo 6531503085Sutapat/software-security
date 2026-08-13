@@ -67,7 +67,11 @@ POST /api/users  { "username":"x", "password":"y", "is_admin":true, "balance":99
 - Client sets fields the server blindly binds (`user.update(body)` — no allow-list)
 - Privilege/balance escalation, right at account creation
 
-<!-- Walk it: the server takes the whole JSON body and binds it to the model, including fields the UI never exposes (is_admin, balance). This is today's local target's mass-assignment bug and the weekly quiz Q6. Fix = allow-list the bindable fields (ALLOWED_CREATE_FIELDS in solution_api.py). ~5 min. -->
+```sim
+mass-assign
+```
+
+<!-- Walk it: the server takes the whole JSON body and binds it to the model, including fields the UI never exposes (is_admin, balance). The sim runs both create_user() implementations for real — edit the body, flip the toggle, watch which fields survive. This is today's local target's mass-assignment bug and the weekly quiz Q6. Fix = allow-list the bindable fields (ALLOWED_CREATE_FIELDS in solution_api.py). ~5 min. -->
 
 ---
 
@@ -126,6 +130,14 @@ nc -lvp 34567 -e /bin/bash   # attacker gets a shell
 > Legitimate admin features become RCE without strict authz + integrity checks.
 
 <!-- Shows that "a feature" + missing authz = RCE. A legit admin editor, abused once an attacker has access. Ties to least-privilege: even admins shouldn't be able to inject executable code. ~3 min. -->
+
+---
+
+## One API, three flaws
+
+![One REST API with three separate flaws, each in a different handler. GET /api/users/{id}/orders never compares owner to caller — API1 BOLA. POST /api/users splats the whole JSON body into the model — API3 mass assignment. POST /api/login has no counter or lockout — API4 unrestricted resource consumption. All three are authorization and design flaws, not input-validation flaws — the JSON is well formed, so no amount of escaping, encoding, or a WAF rule blocks any of them.](img/api-flaws.svg)
+
+<!-- Synthesis slide — today's three graded bugs, each traced to its exact line and exact fix. Land on the closing line: nothing here is a malformed-input problem, which is why "sanitize your inputs" doesn't apply this week — these are missing checks, not bad parsing. ~4 min. -->
 
 ---
 

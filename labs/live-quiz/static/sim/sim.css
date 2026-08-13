@@ -56,6 +56,9 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em}
 label{display:block;margin:.5rem 0 .2rem;font-size:.8rem;color:var(--mut)}
 input[type=text]{width:100%;font:inherit;padding:.4rem .5rem;border:1px solid var(--line);
                  border-radius:6px;background:var(--bg);color:var(--fg)}
+textarea{width:100%;font:inherit;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+         font-size:.85rem;padding:.5rem .6rem;border:1px solid var(--line);border-radius:6px;
+         background:var(--bg);color:var(--fg);resize:vertical}
 .preset{display:flex;flex-wrap:wrap;gap:.35rem;margin:.4rem 0}
 .preset button{font-size:.78rem}
 
@@ -520,3 +523,49 @@ input.jwt-forge-in{font-size:.95rem;padding:.4rem .5rem}
   text-transform:uppercase;letter-spacing:.05em;font-weight:700}
 .resolver-confusion-radio{display:flex;align-items:center;gap:.4rem;margin:.4rem 0 0;font-size:.9rem}
 .resolver-confusion-radio input{width:1.05rem;height:1.05rem}
+
+/* ── mass-assign (Week 10, software-security): which fields bind ──
+   Mode fieldset/radio reuses resolver-confusion's pattern verbatim (same
+   shape: two named server implementations, pick one). Only the JSON
+   textarea and the resulting key/value row list are new. */
+.mass-assign-body{min-height:7rem}
+.mass-assign-err{color:var(--orange);margin:.4rem 0 0}
+.mass-assign-mode{border:0;padding:0;margin:.8rem 0 0;min-width:0}
+.mass-assign-mode legend{padding:0;font-size:.85rem;color:var(--mut);
+  text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.mass-assign-radio{display:flex;align-items:center;gap:.4rem;margin:.4rem 0 0;font-size:.88rem}
+.mass-assign-radio input{width:1.05rem;height:1.05rem;flex:0 0 auto}
+.mass-assign-result{display:flex;flex-direction:column;gap:.3rem;margin-bottom:.5rem}
+.mass-assign-row{display:flex;justify-content:space-between;gap:.6rem;padding:.3rem .5rem;
+  border-radius:5px;border:1px solid var(--line);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:.8rem;background:var(--bg)}
+.mass-assign-key{color:var(--mut)}
+.mass-assign-row.is-fromclient{border-color:var(--line)}
+.mass-assign-row.is-serverset{border-color:var(--blue);color:var(--blue)}
+.mass-assign-row.is-serverset .mass-assign-key{color:var(--blue)}
+.mass-assign-row.is-smuggled{border-color:var(--orange)}
+.mass-assign-row.is-smuggled .mass-assign-key,.mass-assign-row.is-smuggled .mass-assign-val{color:var(--orange);font-weight:700}
+
+/* ── iam-scope (Week 13, software-security): Action/Resource wildcards ──
+   Reuses mass-assign's textarea/error classes verbatim (same JSON-editing
+   shape); only the per-field finding rows are new. */
+.iam-scope-finding{display:flex;align-items:center;gap:.5rem;padding:.4rem .55rem;
+  border-radius:5px;border:1px solid var(--line);margin-bottom:.35rem;font-size:.88rem}
+.iam-scope-finding.is-bad{border-color:var(--orange);background:rgba(227,82,5,.08)}
+.iam-scope-finding.is-ok{border-color:var(--blue)}
+.iam-scope-badge{font-weight:700;flex:0 0 auto}
+.iam-scope-finding.is-bad .iam-scope-badge{color:var(--orange)}
+.iam-scope-finding.is-ok .iam-scope-badge{color:var(--blue)}
+
+/* ── prompt-guard (Week 14, software-security): guardrail pipeline steps ──
+   Mode fieldset reuses mass-assign's radio pattern; the step list is new
+   because this is the first sim with a MULTI-STAGE pipeline to narrate
+   (guardrail -> model -> redact -> escape), not a single verdict. */
+.prompt-guard-step{display:flex;flex-direction:column;gap:.1rem;padding:.4rem .5rem;
+  border-radius:5px;border:1px solid var(--line);margin-bottom:.35rem;background:var(--bg)}
+.prompt-guard-steplbl{font-size:.7rem;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.prompt-guard-stepval{font-size:.85rem;word-break:break-word}
+.prompt-guard-step.is-blocked{border-color:var(--blue)}
+.prompt-guard-step.is-bad{border-color:var(--orange);background:rgba(227,82,5,.08)}
+.prompt-guard-step.is-fixed{border-color:var(--blue)}
