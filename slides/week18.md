@@ -25,14 +25,9 @@ Cumulative · emphasis on Weeks 10–15
 
 ## What's assessed
 
-- **API security / BOLA** — object-level authorization across A/B/C (20 pts total, not a single bullet's worth)
-- Supply-chain integrity (SLSA / SBOM / Cosign)
-- Cloud & container misconfiguration (concrete examples, not IAM-specific)
-- LLM & agentic threat modeling
-- DevSecOps gate design
-- Memory-safety mitigations & Secure-by-Design tradeoffs
+![A thin foundation band (Weeks 1-6, lighter weight) plus a wide emphasis band (Weeks 10-15, most of the exam weight: BOLA/mass-assignment/rate-limits, memory safety, SLSA/SBOM/Cosign, cloud IAM, prompt injection, DevSecOps gates) — Week 16 capstone isn't examinable. Section A (30, modern-stack concepts) and B (20, spot-the-vuln) test recall; C (30, applied design, no payload required) and D (20, pipeline/incident design) test design reasoning — 50/50. Unlike Week 8's midterm, which devoted 30 points to writing an actual SQL injection payload, Week 18 requires zero points of payload-writing: the shift is from writing exploits to designing fixes.](img/exam-blueprint-final.svg)
 
-<!-- BOLA/API is the one people under-revise — it's 20 of 100 points across three sections, not a single "spot the vuln" line. Show briefly; exam day — don't teach. -->
+<!-- BOLA/API is the one people under-revise — it's 20 of 100 points across three sections, not a single "spot the vuln" line. The recall-vs-design 50/50 split and the explicit contrast with Week 8 (no payloads here) are the two framing points worth saying out loud. Show briefly; exam day — don't teach. -->
 
 ---
 

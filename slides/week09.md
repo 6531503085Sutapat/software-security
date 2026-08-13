@@ -25,10 +25,7 @@ Covers Weeks 1–6 · Individual
 
 ## Challenge areas — 100 pts, 7 challenges
 
-- **Injection (30):** SQLi + command injection — against this course's own apps, **not DVWA** (not deployed anywhere in the exam surface)
-- **Auth / access (30):** IDOR + weak JWT forgery
-- **Crypto (25):** crack a weak hash / break an ECB oracle
-- **XSS (15):** one stored-XSS challenge on this course's own week05 app — not reflected/DOM this time
+![Four categories: Injection (30 pts) from Week 4 — Boolean Bypass SQLi and Shell Out command injection, 15 each. Auth and Access Control (30 pts) from Week 6 — Not Your Order IDOR and Forge Ahead JWT forgery, 15 each. Cryptography (25 pts) from Week 3 — Crack It password cracking (15) and Penguin ECB oracle (10). XSS (15 pts) from Week 5 — Pop the Alert, stored only. Not against DVWA or Juice Shop — this course's own apps, the only targets a flag is actually planted on.](img/ctf-categories.svg)
 
 <!-- Same targets as the W7 mock, weighted unevenly — don't present these as equal-weight. DVWA appears in this week's own README but isn't deployed anywhere in ctf.md's target list — correct it here so no one hunts for a container that isn't running. Juice Shop is similar: ctf.md's Targets line used to list it as an "(or OWASP Juice Shop)" alternative for the XSS slot, but no flag was ever planted there (seed_flags.py / the answer key only seed this course's own apps) — so it wasn't actually part of the graded surface, and that line has been removed from ctf.md. If a student asks, week05's app is the only XSS target; Juice Shop earns no credit. Extra challenges available in exams/item-bank.md (CTF pool) if you rotate. -->
 

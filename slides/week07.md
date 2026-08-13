@@ -26,16 +26,9 @@ Pre-Midterm · Weeks 1–6
 
 ## Map of the half
 
-| Wk | Topic | OWASP/CWE | One-line |
-|---|---|---|---|
-| 1 | Threat modeling | A06, CWE-501 | think like an attacker; STRIDE |
-| 2 | SDLC & tooling | A02/04/05, CWE-89/78/327/798 | SAST/DAST/SCA/fuzzing; shift left |
-| 3 | Crypto | A04, CWE-327 | KDFs, AEAD; avoid ECB/MD5 |
-| 4 | Injection | A05, CWE-89/78/434 | data ≠ code; parameterize |
-| 5 | XSS | A05, CWE-79/352 | encode per context; CSP |
-| 6 | Auth & access | A01, CWE-639/347 | authorize every request |
+![A revision map of weeks 1 to 6: untrusted input crosses a trust boundary toward a sink, and every week places its control exactly at that crossing. Week 1 threat modeling: draw the DFD, run STRIDE at each crossing. Week 2 SDLC/tooling: Semgrep, Gitleaks, DAST and fuzzing catch what rides through commit/build/run unseen. Week 3 crypto: argon2id + AES-GCM with the key from the environment, not MD5/ECB with a fixed key. Week 4 injection: a parameterized query, no shell, an allow-list on the host. Week 5 XSS/CSRF: contextual encoding, a strict CSP, SameSite plus a real CSRF token. Week 6 auth: deny by default, a server-side owner check, and verifying the JWT's algorithm and signature.](img/revision-map.svg)
 
-<!-- Fast recap — cold-call one student per row to give the one-liner from memory. Don't lecture; it's retrieval practice. This column condenses each week's own graded OWASP/CWE scope, not a verbatim README quote — most weeks' READMEs carry a richer tag than this one-line abbreviation (e.g. Week 3's README also cites CWE-916/330, Week 6's also cites A07/CWE-287/321); Week 2's row spans all three of its graded categories (A05 injection, A04 weak hash, A02 secrets/misconfig) since no single category is the week's real content. ~10 min. -->
+<!-- Fast recap — cold-call one student per row to give the one-liner from memory. Don't lecture; it's retrieval practice. Same unifying shape as Week 1's own trust-boundary concept: input crosses, a control sits at the crossing — the map makes that pattern visible across all 6 weeks at once, not just stated per week. ~10 min. -->
 
 ---
 
