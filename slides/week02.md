@@ -54,7 +54,7 @@ Requirements → Design → Code → Build → Test → Deploy → Operate
 | **DAST** | running app | test/staging |
 | **SCA** | dependencies | build |
 | **Secret scanning** | secrets in code/history | commit/CI |
-| **Fuzzing** | runtime + random inputs | test |
+| **Fuzzing** | runtime + random inputs | **build** (compiled harness, not the text) |
 
 <!-- The mental map for the whole unit. Stress: no single tool finds everything — they see different things. Tie each to a later week (SCA → W12, DAST → Burp in W4-6). ~5 min. -->
 
@@ -79,12 +79,13 @@ def user():
     name = request.args.get("name")
     q = "SELECT * FROM users WHERE name='%s'" % name   # SAST → CWE-89
     return db.execute(q).fetchall()
-AWS_SECRET = "wJalr...EXAMPLEKEY"                       # Gitleaks → CWE-798
+AWS_SECRET_ACCESS_KEY = "hK8pQ2mN5vX9wZ3rT6yU1sA4bC7dE0fG2hJ5kL8"  # Gitleaks → CWE-798
 ```
 
 - **Semgrep (SAST):** flags the string-built SQL query (CWE-89)
-- **Gitleaks (secret scan):** flags the hardcoded AWS key (CWE-798)
+- **Gitleaks (secret scan):** flags the hardcoded key — *must be a real-looking secret;* the AWS-docs example key (`wJalr...EXAMPLEKEY`) is a known public string and **won't fire any rule**
 - **DAST/fuzzer:** would catch a crash/SQLi by *hitting* `/user`, not reading it
+- Same file also plants command injection, a weak `md5` hash, and `debug=True` — Task 1 grades all five
 
 <!-- The make-it-concrete slide — point at the exact lines each tool fires on. This is the `vulnerable-repo/app.py` they'll scan in the lab. Ask: "which tool finds the secret? which finds the SQLi? could one tool find both?" ~6 min. -->
 
@@ -97,10 +98,12 @@ AWS_SECRET = "wJalr...EXAMPLEKEY"                       # Gitleaks → CWE-798
 - Pair with sanitizers (ASan) to pinpoint the bug
 
 ```bash
-clang -fsanitize=address,fuzzer harness.c -o fuzz && ./fuzz
+# run inside labs/toolbox — Apple clang has no libFuzzer runtime
+clang -g -fsanitize=address,fuzzer harness.c -o fuzz
+mkdir -p corpus && printf 'FUZ' > corpus/seed && ./fuzz corpus
 ```
 
-<!-- Fuzzing is the highest-yield bug finder in industry (most memory CVEs come from it). Explain coverage-guided = the fuzzer "learns" inputs that reach new code. Deep dive + exploit comes in W11. ~5 min. -->
+<!-- Fuzzing is the highest-yield bug finder in industry (most memory CVEs come from it). Explain coverage-guided = the fuzzer "learns" inputs that reach new code. The seed corpus matters — unseeded, this exact harness crashes in roughly 1 of 6 short runs; seeded, it's reliable every time. Deep dive + exploit comes in W11. ~5 min. -->
 
 ---
 
@@ -117,11 +120,11 @@ clang -fsanitize=address,fuzzer harness.c -o fuzz && ./fuzz
 
 ## Tools you'll meet
 
-- **SonarQube** — code quality + SAST against the "7 axes" (bugs, duplication, complexity, coverage…)
-- **GitHub Advanced Security (GHAS)** — CodeQL + secret scanning + Dependabot, native in the repo
+- **Trivy** — the SCA scanner *you'll actually run this lab* (dependency scan today; image + IaC scanning return in W12/13)
+- **SonarQube**, **GitHub Advanced Security (GHAS)** — quality-gate/SAST-in-the-repo tools you'll see in industry/internships, not used in this lab
 - Address **technical debt** early — cheaper than re-work later
 
-<!-- Name the real tools they'll see in industry/internships. SonarQube = quality gate; GHAS = security native in GitHub. Connect "technical debt" to the cost curve from the recap. ~3 min. -->
+<!-- Trivy is the one they'll type today (Task 5, scanning the NoteVault target) — say so explicitly so "tools you'll meet" doesn't read as "tools this lab uses." SonarQube/GHAS are real-world awareness. Connect "technical debt" to the cost curve from the recap. ~3 min. -->
 
 ---
 
@@ -131,11 +134,13 @@ clang -fsanitize=address,fuzzer harness.c -o fuzz && ./fuzz
 - Score = true positives − misclassified · live scoreboard
 
 ```bash
-docker run --rm -v "$PWD:/src" semgrep/semgrep semgrep --config p/default /src
-docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect -s /repo -v
+docker run --rm -v "$PWD/vulnerable-repo:/src" semgrep/semgrep \
+  semgrep --config p/default --config p/owasp-top-ten /src
+docker run --rm -v "$PWD/vulnerable-repo:/repo" zricethezav/gitleaks:latest \
+  detect -s /repo -v --no-git
 ```
 
-<!-- Explain the game before lab: speed + accuracy. Penalize wild guessing (misclassified subtracts) so they must justify each finding. Mirrors a real bug-bounty triage queue. ~3 min. -->
+<!-- Explain the game before lab: speed + accuracy. Penalize wild guessing (misclassified subtracts) so they must justify each finding. Mirrors a real bug-bounty triage queue. Warn about the two gotchas up front: Gitleaks needs `--no-git` or it silently reports zero leaks; the repo root's own `.gitleaks.toml` deliberately allowlists this lab's secrets, so scan `vulnerable-repo/` specifically, not the repo root. ~3 min. -->
 
 ---
 
@@ -151,14 +156,17 @@ docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect -s /repo -v
 
 ## Lab 2 — deliverable
 
-> 📋 **Worksheet 2** — `labs/week02-sdlc-tooling/worksheet.md` (Part 3) · **kickoff:** `bash scan.sh` (Semgrep + Gitleaks on `./vulnerable-repo`)
+> 📋 **Worksheet 2** — `labs/week02-sdlc-tooling/worksheet.md` (Part 3) · **kickoff:** `bash scan.sh` (Semgrep ×2 rulesets + Gitleaks `--no-git` on `./vulnerable-repo`)
 
-- A findings **triage table**: tool, CWE, severity, TP/FP, fix idea
-- 3 true positives + 1 false positive (justified)
+- A findings **triage table**: tool, CWE, severity, TP/FP, fix idea (3 TP + 1 FP, justified)
 - 1 fuzzing crash with a one-line root cause
+- Trivy SCA scan of the **NoteVault** project target
+- A security **CI gate** built from Week 15's `security-ci.yml`
+- One **SAST blind spot** you found by hand
+- **Defend/fix: remediate all 5 planted flaws**, before/after diff — this alone is 25 of 100 rubric points
 - **+ Audit the AI** and **EiPE / Prompt Problem** (see worksheet)
 
-<!-- The graded output. Remind them to also scan the NoteVault project target (worksheet task) and to do the AI-resilient tasks. Point to scan.sh. -->
+<!-- The graded output — six tasks, not three. The defend/fix task (25 pts, "Defense") is the single biggest score component and is easy to undersell if you only recap the triage table. Point to scan.sh. -->
 
 ---
 

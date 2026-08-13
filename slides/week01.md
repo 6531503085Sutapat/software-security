@@ -22,7 +22,7 @@ Software Security · Nutthakorn Chalaemwongwan
 - **Secure by Design**
 - 🎲 Game: **Elevation of Privilege** · Lab 0 setup
 
-<!-- Roadmap slide — 1 min. Tell them the lecture is ~2 h, then a 3 h lab where they threat-model a real app and play the card game. Flag the deliverable early: a 2–3 page threat model. Ask: "Who has heard the word 'threat model' before?" gauge the room. -->
+<!-- Roadmap slide — 1 min. Tell them the lecture is ~2 h, then a 3 h lab where they threat-model a real app, play the card game, AND implement one real fix (this grew from a propose-only exercise to a build-and-prove one — see Lab 1 slide). Ask: "Who has heard the word 'threat model' before?" gauge the room. -->
 
 ---
 
@@ -53,10 +53,10 @@ Software Security · Nutthakorn Chalaemwongwan
 
 - Defenders must close **every** hole
 - Attackers need **one**
-- Think in **misuse cases**, not just use cases
+- Think in **abuse cases**, not just use cases
 - "What can go wrong here?" at every boundary
 
-<!-- The asymmetry is the whole reason security is hard. Contrast a "use case" (user logs in) with a "misuse case" (attacker logs in as someone else). Exercise: pick the classroom projector login and ask "how would you abuse this?" Get 3 answers. ~5 min. -->
+<!-- The asymmetry is the whole reason security is hard. Contrast a "use case" (user logs in) with an "abuse case" (attacker logs in as someone else) — say "abuse case," not "misuse case," to match the worksheet's term (Task 4: 2 personas × 2 abuse cases, graded). Exercise: pick the classroom projector login and ask "how would you abuse this?" Get 3 answers. ~5 min. -->
 
 ---
 
@@ -80,9 +80,10 @@ Browser  --(file)-->  [Flask app]  --save f.filename-->  uploads/
 
 - Crosses the **Internet → app** trust boundary
 - Inputs: the file **bytes** *and* the **filename** (attacker-controlled)
-- `../../etc/passwd` as a filename → path traversal (read outside `uploads/`)
+- `../../escaped.txt` as a filename → the app saves it there — **arbitrary-file-write**, unauthenticated, anywhere the process can reach (not "overwrite a same-name file" — write to a path you chose)
+- `/files/<name>` (the *read* path) is comparatively well-defended — Werkzeug's `safe_join` blocks the same trick
 
-<!-- This is the "make it concrete" moment — walk the data flow on the board. Ask: "what does the app trust here?" (it trusts the filename). Show how a crafted filename escapes the folder. We'll STRIDE this exact element next slide. This worked example is what makes the abstract method click. ~7 min. -->
+<!-- This is the "make it concrete" moment — walk the data flow on the board. Ask: "what does the app trust here?" (it trusts the filename, unsanitized, on save). Verified live: /upload writes outside uploads/ with no auth; /files/<name> refuses every traversal encoding tried. Get the direction right — it's a WRITE bug, not a read bug — the rest of today's STRIDE pass depends on this. ~7 min. -->
 
 ---
 
@@ -104,13 +105,13 @@ Browser  --(file)-->  [Flask app]  --save f.filename-->  uploads/
 ## STRIDE applied to `/upload`
 
 - **S** — no auth: anyone can upload as "anyone"
-- **T** — overwrite another user's file (same name)
+- **T** — `../` filename **writes** outside `uploads/` — arbitrary-file-write, not just an overwrite
 - **R** — no logs → can't prove who uploaded the malware
-- **I** — `../` filename reads files outside the folder
+- **I** — the *read* path (`/files/<name>`) is comparatively well-defended (Werkzeug blocks traversal there) — this element's real risk is on the write side, not this letter
 - **D** — no size limit → fill the disk
 - **E** — upload `shell.php`, then request it → code execution
 
-<!-- Pay-off slide: the full STRIDE pass on one element. Let the class call out threats before revealing each line. This models exactly what they'll do in the lab. End with: "6 threats from ONE endpoint — now imagine the whole app." ~6 min. -->
+<!-- Pay-off slide: the full STRIDE pass on one element. Let the class call out threats before revealing each line. Verified by running the real sample-app: the traversal bug is a WRITE primitive (Tampering), and the naive "I = read outside the folder" claim does NOT reproduce against /files/<name> — Werkzeug's safe_join blocks it. Don't let this STRIDE pass repeat that error. End with: "5-6 threats from ONE endpoint — now imagine the whole app." ~6 min. -->
 
 ---
 
@@ -118,10 +119,10 @@ Browser  --(file)-->  [Flask app]  --save f.filename-->  uploads/
 
 - **OWASP Top 10 (2025)** — most critical web risks
 - **OWASP LLM Top 10 (2025)** — AI app risks
-- **MITRE CWE** — catalogue of weaknesses
+- **MITRE CWE** — catalogue of weaknesses (this week's finding maps to **CWE-501**, Trust Boundary Violation)
 - **MITRE ATT&CK** — adversary tactics & techniques
 
-<!-- Orient them to the references we'll cite weekly. OWASP = what to prevent; CWE = the precise weakness id (e.g., CWE-22 path traversal); ATT&CK = how real adversaries operate. They'll map every finding to a CWE/OWASP id all term. ~3 min. -->
+<!-- Orient them to the references we'll cite weekly. OWASP = what to prevent; CWE = the precise weakness id; ATT&CK = how real adversaries operate. Name CWE-501 explicitly here — the worksheet's Reflection Q1 asks them to map their /upload finding to a CWE, and this is the answer the course has already committed to (fixed 2026-07-25, after CWE-1059 turned out to be MITRE-prohibited for vulnerability mapping). They'll map every finding to a CWE/OWASP id all term. ~3 min. -->
 
 ---
 
@@ -131,8 +132,9 @@ Browser  --(file)-->  [Flask app]  --save f.filename-->  uploads/
 - Shift from "patch later" to **design out the bug class**
 - Industry & government push toward **memory-safe languages** (more in Wk 11)
 - Some bugs are **design flaws**, not coding slips → **A06: Insecure Design**
+- Today's lab makes you *do* this: after you fix `/upload`, you'll argue whether your fix closes the **class** of bug or just this one **instance**
 
-<!-- Tie the mindset to the current policy moment (CISA, memory-safety roadmaps). Key idea: threat modeling catches design flaws *before* code exists — cheapest place to fix. Contrast cost of fixing at design vs in production (orders of magnitude). ~4 min. -->
+<!-- Tie the mindset to the current policy moment (CISA, memory-safety roadmaps). Key idea: threat modeling catches design flaws *before* code exists — cheapest place to fix. This slide's own thesis is Task 8's actual grading question — make the connection explicit, don't leave it implicit. Contrast cost of fixing at design vs in production (orders of magnitude). ~4 min. -->
 
 ---
 
@@ -163,14 +165,16 @@ Browser  --(file)-->  [Flask app]  --save f.filename-->  uploads/
 
 > 📋 **Worksheet 1** — `labs/week01-threat-modeling/worksheet.md` (Part 3) · **kickoff:** `docker compose up` → http://localhost:8080
 
-1. Run the provided app (`docker compose up`)
-2. Draw a **DFD**: processes, stores, external entities, trust boundaries
-3. Apply **STRIDE** to each element
-4. Rank top 5 risks (likelihood × impact) + one mitigation each
+1. Run the app; draw a **DFD**; apply **STRIDE** to each element
+2. Abuse cases: 2 personas × 2 abuse cases
+3. Deep-dive the `/upload` path-traversal finding
+4. **Systems-level pass:** assume one element is owned — what does it reach? Chain two low findings into one system-level claim
+5. Turn threats into testable **security requirements** ("the system must … so that …")
+6. **NoteVault (term project):** DFD + top-3 threats — this kicks off your project
+7. Rank top 5 risks (likelihood × impact)
+8. **Defend: implement one real mitigation** — diff, before/after evidence, and argue whether your fix closes the bug **class** or just this **instance**
 
-**Deliverable:** 2–3 page threat model
-
-<!-- The main lab. They repeat today's /upload worked example across the whole sample app. Remind: rank by likelihood × impact (not everything is critical), and propose a concrete mitigation each. Point them to THREAT-MODEL-TEMPLATE.md. Also: kick off the term project by threat-modeling NoteVault (see worksheet). -->
+<!-- This grew from a 4-step propose-only exercise into an 8-part build-and-prove lab (task numbering in the worksheet is 0-8, with a 3b for the systems-level pass) — don't teach the old 4-step version. Two things are new and graded, cite them explicitly: the systems-level pass (step 4, research-grounded — STRIDE-only modeling makes people miss system-level threats) and the implemented-and-evidenced defense (step 8 — this is where "Secure by Design" 4 slides ago stops being theory). Point them to THREAT-MODEL-TEMPLATE.md. Step 6 kicks off the term project. -->
 
 ---
 

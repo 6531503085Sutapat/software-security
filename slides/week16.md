@@ -37,10 +37,10 @@ Software Security · Nutthakorn Chalaemwongwan
 ## Demo format (today, ungraded)
 
 - 10-min demo + 5-min Q&A
-- Show one full attack→fix walkthrough live
+- Show one full attack→fix walkthrough — **live** unless your environment breaks, then a recorded fallback is fine (this is a rehearsal, not the Week 19 format)
 - Get peer feedback before the graded Week 19
 
-<!-- Run on a timer (15 min/team). "Ungraded" lowers stakes so they expose weak spots now. Insist on a LIVE walkthrough, not slides about it. -->
+<!-- Run on a timer (15 min/team). "Ungraded" lowers stakes so they expose weak spots now. Prefer live — it's the better rehearsal — but don't hard-block a team whose sandbox breaks; the worksheet itself allows a recorded fallback for the attack segment, so don't contradict it on stage. -->
 
 ---
 
@@ -57,11 +57,11 @@ Software Security · Nutthakorn Chalaemwongwan
 
 ## 🏆 Practice CTF
 
-- Mixed web / API / supply-chain / LLM / binary
-- Cross-team scrimmage
-- Dry run for the Week 19 tournament
+- Mixed web / API / binary / supply-chain / cloud / LLM — 9 challenges, 6 categories
+- **Boss challenge:** chains two bugs on **NoteVault** itself — your term project's own starter app
+- Cross-team scrimmage, dry run for the Week 19 tournament
 
-<!-- Run the scrimmage (scrimmage.md / item-bank CTF pool) in the exact W19 team format so the final has no surprises. Leaderboard on CTFd. ~2.5 h. -->
+<!-- Run the scrimmage (scrimmage.md / item-bank CTF pool) in the exact W19 team format so the final has no surprises — don't drop "cloud" from the category list, it's a real category on the board (misconfig hunt, wk13). The Boss challenge is the one place this CTF ties back to the capstone theme — call it out, it's easy to miss. Leaderboard on CTFd. ~2.5 h. -->
 
 ---
 
