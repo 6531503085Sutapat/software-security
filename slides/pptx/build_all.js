@@ -26,14 +26,33 @@ async function iconPng(Comp, color) {
   return "image/png;base64," + (await sharp(Buffer.from(svg)).png().toBuffer()).toString("base64");
 }
 
+// Estimate how many lines a string wraps to inside a box of a given width, so fixed-height
+// boxes can be sized from real wrapped-line counts instead of raw item counts — a mispredicted
+// single-line assumption is what let long bullets spill outside their panel.
+function wrapLines(text, widthIn, fontPt) {
+  const charWidthIn = (fontPt * 0.52) / 72; // empirical avg glyph width, Calibri/Arial body text
+  const charsPerLine = Math.max(10, Math.floor(widthIn / charWidthIn));
+  return Math.max(1, Math.ceil(text.length / charsPerLine));
+}
+
 // ---- tiny markdown helpers ----
-const strip = (s) => s
-  .replace(/\*\*([^*]+)\*\*/g, "$1")      // **bold** -> bold
-  .replace(/\*([^*\s][^*]*?)\*/g, "$1")  // *italic* -> italic (leaves standalone * in code alone)
-  .replace(/\*\*/g, "")
-  .replace(/`/g, "")
-  .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
-  .trim();
+// Protect `code span` contents from the bold/italic regexes below — a literal "*" inside
+// backticks (e.g. `Resource:"*"` or `*** panic ***`) is not emphasis syntax and must survive
+// verbatim; without this guard the italic regex eats asterisks out of inline code.
+const strip = (s) => {
+  const codeSpans = [];
+  s = s.replace(/`([^`]+)`/g, (_, code) => {
+    codeSpans.push(code);
+    return "@@CS" + (codeSpans.length - 1) + "@@";
+  });
+  s = s
+    .replace(/\*\*([^*]+)\*\*/g, "$1")      // **bold** -> bold
+    .replace(/\*([^*\s][^*]*?)\*/g, "$1")  // *italic* -> italic
+    .replace(/\*\*/g, "")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .trim();
+  return s.replace(/@@CS(\d+)@@/g, (_, i) => codeSpans[Number(i)]);
+};
 
 function parseDeck(md) {
   // drop YAML front-matter
@@ -46,12 +65,25 @@ function parseBlock(block) {
   const lines = block.split("\n");
   let title = "", h1 = "", sub = "", author = "";
   const body = [], notes = [];
-  let inCode = false, code = [], inComment = false;
+  let inCode = false, code = [], codeLang = "", inComment = false;
   for (let raw of lines) {
     const line = raw.replace(/\s+$/, "");
     if (line.startsWith("```")) {
-      if (inCode) { body.push({ t: "code", v: code.join("\n") }); code = []; inCode = false; }
-      else inCode = true;
+      if (inCode) {
+        // A ```sim fence embeds an interactive simulation on the web (see
+        // content.py's fence handler) — this generator has no iframe to put
+        // on a slide, so a raw sim slug would otherwise land in a code box
+        // with nothing around it. A short pointer reads better than either
+        // silently dropping the block or rendering "cia-triad" as if it were
+        // a command to run.
+        if (codeLang === "sim") {
+          const slug = code.join("\n").trim();
+          body.push({ t: "raw", v: `Try it live: /sim/${slug} (interactive simulation, web only)` });
+        } else {
+          body.push({ t: "code", v: code.join("\n") });
+        }
+        code = []; inCode = false; codeLang = "";
+      } else { inCode = true; codeLang = line.slice(3).trim(); }
       continue;
     }
     if (inCode) { code.push(raw); continue; }
@@ -70,6 +102,17 @@ function parseBlock(block) {
     if (line.startsWith("# ")) { h1 = strip(line.slice(2)); continue; }
     if (line.startsWith("## ")) { title = strip(line.slice(3)); continue; }
     if (!line.trim()) continue;
+    // A markdown image has no on-slide equivalent here (this generator only
+    // emits text/tables/code). Without this, strip()'s link-stripping regex
+    // eats the "[alt](src)" part of "![alt](src)" but leaves the leading "!"
+    // glued to the alt text as stray punctuation. Render a labeled pointer
+    // instead, same idea as the ```sim fence handling above.
+    const imgMatch = line.trim().match(/^!\[([^\]]*)\]\([^)]*\)$/);
+    if (imgMatch) {
+      const alt = strip(imgMatch[1]);
+      body.push({ t: "raw", v: alt ? `See diagram: ${alt} (web only)` : "See diagram (web only)" });
+      continue;
+    }
     body.push({ t: "raw", v: line });
   }
   if (inCode && code.length) body.push({ t: "code", v: code.join("\n") });
@@ -186,9 +229,23 @@ function organize(body) {
       header(s, titleTxt);
       let y = 1.45;
       const bottom = 5.0;
+      // A block that doesn't fit on one slide gets a "(cont.)" continuation slide instead of
+      // silently dropping items — the old fixed-budget loop just stopped early with no overflow
+      // handling, which deleted real content (e.g. a lab's last numbered steps) with no trace.
+      const pages = [s];
+      const newPage = () => {
+        foot(s, "");
+        s = base();
+        header(s, titleTxt + " (cont.)");
+        pages.push(s);
+        y = 1.45;
+      };
+      const bulletH = (b) => 0.34 + Math.max(0, wrapLines(b.text, 8.4 - (b.lvl ? 0.65 : 0.4), 14) - 1) * 0.22;
+      const numberedH = (t) => Math.max(0.42, 0.28 * wrapLines(t, 8.3, 13.5) + 0.16);
+
       for (const it of items) {
-        if (y > bottom - 0.4) break;
         if (it.kind === "table") {
+          if (y > bottom - 0.6) newPage();
           const rows = it.rows;
           const colN = Math.max(...rows.map((r) => r.length));
           const tbody = rows.map((r, ri) => {
@@ -199,40 +256,64 @@ function organize(body) {
           s.addTable(tbody, { x: 0.5, y, w: 9.0, rowH, border: { type: "solid", pt: 1, color: BG } });
           y += rows.length * rowH + 0.2;
         } else if (it.kind === "code") {
-          const ln = it.text.split("\n").length;
-          const h = Math.min(0.28 * ln + 0.3, bottom - y);
+          if (y > bottom - 0.6) newPage();
+          // Count wrapped lines per source line too — a long unbroken command can wrap inside
+          // the fixed-width box even though the source has a single "\n"-delimited line.
+          const ln = it.text.split("\n").reduce((sum, l) => sum + wrapLines(l || " ", 8.4, 11.5), 0);
+          const h = Math.min(0.24 * ln + 0.3, bottom - y);
           s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 0.5, y, w: 9.0, h, rectRadius: 0.06, fill: { color: "0A1020" }, line: { color: PANEL2, width: 1 } });
-          s.addText(it.text, { x: 0.7, y: y + 0.08, w: 8.6, h: h - 0.16, fontSize: 11.5, color: "9FE7D6", fontFace: "Courier New", valign: "top", margin: 0 });
+          s.addText(it.text, { x: 0.7, y: y + 0.08, w: 8.6, h: h - 0.16, fontSize: 11.5, color: "9FE7D6", fontFace: "Courier New", valign: "top", margin: 0, fit: "shrink" });
           y += h + 0.18;
         } else if (it.kind === "bullets") {
-          const h = Math.min(0.34 * it.items.length + 0.3, bottom - y);
-          s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 0.5, y, w: 9.0, h, rectRadius: 0.08, fill: { color: PANEL }, shadow: shadow() });
-          s.addText(it.items.map((b, k) => ({ text: b.text, options: { bullet: { code: "2022" }, indentLevel: b.lvl, color: TEXT, breakLine: true, paraSpaceAfter: 6 } })),
-            { x: 0.8, y: y + 0.12, w: 8.4, h: h - 0.24, fontSize: 14, color: TEXT, fontFace: BODY, valign: "top", margin: 0 });
-          y += h + 0.18;
-        } else if (it.kind === "numbered") {
-          const h = Math.min(0.5 * it.items.length + 0.1, bottom - y);
-          let yy = y;
-          for (let k = 0; k < it.items.length && yy < bottom - 0.3; k++) {
-            s.addShape(pres.shapes.OVAL, { x: 0.55, y: yy, w: 0.42, h: 0.42, fill: { color: ORANGE } });
-            s.addText(String(k + 1), { x: 0.55, y: yy, w: 0.42, h: 0.42, fontSize: 15, bold: true, color: "0E1726", align: "center", valign: "middle", fontFace: HEAD, margin: 0 });
-            s.addText(it.items[k], { x: 1.15, y: yy, w: 8.3, h: 0.42, fontSize: 13.5, color: TEXT, fontFace: BODY, valign: "middle", margin: 0 });
-            yy += 0.5;
+          // Height from real wrapped-line counts per bullet, not raw bullet count — a bullet
+          // long enough to wrap to 2 lines was previously charged the same 0.34in as a 1-liner,
+          // which let text spill below the panel. Bullets that don't fit at all spill onto a
+          // continuation slide instead of being silently dropped.
+          let idx = 0;
+          while (idx < it.items.length) {
+            if (y > bottom - 1.0) newPage();
+            let h = 0.3, count = 0;
+            for (let k = idx; k < it.items.length; k++) {
+              const bh = bulletH(it.items[k]);
+              if (count > 0 && y + h + bh > bottom) break;
+              h += bh; count++;
+            }
+            const chunk = it.items.slice(idx, idx + count);
+            const boxH = Math.min(h, bottom - y);
+            s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 0.5, y, w: 9.0, h: boxH, rectRadius: 0.08, fill: { color: PANEL }, shadow: shadow() });
+            s.addText(chunk.map((b) => ({ text: b.text, options: { bullet: { code: "2022" }, indentLevel: b.lvl, color: TEXT, breakLine: true, paraSpaceAfter: 6 } })),
+              { x: 0.8, y: y + 0.12, w: 8.4, h: boxH - 0.24, fontSize: 14, color: TEXT, fontFace: BODY, valign: "top", margin: 0, fit: "shrink" });
+            y += boxH + 0.18;
+            idx += count;
           }
-          y = yy + 0.1;
+        } else if (it.kind === "numbered") {
+          // Every item gets placed somewhere — if one doesn't fit in the remaining space, start
+          // a continuation slide first rather than truncating the list (numbering carries over).
+          for (let k = 0; k < it.items.length; k++) {
+            const rh = numberedH(it.items[k]);
+            if (y + rh > bottom - 0.1) newPage();
+            s.addShape(pres.shapes.OVAL, { x: 0.55, y, w: 0.42, h: 0.42, fill: { color: ORANGE } });
+            s.addText(String(k + 1), { x: 0.55, y, w: 0.42, h: 0.42, fontSize: 15, bold: true, color: "0E1726", align: "center", valign: "middle", fontFace: HEAD, margin: 0 });
+            s.addText(it.items[k], { x: 1.15, y, w: 8.3, h: rh, fontSize: 13.5, color: TEXT, fontFace: BODY, valign: "middle", margin: 0, fit: "shrink" });
+            y += rh + 0.08;
+          }
         } else if (it.kind === "quote") {
-          const h = Math.min(0.9, bottom - y);
+          if (y > bottom - 0.6) newPage();
+          const lines = wrapLines(it.text, 8.4, 14);
+          const h = Math.min(Math.max(0.9, 0.3 * lines + 0.3), bottom - y);
           s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 0.5, y, w: 9.0, h, rectRadius: 0.08, fill: { color: PANEL2 } });
-          s.addText(it.text, { x: 0.8, y, w: 8.4, h, fontSize: 14, italic: true, color: ORANGE, fontFace: BODY, valign: "middle", margin: 0 });
+          s.addText(it.text, { x: 0.8, y, w: 8.4, h, fontSize: 14, italic: true, color: ORANGE, fontFace: BODY, valign: "middle", margin: 0, fit: "shrink" });
           y += h + 0.18;
         } else if (it.kind === "para") {
-          const h = Math.min(0.3 * it.text.split("\n").length + 0.3, bottom - y);
-          s.addText(it.text, { x: 0.6, y, w: 8.8, h, fontSize: 14, color: TEXT, fontFace: BODY, valign: "top", margin: 0 });
+          if (y > bottom - 0.6) newPage();
+          const lines = it.text.split("\n").reduce((sum, l) => sum + wrapLines(l || " ", 8.8, 14), 0);
+          const h = Math.min(0.3 * lines + 0.3, bottom - y);
+          s.addText(it.text, { x: 0.6, y, w: 8.8, h, fontSize: 14, color: TEXT, fontFace: BODY, valign: "top", margin: 0, fit: "shrink" });
           y += h + 0.1;
         }
       }
       foot(s, "");
-      if (blk.notes) s.addNotes(blk.notes);
+      if (blk.notes) pages.forEach((pg) => pg.addNotes(blk.notes));
     }
 
     const outFile = path.join(OUT, `week${ww}.pptx`);

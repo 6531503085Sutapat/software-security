@@ -245,11 +245,15 @@ def test_every_week_bare_url_opens_its_primary_document():
 
 def test_primary_kind_prefers_the_real_document_over_the_readme():
     """A README exists for every week, so falling back to it would hide the
-    breakage rather than fix it — the exam weeks must open the exam."""
+    breakage rather than fix it — the exam weeks must open the exam.
+
+    week01 checks the other direction: an ordinary lab week must open on
+    slides (the concept), not worksheet (the task list) or readme — see
+    content.PRIMARY_ORDER's own comment for why slides leads worksheet."""
     for slug, expected in (("week08-midterm-written", "exam"),
                            ("week07-review-midterm-prep", "mock-ctf"),
                            ("week19-final-ctf-capstone", "ctf"),
-                           ("week01-threat-modeling", "worksheet")):
+                           ("week01-threat-modeling", "slides")):
         if any(w["slug"] == slug for w in C.list_weeks()):
             assert C.primary_kind(slug) == expected, slug
 

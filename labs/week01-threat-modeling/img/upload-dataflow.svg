@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 320" role="img"
+     aria-label="A data-flow diagram. The browser sends a file and its filename to the Flask app, crossing the boundary from the public internet into the server. Inside the server, the Flask app writes to the uploads directory using the raw, attacker-controlled filename — an unauthenticated arbitrary file write. Separately, the app reads back from uploads through the /files/name path, which is defended against path traversal.">
+  <title>The /upload endpoint: a write that trusts input, a read that doesn't</title>
+  <style>
+    .z    { fill: none; stroke: #b9b4aa; stroke-dasharray: 6 4 }
+    .zl   { font: 600 11px system-ui, sans-serif; fill: #6b7280;
+            letter-spacing: .06em; text-transform: uppercase }
+    .b    { fill: #fffdf9; stroke: #017BC4; stroke-width: 1.5; rx: 6 }
+    .bl   { font: 600 13px system-ui, sans-serif; fill: #16191d; text-anchor: middle }
+    .e    { stroke: #6b7280; stroke-width: 1.6; marker-end: url(#a) }
+    .el   { font: 11px system-ui, sans-serif; fill: #6b7280; text-anchor: middle }
+    .ell  { text-anchor: end }
+    .elr  { text-anchor: start }
+    .x    { font: 700 11px system-ui, sans-serif; fill: #E35205; text-anchor: middle }
+    .arrow{ fill: #6b7280 }
+    .ebad { stroke: #E35205; stroke-width: 1.8; marker-end: url(#b) }
+    .arrowbad { fill: #E35205 }
+    @media (prefers-color-scheme: dark) {
+      .z { stroke: #3a4149 } .zl, .e, .el { stroke: #9aa3ad }
+      .zl, .el { fill: #9aa3ad } .e { stroke: #9aa3ad }
+      .b { fill: #151a20; stroke: #4aa3dd } .bl { fill: #e6e8ea }
+      .arrow { fill: #9aa3ad } .x { fill: #ff7a3d }
+      .ebad { stroke: #ff7a3d } .arrowbad { fill: #ff7a3d }
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7"
+            markerHeight="7" orient="auto"><path class="arrow" d="M0 0 L8 4 L0 8 z"/></marker>
+    <marker id="b" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7"
+            markerHeight="7" orient="auto"><path class="arrowbad" d="M0 0 L8 4 L0 8 z"/></marker>
+  </defs>
+  <rect class="z" x="8"   y="46" width="188" height="180" rx="8"/>
+  <rect class="z" x="248" y="40" width="260" height="236" rx="8"/>
+  <text class="zl" x="16"  y="38">Public internet</text>
+  <text class="zl" x="256" y="32">Server (trusted)</text>
+  <rect class="b" x="46"  y="112" width="112" height="48"/>
+  <text class="bl" x="102" y="141">Browser</text>
+  <rect class="b" x="308" y="68"  width="140" height="48"/>
+  <text class="bl" x="378" y="97">Flask app</text>
+  <rect class="b" x="308" y="204" width="140" height="48"/>
+  <text class="bl" x="378" y="233">uploads/</text>
+  <path class="e" d="M158 136 L286 96"/>
+  <text class="el" x="222" y="106">POST /upload</text>
+  <path class="ebad" d="M344 116 L344 200"/>
+  <text class="el ell" x="334" y="146">save(filename)</text>
+  <circle cx="344" cy="180" r="5" class="arrowbad"/>
+  <path class="e" d="M412 200 L412 120"/>
+  <text class="el elr" x="422" y="190">/files/&lt;name&gt;</text>
+  <text class="x" x="344" y="296">unauthenticated, arbitrary-file-write</text>
+  <text class="el" x="360" y="314">Same boundary, two outcomes — the write trusts the filename; the read doesn't.</text>
+</svg>

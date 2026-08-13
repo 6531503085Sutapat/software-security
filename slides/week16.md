@@ -34,13 +34,21 @@ Software Security · Nutthakorn Chalaemwongwan
 
 ---
 
+## The whole term, one lookup table
+
+![The OWASP Top 10 (2025), each row paired with the week that taught it, the lab file that demonstrated it, and a representative CWE — A01 Broken Access Control (weeks 6, 10, deep coverage), A02 Security Misconfiguration (weeks 13, 2), A03 Software Supply Chain Failures (weeks 12, 15, deep coverage), A04 Cryptographic Failures (week 3), A05 Injection (weeks 4, 5, 2, deep coverage), A06 Insecure Design (week 1), A07 Authentication Failures (week 6), A08 Integrity Failures (week 12), A09 Logging Failures (week 15), A10 Mishandling Exceptional Conditions (week 15) — plus three categories beyond the web Top 10 still graded in the capstone CTF: API1 BOLA (week 10), memory-safety exploitation (week 11), and prompt injection (week 14).](img/owasp-map.svg)
+
+<!-- The self-assessment tool for this session: which categories does YOUR capstone actually demonstrate, and which week's lab is the closest precedent to borrow from? The three "deep coverage" rows (A01/A03/A05) had the most lab hours — that's where a team's evidence will be strongest, and a useful nudge for teams still choosing what to build around. ~4 min. -->
+
+---
+
 ## Demo format (today, ungraded)
 
 - 10-min demo + 5-min Q&A
-- Show one full attack→fix walkthrough live
+- Show one full attack→fix walkthrough — **live** unless your environment breaks, then a recorded fallback is fine (this is a rehearsal, not the Week 19 format)
 - Get peer feedback before the graded Week 19
 
-<!-- Run on a timer (15 min/team). "Ungraded" lowers stakes so they expose weak spots now. Insist on a LIVE walkthrough, not slides about it. -->
+<!-- Run on a timer (15 min/team). "Ungraded" lowers stakes so they expose weak spots now. Prefer live — it's the better rehearsal — but don't hard-block a team whose sandbox breaks; the worksheet itself allows a recorded fallback for the attack segment, so don't contradict it on stage. -->
 
 ---
 
@@ -57,11 +65,11 @@ Software Security · Nutthakorn Chalaemwongwan
 
 ## 🏆 Practice CTF
 
-- Mixed web / API / supply-chain / LLM / binary
-- Cross-team scrimmage
-- Dry run for the Week 19 tournament
+- Mixed web / API / binary / supply-chain / cloud / LLM — 9 challenges, 6 categories
+- **Boss challenge:** chains two bugs on **NoteVault** itself — your term project's own starter app
+- Cross-team scrimmage, dry run for the Week 19 tournament
 
-<!-- Run the scrimmage (scrimmage.md / item-bank CTF pool) in the exact W19 team format so the final has no surprises. Leaderboard on CTFd. ~2.5 h. -->
+<!-- Run the scrimmage (scrimmage.md / item-bank CTF pool) in the exact W19 team format so the final has no surprises — don't drop "cloud" from the category list, it's a real category on the board (misconfig hunt, wk13). The Boss challenge is the one place this CTF ties back to the capstone theme — call it out, it's easy to miss. Leaderboard on CTFd. ~2.5 h. -->
 
 ---
 

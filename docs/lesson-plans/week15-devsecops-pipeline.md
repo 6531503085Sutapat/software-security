@@ -192,8 +192,8 @@ admin token still works.
 - Lab: `labs/week15-devsecops-pipeline/` — `README.md`, `README-pipeline.md`, `worksheet.md`,
   `security-ci.yml`, `sample-service.py`, `insecure_service.py`, `secure_service.py`,
   `docker-compose.yml`
-- The repo's own live pipeline, offered by the week's README as the template to study:
-  `.github/workflows/security-ci.yml`
+- The lab's own pipeline template, offered by the week's README as the starting point to study:
+  `labs/week15-devsecops-pipeline/security-ci.yml` (wiring steps in `README-pipeline.md`)
 - Slides: `slides/week15.md`
 - References (from the week's README): OWASP Logging Cheat Sheet
   (<https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html>) ·

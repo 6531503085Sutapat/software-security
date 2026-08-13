@@ -57,7 +57,7 @@ Software Security · Nutthakorn Chalaemwongwan
 ## Password storage
 
 - Never store plaintext or plain hashes
-- Use a **slow, salted KDF**: argon2id (preferred), bcrypt, scrypt
+- Use a **slow, salted KDF**, in order of preference: **argon2id** → scrypt (if argon2id unavailable) → bcrypt (legacy systems only) → PBKDF2 (FIPS-140 compliance only)
 - Salt is per-user and random
 
 ```python
@@ -71,16 +71,16 @@ ph = PasswordHasher(); hash = ph.hash("correct horse battery staple")
 
 ## Worked example: why ECB leaks
 
-```text
-plaintext blocks:   [AAAA][AAAA][BBBB][AAAA]
-AES-ECB ciphertext: [ X  ][ X  ][ Y  ][ X  ]   ← same block → same cipher
-```
-
 - ECB encrypts each block independently → **patterns survive**
 - The classic "ECB penguin": the image is still recognizable encrypted
-- Fix: an authenticated mode (**AES-GCM**) with a random nonce
+- **CBC isn't the fix either** — no integrity check means an attacker can flip bits in the ciphertext and the corresponding plaintext bits flip predictably
+- Fix: an **authenticated** mode (**AES-GCM**) with a random nonce — confidentiality *and* integrity together
 
-<!-- The visual that makes ECB "click". Walk the block mapping: identical plaintext → identical ciphertext, so structure leaks. Show the ECB-penguin image if you have it. This is exactly the ECB oracle they break in the lab. ~6 min. -->
+```sim
+aes-modes
+```
+
+<!-- The visual that makes ECB "click" — an ECB-penguin-style panel AND a live CBC-malleability demo (flip a ciphertext bit, watch the plaintext bit flip in a sess=...;admin=0;... token) in one sim. Don't stop at "ECB bad, GCM good" — CBC's lack of integrity is the middle step that makes AEAD's *value* click. This is exactly the ECB oracle they break in the lab. ~6 min. -->
 
 ---
 
@@ -131,13 +131,21 @@ hashcat -m 0 hashes.txt rockyou.txt
 
 ---
 
+## Four decisions, four fixes
+
+![Four crypto misuses and their fixes: password storage (md5 to argon2id), cipher mode (hardcoded-key ECB to GCM with a nonce and auth tag), randomness (random.choice to secrets.token_urlsafe), and key source (hardcoded key to an environment variable). One cipher name answers none of these four questions — AES-GCM under a hardcoded key is still CWE-798.](img/crypto-misuse.svg)
+
+<!-- Synthesis slide — the four separate concepts from the last several slides (KDF, cipher mode, RNG, key source) are one decision each in vulnerable_crypto.py, not one big "use better crypto" fix. Land on the closing line: picking AES-GCM doesn't save you if the key is still hardcoded. ~4 min. -->
+
+---
+
 ## 🔓 Game — Capture the Hash
 
 - **Round 1 (speedrun):** crack unsalted/MD5 hashes — fastest team wins
 - **Round 2:** exploit an **ECB oracle** (identical blocks)
-- **Round 3 (defend):** argon2id + AES-GCM + keys from env
+- **Round 3 (defend):** run the fixed version (argon2id + AES-GCM + keys from env) and confirm it holds — **then author two pieces yourself**: migrate a legacy MD5 record to argon2id on next login, and write the decrypt+tamper-check the fixed version doesn't include for you
 
-<!-- Explain rounds before lab. Round 1 = instant-feedback fun; round 3 = the real learning (fix it). Leaderboard on round 1. ~3 min. -->
+<!-- Explain rounds before lab. Round 1 = instant-feedback fun. Round 3 is NOT just "run the pre-fixed code and verify" — be precise that the rehash-on-login migration and the GCM decrypt/tamper-check are the parts students actually write; the rest of the fixed script is handed to them already implemented. Leaderboard on round 1. ~3 min. -->
 
 ---
 
@@ -146,10 +154,13 @@ hashcat -m 0 hashes.txt rockyou.txt
 > 📋 **Worksheet 3** — `labs/week03-cryptography/worksheet.md` (Part 3) · **kickoff:** `docker compose up` (runs the crypto scripts)
 
 - Cracked hashes + method · ECB-leak proof · predictable-token note
-- **Before/after** code (misuse → fix → CWE closed)
+- **Before/after** code (misuse → fix → CWE closed) — incl. your rehash-on-login migration + GCM decrypt/tamper-check
+- TLS: read a real cert's issuer/subject/validity + negotiated protocol version
+- Crack **NoteVault's** own MD5 hashes for the term-project report
+- Every screenshot needs your **whoami + student ID + timestamp in-frame** — this lab's raw output is identical for the whole cohort by design, so unstamped evidence isn't gradable
 - **+ Audit the AI / EiPE / Prompt Problem** (see worksheet)
 
-<!-- Graded output. Also: crack NoteVault's MD5 hashes for the project (worksheet). Point to vulnerable_crypto.py + solution_skeleton.py. -->
+<!-- Graded output — six pieces, not three; don't let the deliverable slide undersell TLS (Task 8) or the evidence stamp (highest-impact single miss if skipped — output is byte-identical across the cohort without it). Point to vulnerable_crypto.py + solution_skeleton.py. -->
 
 ---
 

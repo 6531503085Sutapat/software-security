@@ -17,15 +17,17 @@
 - Add authorization, schema validation, and rate limiting.
 
 ## 🥷 Signature game — "crAPI Raid"
-Take over accounts/vehicles in the crAPI target; each flag = points on the leaderboard.
+Target: **the local API below** — that's the graded lab (see rubric), not crAPI.
+1. **BOLA:** read another user's orders by id with zero ownership check (`/api/users/<id>/orders`).
+2. **Mass assignment:** smuggle `is_admin`/`balance` into `POST /api/users`.
+3. **Resource consumption:** hammer `/api/login` — no rate limit (`401×5 → 429×2`).
+4. **Fix:** read `solution_api.py` and cite the exact line that blocks each exploit (the object-level ownership check, the `ALLOWED_CREATE_FIELDS` allow-list, and the rate limiter).
+
+> **Bonus (optional, ~20 min, ungraded): crAPI** — OWASP's own intentionally-vulnerable API, real GUID-based BOLA. Capture-only — **no fix step**.
 ```bash
 git clone https://github.com/OWASP/crAPI.git
 cd crAPI/deploy/docker && docker compose -f docker-compose.yml up -d
 ```
-1. **BOLA:** access another user's vehicle/order by id.
-2. **Mass assignment:** set a field you shouldn't (e.g. role/credit) via JSON body.
-3. **Resource consumption:** trigger an unthrottled endpoint.
-4. **Fix (round 2):** object-level auth checks, explicit allow-listed request schemas, and rate limiting.
 
 ## Run the local target
 ```bash
