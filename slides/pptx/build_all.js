@@ -65,12 +65,25 @@ function parseBlock(block) {
   const lines = block.split("\n");
   let title = "", h1 = "", sub = "", author = "";
   const body = [], notes = [];
-  let inCode = false, code = [], inComment = false;
+  let inCode = false, code = [], codeLang = "", inComment = false;
   for (let raw of lines) {
     const line = raw.replace(/\s+$/, "");
     if (line.startsWith("```")) {
-      if (inCode) { body.push({ t: "code", v: code.join("\n") }); code = []; inCode = false; }
-      else inCode = true;
+      if (inCode) {
+        // A ```sim fence embeds an interactive simulation on the web (see
+        // content.py's fence handler) — this generator has no iframe to put
+        // on a slide, so a raw sim slug would otherwise land in a code box
+        // with nothing around it. A short pointer reads better than either
+        // silently dropping the block or rendering "cia-triad" as if it were
+        // a command to run.
+        if (codeLang === "sim") {
+          const slug = code.join("\n").trim();
+          body.push({ t: "raw", v: `Try it live: /sim/${slug} (interactive simulation, web only)` });
+        } else {
+          body.push({ t: "code", v: code.join("\n") });
+        }
+        code = []; inCode = false; codeLang = "";
+      } else { inCode = true; codeLang = line.slice(3).trim(); }
       continue;
     }
     if (inCode) { code.push(raw); continue; }
@@ -89,6 +102,17 @@ function parseBlock(block) {
     if (line.startsWith("# ")) { h1 = strip(line.slice(2)); continue; }
     if (line.startsWith("## ")) { title = strip(line.slice(3)); continue; }
     if (!line.trim()) continue;
+    // A markdown image has no on-slide equivalent here (this generator only
+    // emits text/tables/code). Without this, strip()'s link-stripping regex
+    // eats the "[alt](src)" part of "![alt](src)" but leaves the leading "!"
+    // glued to the alt text as stray punctuation. Render a labeled pointer
+    // instead, same idea as the ```sim fence handling above.
+    const imgMatch = line.trim().match(/^!\[([^\]]*)\]\([^)]*\)$/);
+    if (imgMatch) {
+      const alt = strip(imgMatch[1]);
+      body.push({ t: "raw", v: alt ? `See diagram: ${alt} (web only)` : "See diagram (web only)" });
+      continue;
+    }
     body.push({ t: "raw", v: line });
   }
   if (inCode && code.length) body.push({ t: "code", v: code.join("\n") });
