@@ -39,13 +39,23 @@ Software Security · Nutthakorn Chalaemwongwan
 
 ## What does "secure" mean?
 
-- **Confidentiality** — only the right people can read data
-- **Integrity** — data/code can't be tampered with undetected
-- **Availability** — the system is there when needed
+![A triangle connecting three properties. Confidentiality, at the top: only the right people can read it. Integrity, at bottom left: no one can silently change it. Availability, at bottom right: it's there when you need it.](img/cia-triangle.svg)
 
 > Security is not a feature you add — it's a property you design for.
 
 <!-- Core model. Give one concrete example each: C — your medical records; I — your bank balance not silently changed; A — the hospital system up during an emergency. Ask the class to classify a breach you name (e.g., "ransomware encrypts files" → hits A and often C). Stress the tagline; it recurs all term. ~6 min. -->
+
+---
+
+## Classify the incident
+
+Six real-shaped incidents. Guess the property before the reveal — most classes call one out loud before the buttons are even clicked.
+
+```sim
+cia-triad
+```
+
+<!-- Live in the room: put it on screen, read each scenario out loud, take a show-of-hands before revealing. Item 4 (ransomware) is the one to slow down on — most students say "Availability" instantly and miss that real ransomware usually exfiltrates first, so a breach report often has to also disclose C. That nuance is exactly why this drills the PRIMARY hit, not the only one. ~5 min. -->
 
 ---
 
@@ -66,37 +76,40 @@ Software Security · Nutthakorn Chalaemwongwan
 - **Attack surface:** every input an attacker can reach
   - HTTP params, headers, cookies, file uploads, APIs, env vars, dependencies
 
-<!-- Define both precisely — these terms drive the whole DFD/STRIDE method. Draw on the board: browser | (boundary) | server | (boundary) | database. Anything crossing a boundary is where you scrutinize. Ask the class to list inputs of a login page → that's its attack surface. ~6 min. -->
+![Three trust zones — public internet, application tier, data tier — with the two boundaries a request crosses between them](img/trust-boundaries.svg)
+
+<!-- Define both precisely — these terms drive the whole DFD/STRIDE method. Walk the diagram left to right: browser | (boundary) | app | (boundary) | data. Anything crossing a boundary is where you scrutinize. Ask the class to list inputs of a login page → that's its attack surface. Same diagram the worksheet's Task 3b reuses, so pointing back at "the picture from lecture" during the lab actually works. ~6 min. -->
 
 ---
 
 ## Worked example: the `/upload` endpoint
 
-```text
-Browser  --(file)-->  [Flask app]  --save f.filename-->  uploads/
-                            |                               ^
-                       /files/<name>  --------serves back---
-```
+![A data-flow diagram. The browser sends a file and its filename to the Flask app, crossing the boundary from the public internet into the server. Inside the server, the Flask app writes to the uploads directory using the raw, attacker-controlled filename — an unauthenticated arbitrary file write. Separately, the app reads back from uploads through the /files/name path, which is defended against path traversal.](img/upload-dataflow.svg)
 
 - Crosses the **Internet → app** trust boundary
 - Inputs: the file **bytes** *and* the **filename** (attacker-controlled)
 - `../../escaped.txt` as a filename → the app saves it there — **arbitrary-file-write**, unauthenticated, anywhere the process can reach (not "overwrite a same-name file" — write to a path you chose)
-- `/files/<name>` (the *read* path) is comparatively well-defended — Werkzeug's `safe_join` blocks the same trick
+- `/files/<name>` (the *read* path) is comparatively well-defended — the same trick doesn't work against it
 
 <!-- This is the "make it concrete" moment — walk the data flow on the board. Ask: "what does the app trust here?" (it trusts the filename, unsanitized, on save). Verified live: /upload writes outside uploads/ with no auth; /files/<name> refuses every traversal encoding tried. Get the direction right — it's a WRITE bug, not a read bug — the rest of today's STRIDE pass depends on this. ~7 min. -->
 
 ---
 
+## Try it — same input, opposite outcomes
+
+Type a filename below, or pick a preset. The resolved path is computed live, not looked up.
+
+```sim
+path-traversal
+```
+
+<!-- Let them drive this one themselves if the room has laptops open, otherwise drive it from the front and call for filename suggestions. Make sure `../../../../etc/passwd` gets tried before moving on — watching the write side turn orange while the read side stays blocked is the moment this stops being an abstract claim. Ties directly to worksheet Task 3's Reflection Q1 (map the finding to a CWE — CWE-501, named explicitly two slides from now). ~5 min. -->
+
+---
+
 ## STRIDE
 
-| Letter | Threat | Property violated |
-|---|---|---|
-| **S** | Spoofing | Authentication |
-| **T** | Tampering | Integrity |
-| **R** | Repudiation | Non-repudiation |
-| **I** | Information disclosure | Confidentiality |
-| **D** | Denial of service | Availability |
-| **E** | Elevation of privilege | Authorization |
+![Six STRIDE categories, each mapped to the property it violates. Spoofing violates authentication. Tampering violates integrity. Repudiation violates non-repudiation. Information disclosure violates confidentiality. Denial of service violates availability. Elevation of privilege violates authorization.](img/stride-map.svg)
 
 <!-- STRIDE is a checklist so you don't forget a category. Go letter by letter, 1 example each, ideally tied to /upload: T = swap a file; I = read another user's upload; D = upload a 10 GB file; E = upload a .php and execute it. Tell them: apply STRIDE to every element of the DFD. ~8 min. -->
 
@@ -111,7 +124,19 @@ Browser  --(file)-->  [Flask app]  --save f.filename-->  uploads/
 - **D** — no size limit → fill the disk
 - **E** — upload `shell.php`, then request it → code execution
 
-<!-- Pay-off slide: the full STRIDE pass on one element. Let the class call out threats before revealing each line. Verified by running the real sample-app: the traversal bug is a WRITE primitive (Tampering), and the naive "I = read outside the folder" claim does NOT reproduce against /files/<name> — Werkzeug's safe_join blocks it. Don't let this STRIDE pass repeat that error. End with: "5-6 threats from ONE endpoint — now imagine the whole app." ~6 min. -->
+<!-- Pay-off slide: the full STRIDE pass on one element. Let the class call out threats before revealing each line. Verified by running the real sample-app: the traversal bug is a WRITE primitive (Tampering), and the naive "I = read outside the folder" claim does NOT reproduce against /files/<name>. If asked why: for the common `../../etc/passwd`-style payload, Flask's URL router rejects any `<name>` segment containing `/` before the view ever runs — `safe_join` inside `send_from_directory` only gets exercised by a slash-free segment like a bare `..`, and blocks that too. Don't attribute it to safe_join alone; the router does most of the work for the payload shape students actually try. Don't let this STRIDE pass repeat that error. End with: "5-6 threats from ONE endpoint — now imagine the whole app." ~6 min. -->
+
+---
+
+## Now without the bullet list
+
+Same six findings, letters hidden. Guess before it reveals.
+
+```sim
+stride-drill
+```
+
+<!-- Cold-call while this is on screen — it's the same six findings they just watched you reveal, so this checks whether it actually landed, not whether they can read a table. The I item is the one that catches people: watch for anyone answering "I" out of habit rather than working through why the read path is the defended side here. ~4 min. -->
 
 ---
 
@@ -128,11 +153,7 @@ Browser  --(file)-->  [Flask app]  --save f.filename-->  uploads/
 
 ## Secure by Design
 
-- **CISA "Secure by Design":** safety is the vendor's job, on by default
-- Shift from "patch later" to **design out the bug class**
-- Industry & government push toward **memory-safe languages** (more in Wk 11)
-- Some bugs are **design flaws**, not coding slips → **A06: Insecure Design**
-- Today's lab makes you *do* this: after you fix `/upload`, you'll argue whether your fix closes the **class** of bug or just this one **instance**
+![A shift from the old model to Secure by Design. Old model: ship fast, patch later — bugs found after ship, fixed one instance at a time. Secure by Design: design out the bug class — safe by default, it's the vendor's job, designed out before code exists. Design flaws aren't coding slips, mapped to OWASP A06: Insecure Design. Driven by CISA policy and an industry push toward memory-safe languages, covered more in Week 11.](img/secure-by-design-timeline.svg)
 
 <!-- Tie the mindset to the current policy moment (CISA, memory-safety roadmaps). Key idea: threat modeling catches design flaws *before* code exists — cheapest place to fix. This slide's own thesis is Task 8's actual grading question — make the connection explicit, don't leave it implicit. Contrast cost of fixing at design vs in production (orders of magnitude). ~4 min. -->
 
