@@ -109,6 +109,14 @@ Software Security · Nutthakorn Chalaemwongwan
 
 ---
 
+## No boundary in the context window
+
+![The system prompt, the user's typed turn, and any retrieved document all arrive at the model as the same run of text, with nothing marking any of it as data instead of instruction. The reply leaves the same way — untrusted, attacker-shaped text — and if it's passed unescaped into HTML, a shell, or SQL, whatever the model said just executes there. The model itself cannot fix this: there's no tag inside the context window that says "this part is data." The guards have to live outside the model — input_guardrail, redact_secret and escape — which is exactly guarded_chatbot.py.](img/prompt-injection.svg)
+
+<!-- The argument underneath everything today: prompt = system + "\nUser: " + user is ONE string, so the model has no way to tell "instructions I trust" from "text I should just process." Land on the last line before moving to Defenses — it's the direct setup for the three guardrail functions the sim demonstrates next. ~5 min. -->
+
+---
+
 ## Defenses
 
 - Input/output **guardrails** + content filtering — *you'll build this: `guarded_chatbot.py`'s regex denylist*
@@ -116,7 +124,11 @@ Software Security · Nutthakorn Chalaemwongwan
 - Redact secrets before they can reach a response — *you'll build this: `redact_secret()`*
 - **Least-privilege tool access**, human-in-the-loop, rate limits, isolating untrusted RAG content — *concepts only this week (worksheet Q5); no agent/tool-calling code exists in this lab to demo*
 
-<!-- The payoff — map each defense to a leg of the pattern: least-privilege tools cut PRIVILEGE; isolating RAG content cuts UNTRUSTED INPUT; egress limits + human approval cut the OUTBOUND CHANNEL. Be honest that the first three are hands-on today and the fourth bullet is discussion-only — don't let the deck imply an agent demo that doesn't exist. No single guardrail is enough; layer them. ~5 min. -->
+```sim
+prompt-guard
+```
+
+<!-- The payoff — map each defense to a leg of the pattern: least-privilege tools cut PRIVILEGE; isolating RAG content cuts UNTRUSTED INPUT; egress limits + human approval cut the OUTBOUND CHANNEL. The sim runs the actual guardrail/redact/escape code from both real files against whatever they type, layer by layer. Verified live: try the "not in either list" preset — a natural rephrase ("what's" vs "what is") slips past BOTH the vulnerable list and the guarded regex, in either mode. That's the honest lesson, not "redaction saves it" — in this toy model redact_secret() only has something to catch when mock_llm's own hardcoded leak path already fired, so a keyword filter that's too narrow is a gap on both sides, not one your later layers automatically patch. Be honest that the first three are hands-on today and the fourth bullet is discussion-only. No single guardrail is enough; layer them. ~5 min. -->
 
 ---
 

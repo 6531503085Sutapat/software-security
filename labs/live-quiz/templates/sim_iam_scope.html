@@ -1,0 +1,24 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>Two findings, one statement</h1>
+<p class="lead">Edit the IAM statement below. <code>Action</code> and
+<code>Resource</code> are graded as two separate findings, not one — this
+checks each on its own, the way the worksheet does.</p>
+<div class="wrap">
+  <div class="card">
+    <label for="policy">IAM policy statement (JSON)</label>
+    <textarea id="policy" class="mass-assign-body" rows="8" spellcheck="false"></textarea>
+    <p class="mass-assign-err hint" id="err" hidden></p>
+    <div class="preset" id="presets"></div>
+  </div>
+  <div class="card">
+    <h3>Findings</h3>
+    <div id="findings"></div>
+    <p class="verdict" id="verdict"></p>
+    <p id="explain"></p>
+  </div>
+</div>
+<script src="/static/sim/iam-scope.js?v={{ asset_v }}"></script>
+</body></html>
