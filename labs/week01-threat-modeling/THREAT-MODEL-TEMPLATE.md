@@ -8,14 +8,15 @@
 |---|---|---|
 | Web client | external entity | yes (Internet → app) |
 | Flask app | process | |
-| SQLite DB | data store | |
-| /upload endpoint | process + store | |
+| SQLite DB (`notes.db`) | data store | |
+| `uploads/` store | data store | |
 
 ## 3. STRIDE analysis
 | Element | S | T | R | I | D | E |
 |---|---|---|---|---|---|---|
 | /notes | | | | | | |
 | /upload | | | | | | |
+| /files/<name> | | | | | | |
 
 ## 4. Top 5 risks (likelihood × impact) + mitigation
 1.
