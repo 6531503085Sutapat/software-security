@@ -423,12 +423,12 @@ input.jwt-forge-in{font-size:.95rem;padding:.4rem .5rem}
 .cia-triad-answers{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
   gap:.5rem;margin-bottom:.6rem}
 .cia-triad-opt{font-size:.92rem;padding:.55rem .7rem}
-.cia-triad-opt.is-correct,.stride-drill-opt.is-correct{
+.cia-triad-opt.is-correct,.stride-drill-opt.is-correct,.triage-drill-opt.is-correct{
   border-color:var(--blue);color:var(--blue);background:rgba(1,123,196,.12)}
-.cia-triad-opt.is-wrong,.stride-drill-opt.is-wrong{
+.cia-triad-opt.is-wrong,.stride-drill-opt.is-wrong,.triage-drill-opt.is-wrong{
   border-color:var(--orange);color:var(--orange);background:rgba(227,82,5,.12)}
-.cia-triad-opt.is-dim,.stride-drill-opt.is-dim{opacity:.45}
-.cia-triad-opt:focus-visible,.stride-drill-opt:focus-visible{
+.cia-triad-opt.is-dim,.stride-drill-opt.is-dim,.triage-drill-opt.is-dim{opacity:.45}
+.cia-triad-opt:focus-visible,.stride-drill-opt:focus-visible,.triage-drill-opt:focus-visible{
   outline:3px solid var(--blue);outline-offset:2px}
 .cia-triad-explain{min-height:1.4em;margin:.3rem 0 .8rem;max-width:70ch}
 .cia-triad-next{margin-top:.2rem;font-weight:700}
@@ -441,6 +441,9 @@ input.jwt-forge-in{font-size:.95rem;padding:.4rem .5rem}
 .quiz-finished .cia-triad-scenario,
 .quiz-finished .cia-triad-answers,
 .quiz-finished .stride-drill-answers,
+.quiz-finished .triage-drill-answers,
+.quiz-finished .triage-drill-meta,
+.quiz-finished .q,
 .quiz-finished .cia-triad-explain,
 .quiz-finished .cia-triad-next{display:none}
 
@@ -473,3 +476,31 @@ input.jwt-forge-in{font-size:.95rem;padding:.4rem .5rem}
    (tick vs cross), not the colour, is what tells them apart. */
 .path-traversal-badge.is-ok{fill:var(--card);stroke:var(--blue);stroke-width:1.5}
 .path-traversal-glyph{fill:none;stroke:var(--blue);stroke-width:1.6;stroke-linecap:round}
+
+/* ── triage-drill (Week 2, software-security): raw finding → real bug ──
+   Answer-grid shares .is-correct/.is-wrong/.is-dim/:focus-visible with
+   cia-triad/stride-drill above (see that block); only the grid geometry and
+   the finding-meta line are new, since 5 phrase-length labels need width
+   single letters don't. */
+.triage-drill-meta{font-size:.78rem;color:var(--mut);margin:0 0 .3rem}
+.triage-drill-meta code{color:var(--fg)}
+.triage-drill-answers{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+  gap:.5rem;margin-bottom:.6rem}
+.triage-drill-opt{font-size:.85rem;padding:.55rem .7rem;text-align:left}
+
+/* ── fuzz-verdict (Week 2, software-security): harness.c, computed live ──
+   Four cells = the four `if` checks in LLVMFuzzerTestOneInput, in source
+   order. is-pass/is-fail/is-unreached mirror path-traversal's "report only
+   what happened" stance — is-oob is new because this sim has a third,
+   distinct outcome (the read itself, not its result, is the bug). */
+.fuzz-verdict-cells{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin:.6rem 0}
+.fuzz-verdict-cell{border:1px solid var(--line);border-radius:6px;padding:.45rem .3rem;
+  text-align:center;background:var(--bg)}
+.fuzz-verdict-lbl{font-size:.68rem;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.fuzz-verdict-val{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.1rem;
+  font-weight:700;margin-top:.15rem}
+.fuzz-verdict-cell.is-pass{border-color:var(--blue)}
+.fuzz-verdict-cell.is-pass .fuzz-verdict-val{color:var(--blue)}
+.fuzz-verdict-cell.is-fail,.fuzz-verdict-cell.is-unreached{opacity:.5}
+.fuzz-verdict-cell.is-oob{border-color:var(--orange);border-width:2px;background:rgba(227,82,5,.10)}
+.fuzz-verdict-cell.is-oob .fuzz-verdict-val{color:var(--orange)}

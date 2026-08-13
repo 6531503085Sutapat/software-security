@@ -407,6 +407,8 @@ SIMS = {
     "cia-triad": "Classify the incident: which CIA property took the hit? (Week 1)",
     "path-traversal": "The /upload endpoint: same input, opposite outcomes (Week 1)",
     "stride-drill": "Name the threat: STRIDE applied to one endpoint (Week 1)",
+    "fuzz-verdict": "What actually crashes harness.c, computed live (Week 2)",
+    "triage-drill": "Which bug is this really? Raw findings, deduplicated (Week 2)",
     "sqli-parse": "How concatenation changes the SQL parse tree (Week 4)",
     "aes-modes": "Why ECB leaks a picture, and what CBC's XOR costs (Week 3)",
     "ecdsa-malleability": "One signature, two spellings: (r, s) and (r, n − s) (Cryptography, Week 11)",
@@ -427,6 +429,8 @@ SIM_SOURCE = {
     "cia-triad": ("software-security", "week01-threat-modeling"),
     "path-traversal": ("software-security", "week01-threat-modeling"),
     "stride-drill": ("software-security", "week01-threat-modeling"),
+    "fuzz-verdict": ("software-security", "week02-sdlc-tooling"),
+    "triage-drill": ("software-security", "week02-sdlc-tooling"),
     "sqli-parse": ("software-security", "week04-injection"),
     "aes-modes": ("software-security", "week03-cryptography"),
     # Course slugs here are the deployed URL slugs ($COURSES in production —

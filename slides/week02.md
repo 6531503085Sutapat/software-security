@@ -48,15 +48,9 @@ Requirements → Design → Code → Build → Test → Deploy → Operate
 
 ## The tooling families
 
-| Tool | What it sees | When |
-|---|---|---|
-| **SAST** | source code | code/commit |
-| **DAST** | running app | test/staging |
-| **SCA** | dependencies | build |
-| **Secret scanning** | secrets in code/history | commit/CI |
-| **Fuzzing** | runtime + random inputs | **build** (compiled harness, not the text) |
+![A left-to-right software development pipeline with five stages: write code, commit, build, deploy, run. Four scanners are placed at the stage each one actually operates on, and under each is written what it cannot see, grounded in the actual CWEs found in this week's vulnerable-repo/app.py and harness.c.](img/sdlc-gates.svg)
 
-<!-- The mental map for the whole unit. Stress: no single tool finds everything — they see different things. Tie each to a later week (SCA → W12, DAST → Burp in W4-6). ~5 min. -->
+<!-- The mental map for the whole unit. Stress: no single tool finds everything — they see different things. Every READS/FINDS/BLIND-TO on this diagram is real output from this week's own vulnerable-repo, not a hypothetical — walk it left to right and land on "complements, not substitutes." Tie each to a later week (SCA → W12, DAST → Burp in W4-6). ~5 min. -->
 
 ---
 
@@ -103,7 +97,19 @@ clang -g -fsanitize=address,fuzzer harness.c -o fuzz
 mkdir -p corpus && printf 'FUZ' > corpus/seed && ./fuzz corpus
 ```
 
-<!-- Fuzzing is the highest-yield bug finder in industry (most memory CVEs come from it). Explain coverage-guided = the fuzzer "learns" inputs that reach new code. The seed corpus matters — unseeded, this exact harness crashes in roughly 1 of 6 short runs; seeded, it's reliable every time. Deep dive + exploit comes in W11. ~5 min. -->
+<!-- Fuzzing is the highest-yield bug finder in industry (most memory CVEs come from it). Explain coverage-guided = the fuzzer "learns" inputs that reach new code — each correct byte unlocks a new path, which is why it beats blind random guessing. The seed corpus matters (seeded finds it in ~1 second; unseeded has to rediscover 3 magic bytes on its own) — the exact "how much faster" isn't a number I have a verified source for, so don't state one; the mechanism is the teachable part. Deep dive + exploit comes in W11. ~5 min. -->
+
+---
+
+## Try it — what actually crashes this harness
+
+Type bytes, or pick a preset. Each cell is one `if` in the real source.
+
+```sim
+fuzz-verdict
+```
+
+<!-- This is harness.c's exact logic, computed in the browser — not an animation of "how fuzzing feels." Make sure "FUZ" (3 bytes, overflow) and "FUZZ" (4 bytes, deliberate trap via __builtin_trap — a different crash class, no memory-safety bug at all) both get tried, since that distinction is easy to blur. Ties to worksheet Task 4. ~4 min. -->
 
 ---
 
@@ -114,7 +120,19 @@ mkdir -p corpus && printf 'FUZ' > corpus/seed && ./fuzz corpus
 - Prioritize by exploitability × impact
 - Noise kills trust in tools — triage well
 
-<!-- Crucial professional skill: a scanner that cries wolf gets ignored. Show a likely false positive vs a real one. Teach: every finding gets a CWE + a TP/FP call + a one-line justification. ~4 min. -->
+<!-- Crucial professional skill: a scanner that cries wolf gets ignored. IMPORTANT — a real `bash scan.sh` run against this week's own vulnerable-repo returns 12 findings and all 12 are genuine true positives; there is no clean false-positive example in this specimen, so don't invent one live. The real triage skill THIS repo exercises is deduplication: 5 Semgrep rules fire on the identical SQLi line, 3 fire on the identical command-injection line — teach "same root cause, one row in your table" rather than promising a false positive you won't be able to produce on demand. Every finding still gets a CWE + a TP call + a one-line justification. ~4 min. -->
+
+---
+
+## Try it — which bug is this, really?
+
+Seven raw findings from a real scan. Map each back to the one bug underneath.
+
+```sim
+triage-drill
+```
+
+<!-- Every rule ID and line number here is copied from an actual scan.sh run, not invented. The point: "5 rules fired" is not "5 bugs" — recognizing the SAME root cause under two different rule names is the real-world triage skill, more useful than a TP/FP guess. Directly rehearses worksheet Task 3's triage table. ~4 min. -->
 
 ---
 
