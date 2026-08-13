@@ -25,17 +25,9 @@ Pre-Final · Weeks 10–16 (+ callbacks)
 
 ## Map of the modern stack
 
-| Wk | Topic | One-line |
-|---|---|---|
-| 10 | API security | check ownership; bind intended fields |
-| 11 | Memory safety | fuzz, exploit, go memory-safe |
-| 12 | Supply chain | SBOM, SLSA, sign & verify |
-| 13 | Cloud/container | least privilege, no misconfig |
-| 14 | AI/LLM | prompt injection; least-privilege tools |
-| 15 | DevSecOps | automated gates; fail closed |
-| 16 | Capstone | graded via the Wk 19 project demo, not a quiz question |
+![A revision map for weeks 10 to 16, built on three spine properties every control needs: at a boundary, checked server-side per request (week 10's /api/users/3/orders); on by default, the safe path the only path (week 11's safe.rs bounds checks); fail closed, deny and log the reason, never the secret (week 15's port 8090 vs 8091). Then one row per week, each tied back to a first-half week it builds on: 10 API security builds on 6 authorization; 11 memory safety builds on 4 injection, the sink is now the stack; 12 supply chain builds on 2 SDLC, the scanner is now SCA/SBOM/cosign; 13 cloud/container builds on 3 crypto, a baked-in key is not a secret; 14 AI/LLM builds on 5 XSS, model output is untrusted input; 15 DevSecOps builds on 2 tooling, the same scanners now stop the build; 16 capstone builds on 1 threat modeling, the week 1 DFD is deliverable one.](img/revision-map-final.svg)
 
-<!-- Cold-call one student per row for the one-liner (retrieval). Week 16 gets its own row (this slide's own subtitle says "Weeks 10-16") but flag it as differently-assessed — quiz2.md doesn't examine it, the W19 demo does. Add 2–3 first-half callbacks (injection, auth) since the final is cumulative. ~10 min. -->
+<!-- Cold-call one student per row for the one-liner (retrieval) — the diagram's own first-half callback per row IS the "add 2-3 callbacks" instruction, made concrete instead of left to memory. Week 16 is on the map but flag it as differently-assessed — quiz2.md doesn't examine it, the W19 demo does. ~10 min. -->
 
 ---
 
