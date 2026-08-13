@@ -46,7 +46,9 @@ Software Security · Nutthakorn Chalaemwongwan
 
 > **New in 2025:** LLM07 System Prompt Leakage · LLM08 promoted (RAG everywhere) · LLM10 replaces "DoS" with runaway *cost*.
 
-<!-- Don't read all 10 — highlight the 2025 changes. LLM07 (system-prompt leakage) is new because devs hid secrets in prompts. LLM10 reframed as runaway COST (an agent loop can run up a huge bill). ~4 min. -->
+> **Heads up:** OWASP shipped a **2026** edition days before this lecture (Excessive Agency jumps to #3, Output Handling drops to #10). This course's lab, worksheet, and quiz key are still on **2025** numbering — use 2025 for anything graded this term.
+
+<!-- Don't read all 10 — highlight the 2025 changes. LLM07 (system-prompt leakage) is new because devs hid secrets in prompts. LLM10 reframed as runaway COST (an agent loop can run up a huge bill). Mention the 2026 edition exists so students who search OWASP themselves aren't confused by different numbers — but the quiz/worksheet key is 2025, don't let them "correct" an answer to 2026 numbering. ~4 min. -->
 
 ---
 
@@ -54,10 +56,10 @@ Software Security · Nutthakorn Chalaemwongwan
 
 > Untrusted text overrides the system's instructions — injection, again.
 
-- **Direct:** user tells the bot to ignore its rules
-- **Indirect:** malicious instructions hidden in a fetched doc / web page (RAG)
+- **Direct:** user tells the bot to ignore its rules — this week's hands-on lab (Gandalf + Tasks 1-2)
+- **Indirect:** malicious instructions hidden in a fetched doc / web page (RAG) — **discussed, not built:** the lab's mock LLM has no RAG/retrieval, so this is a thought experiment (worksheet Task 3), not something you'll exploit yourself today
 
-<!-- The core concept — say "this is W4 injection in a new interpreter (the LLM)." Direct = the Gandalf game. Indirect is the scary one: the payload rides in a document/email/web page the model reads, so the victim never typed it. ~6 min. -->
+<!-- The core concept — say "this is W4 injection in a new interpreter (the LLM)." Direct = the Gandalf game + graded Tasks 1-2, fully hands-on. Indirect is the scary one conceptually, but be upfront that this lab can't demonstrate it live — no retrieval pipeline exists to poison. ~6 min. -->
 
 ---
 
@@ -109,35 +111,37 @@ Software Security · Nutthakorn Chalaemwongwan
 
 ## Defenses
 
-- Input/output **guardrails** + content filtering
-- Strict output **schemas/validation**; encode before downstream use
-- **Least-privilege tool access** + human-in-the-loop for sensitive actions
-- Rate/consumption limits; isolate untrusted content in RAG
+- Input/output **guardrails** + content filtering — *you'll build this: `guarded_chatbot.py`'s regex denylist*
+- Strict output **schemas/validation**; encode before downstream use — *you'll build this: HTML-escaping the model's output*
+- Redact secrets before they can reach a response — *you'll build this: `redact_secret()`*
+- **Least-privilege tool access**, human-in-the-loop, rate limits, isolating untrusted RAG content — *concepts only this week (worksheet Q5); no agent/tool-calling code exists in this lab to demo*
 
-<!-- The payoff — map each defense to a leg of the pattern: least-privilege tools cut PRIVILEGE; isolating RAG content cuts UNTRUSTED INPUT; egress limits + human approval cut the OUTBOUND CHANNEL. No single guardrail is enough; layer them. ~5 min. -->
+<!-- The payoff — map each defense to a leg of the pattern: least-privilege tools cut PRIVILEGE; isolating RAG content cuts UNTRUSTED INPUT; egress limits + human approval cut the OUTBOUND CHANNEL. Be honest that the first three are hands-on today and the fourth bullet is discussion-only — don't let the deck imply an agent demo that doesn't exist. No single guardrail is enough; layer them. ~5 min. -->
 
 ---
 
 ## 🧙 Game — Gandalf Challenge
 
-1. Beat Gandalf levels via **direct + indirect prompt injection** → exfiltrate the secret (leaderboard by level)
-2. Demo **tool poisoning / excessive agency** on an agent with tools
-3. **Round 2:** add guardrails + least-privilege tools, re-test
+1. Beat Gandalf levels via **direct prompt injection** → exfiltrate the secret (real external service, leaderboard by level)
+2. **Round 2 (graded):** replay your winning injection + the reflected-XSS payload against the **guarded** bot — does it still land?
+3. **Written only:** tool poisoning / excessive agency on an MCP-style agent (worksheet Q5) — no agent exists in this lab to demo live
 
-<!-- Gandalf (Lakera) is genuinely fun and free — students compete to climb levels. Round 2 (build guardrails + least-privilege tools) is graded. Q6 of the quiz asks for the injection that captured the flag + why the guardrail failed. ~3 min. -->
+<!-- Gandalf (Lakera) is genuinely fun and free — students compete to climb levels. Round 2 (Task 5: replay against guarded_chatbot.py) is graded — the point is that guardrails/redaction/escaping visibly stop what worked before. Don't promise a live tool-poisoning demo; it's a discussion question. Q6 of the quiz asks for the injection that captured the flag + why the guardrail failed. ~3 min. -->
 
 ---
 
 ## Deliverable
 
-> 📋 **Worksheet 14** — `labs/week14-ai-llm-security/worksheet.md` (Part 3) · **kickoff:** `docker compose up` → :6000 (insecure) / :6001 (guarded)
+> 📋 **Worksheet 14** — `labs/week14-ai-llm-security/worksheet.md` (Part 3) · **kickoff:** `docker compose up` → :8082 (insecure) / :8083 (guarded)
 
-- Attack log (which injection beat which level)
-- Mitigations + re-test results
-- Least-privilege agent/MCP tool design
+- Attack log: prompt-injection disclosure (Task 1) + reflected-XSS from unescaped output (Task 2)
+- Written: indirect-injection thought experiment (Task 3)
+- Gandalf leaderboard result (Task 4)
+- Mitigations + re-test results against the guarded bot (Task 5)
+- Written: least-privilege agent/MCP tool design (Part 2 Q5 — reflection, not a build)
 - **+ Audit the AI / EiPE / Prompt Problem** (see worksheet)
 
-<!-- The least-privilege tool design is the thinking deliverable. Especially fitting this week: the Audit-the-AI task critiques an AI's own (insecure) answer. -->
+<!-- Six graded pieces, not three — the least-privilege tool design is a written reflection, not a build, so don't let students think they're missing a coding artifact for it. Especially fitting this week: the Audit-the-AI task critiques an AI's own (insecure) answer. Ports are 8082/8083 — the old pair's 6000 half was genuinely unreachable (Chrome/Firefox both block port 6000, the X11 port, per their restricted-port lists); 6001 was never actually blocked anywhere, so if asked, the honest reason for the move is "6000 was dead and we replaced the whole pair," not "the browsers blocked both." -->
 
 ---
 

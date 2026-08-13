@@ -7,31 +7,32 @@ header: "Software Security · Week 18 · Final"
 
 # Week 18
 ## Final — Written Exam
-Cumulative · emphasis on Weeks 10–16
+Cumulative · emphasis on Weeks 10–15
 
-<!-- Proctor deck. Before start: confirm exam version (rotate from exams/item-bank.md final pool), time, open/closed-note, integrity (no AI/phones). Keep talk minimal once the clock runs. -->
+<!-- Proctor deck. Week 16 is the capstone studio — no new examinable content, don't imply it's in scope. Before start: confirm exam version (rotate from exams/item-bank.md final pool), time, open/closed-note, integrity (no AI/phones). Keep talk minimal once the clock runs. -->
 
 ---
 
 ## Format
 
-- Duration / open-note: (set by instructor)
-- Cumulative; weighted toward the modern-stack half
+- Duration: **150 minutes** · 100 pts
+- Cumulative, emphasis Weeks 10–15 (Week 16 capstone is not separately examined)
+- 4 sections: A Modern-stack concepts (30) · B Spot the Vuln (20) · **C Applied (30)** · D Design & DevSecOps (20)
 
-<!-- Fill the blanks aloud (e.g. 150 min). Cumulative but ~60–70% from W10–16; sections mirror the midterm (concepts / spot-vuln / applied / design). -->
+<!-- State the section split exactly as printed. All 15 graded items map into the Weeks 10–15 block — this is closer to cumulative-in-name-only than a 60/40 split, say so if asked. -->
 
 ---
 
 ## What's assessed
 
+- **API security / BOLA** — object-level authorization across A/B/C (20 pts total, not a single bullet's worth)
 - Supply-chain integrity (SLSA / SBOM / Cosign)
-- Cloud / IAM least privilege
+- Cloud & container misconfiguration (concrete examples, not IAM-specific)
 - LLM & agentic threat modeling
 - DevSecOps gate design
-- "Spot the vuln / design the fix" across the term
-- Memory-safe-language & Secure-by-Design tradeoffs
+- Memory-safety mitigations & Secure-by-Design tradeoffs
 
-<!-- Show briefly; matches the W17 mock. Exam day — don't teach. -->
+<!-- BOLA/API is the one people under-revise — it's 20 of 100 points across three sections, not a single "spot the vuln" line. Show briefly; exam day — don't teach. -->
 
 ---
 
@@ -39,9 +40,9 @@ Cumulative · emphasis on Weeks 10–16
 
 - Reason about design, not just single bugs
 - Always name the mitigation + where it belongs in the pipeline
-- Map to OWASP 2025 / LLM Top 10 / CWE
+- Map every finding to **OWASP 2025 / API Security Top 10 / LLM Top 10 / CWE**
 
-<!-- Key score-saver for the final: it rewards DESIGN reasoning (where the fix belongs), not just bug-spotting. Say once, then start. -->
+<!-- Key score-saver for the final: it rewards DESIGN reasoning (where the fix belongs), not just bug-spotting — and don't drop "API" from the mapping list, BOLA is graded. Say once, then start. -->
 
 ---
 

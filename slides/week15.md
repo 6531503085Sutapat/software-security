@@ -40,14 +40,15 @@ Software Security · Nutthakorn Chalaemwongwan
 ```yaml
 # .github/workflows/security-ci.yml
 - semgrep   # SAST
-- trivy     # SCA + image + IaC
-- gitleaks  # secrets
-# fail build on HIGH/CRITICAL
+- trivy     # SCA (fs) + IaC (config) — image scan is optional, off by default
+- gitleaks  # secrets + git history
+# each tool runs TWICE: once to report (SARIF, always), once to gate (fails the build)
 ```
 
+- Least-privilege token: `contents: read`, `security-events: write` — don't hand the pipeline more than it needs
 - Upload SARIF → GitHub Security tab
 
-<!-- The worked example — this is the lab's actual pipeline. Three scanners, each catching a class we studied. The KEY line is "fail build on HIGH/CRITICAL": a gate that only warns gets ignored. SARIF feeds findings into the Security tab. ~6 min. -->
+<!-- The worked example — this is the lab's actual pipeline. Be precise: Trivy's active jobs are fs (SCA) and config (IaC) — the image-scan step exists in the YAML but is commented out/optional, don't claim it's active. The "runs twice" pattern (report step + separate gate step) is what Part 2 Q1 is built around — say it explicitly. The KEY line is "fail build on HIGH/CRITICAL": a gate that only warns gets ignored. ~6 min. -->
 
 ---
 
@@ -68,9 +69,10 @@ Software Security · Nutthakorn Chalaemwongwan
 
 - **A09:2025** — without logs you can't detect or respond
 - Log security events (authn, authz failures, anomalies)
+- **Never log the secret/token value itself** (CWE-532) — log `reason=bad_token`, not the token
 - Alert on suspicious patterns
 
-<!-- Shift from prevention to detection. A09 (logging/monitoring failures) is a Top 10 risk because you can't respond to what you can't see. Recall W6: we read attacker actions FROM logs — but only if they were logged. ~4 min. -->
+<!-- Shift from prevention to detection. A09 (logging/monitoring failures) is a Top 10 risk because you can't respond to what you can't see. The CWE-532 point is graded (Part 2 Q4) and easy to skip if you only say "log security events" — a log line that captures the bad token has just created a new secrets-in-logs problem. Recall W6: we read attacker actions FROM logs — but only if they were logged. ~4 min. -->
 
 ---
 
@@ -133,22 +135,23 @@ Software Security · Nutthakorn Chalaemwongwan
 ## 🔴🔵 Game — Break the Build
 
 - **Blue:** build the gate (Semgrep + Trivy + Gitleaks), fail on HIGH/CRITICAL, add security logging that fails closed
-- **Red:** submit PRs sneaking in a vuln/secret
-- **Score:** Blue per catch, Red per bypass
+- **Red:** three gate-mapped attacks only — outdated dependency (Trivy SCA), a Dockerfile running as root (Trivy config), a hardcoded token (Gitleaks). `chmod 777` and `FROM:latest` are decoys that stay green — not gate bypasses
+- **Score:** Blue per catch, Red per successful bypass; then capture your personal flag from the fail-open `/admin` bypass in `insecure_service.py`
 
-<!-- The capstone game. Both roles teach: Blue learns to configure gates, Red learns where gates have blind spots. Run it as live PRs against the pipeline. Weekly quiz Q6 asks for one gate they added + what it blocks. ~3 min. -->
+<!-- The capstone game. Both roles teach: Blue learns to configure gates, Red learns where gates have blind spots — but Red's menu is fixed to 3 attacks that actually map to a gate, not open-ended. Run it as live PRs against the pipeline. Weekly quiz Q6 asks for one gate they added + what it blocks + their personal flag — don't drop the flag half, it's graded too. ~3 min. -->
 
 ---
 
 ## Deliverable
 
-> 📋 **Worksheet 15** — `labs/week15-devsecops-pipeline/worksheet.md` (Part 3) · **kickoff:** push `security-ci.yml` → GitHub Actions (· `python sample-service.py`)
+> 📋 **Worksheet 15** — `labs/week15-devsecops-pipeline/worksheet.md` (Part 3) · **kickoff:** push `security-ci.yml` → GitHub Actions; separately, `docker compose up` → :8090 (insecure) / :8091 (secure) for the flag task
 
 - A passing PR that adds the pipeline
-- Screenshot: build **failing** on an injected vulnerable dependency
+- Screenshot: build **failing** on each of the 3 Red-team categories (dependency, root Dockerfile, hardcoded token) — not just one
+- Your personal `FLAG{...}` from the fail-open `/admin` bypass, submitted with this week's quiz Q6
 - **+ Audit the AI / EiPE / Prompt Problem** (see worksheet)
 
-<!-- The "build failing" screenshot is the proof the gate actually blocks — a green pipeline that never fails is useless. AI-resilient tasks count. This is also the last weekly quiz. -->
+<!-- Two separate targets this week, both graded: security-ci.yml is the CI gate; insecure_service.py/secure_service.py (compose, :8090/:8091) is where the personal flag lives. The "build failing" screenshots are the proof the gate actually blocks — a green pipeline that never fails is useless, and one category alone undersells the deliverable. AI-resilient tasks count. This is also the last weekly quiz. -->
 
 ---
 

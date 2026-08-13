@@ -23,28 +23,28 @@ Covers Weeks 1–6 · Individual
 
 ---
 
-## Challenge areas
+## Challenge areas — 100 pts, 7 challenges
 
-- **Injection** — SQLi / command (DVWA / Juice Shop)
-- **XSS** — reflected / stored / DOM (Juice Shop)
-- **Auth / access** — IDOR, weak JWT forgery
-- **Crypto** — crack a weak hash / break an ECB oracle
+- **Injection (30):** SQLi + command injection — against this course's own apps, **not DVWA** (not deployed anywhere in the exam surface)
+- **Auth / access (30):** IDOR + weak JWT forgery
+- **Crypto (25):** crack a weak hash / break an ECB oracle
+- **XSS (15):** one stored-XSS challenge on this course's own week05 app — not reflected/DOM this time
 
-<!-- Same areas as the W7 mock — no surprises. Extra challenges available in exams/item-bank.md (CTF pool) if you rotate. -->
+<!-- Same targets as the W7 mock, weighted unevenly — don't present these as equal-weight. DVWA appears in this week's own README but isn't deployed anywhere in ctf.md's target list — correct it here so no one hunts for a container that isn't running. Juice Shop is similar: ctf.md's Targets line used to list it as an "(or OWASP Juice Shop)" alternative for the XSS slot, but no flag was ever planted there (seed_flags.py / the answer key only seed this course's own apps) — so it wasn't actually part of the graded surface, and that line has been removed from ctf.md. If a student asks, week05's app is the only XSS target; Juice Shop earns no credit. Extra challenges available in exams/item-bank.md (CTF pool) if you rotate. -->
 
 ---
 
 ## Rules
 
 - Sandbox targets only — ethics policy applies
-- Submit flags + a short note on method per challenge
+- Submit **3 fields per challenge**: flag/proof, payload/command, one-line mitigation
 - No collaboration
 
-<!-- Stress: attack only provided targets; per-challenge submit flag + 1-line method + mitigation (the method note earns partial credit + supports grading). Then start the clock. -->
+<!-- Stress: attack only provided targets; three separate required fields, not one combined note — the mitigation line is graded separately from the method. Then start the clock. -->
 
 ---
 
 # Submit your flags
-Next: Unit C — Systems & Modern Stack (Week 10, API security)
+Next: Week 10, API security
 
 <!-- Close: collect submissions; grade with the answer key + seed_flags.py verify for copied flags. Preview W10 (APIs). -->

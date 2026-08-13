@@ -48,10 +48,11 @@ Software Security · Nutthakorn Chalaemwongwan
 ## Sessions
 
 - Server issues a session token after login
-- Stored in cookie (`HttpOnly`, `Secure`, `SameSite`)
-- Risks: fixation, predictable IDs, no expiry, no logout invalidation
+- Classic pattern: stored in a cookie (`HttpOnly`, `Secure`, `SameSite`)
+- Risks: fixation, predictable IDs, **no expiry**, no logout invalidation
+- **Today's lab is 100% JWT bearer-token — no cookies at all.** Of these four risks, only "no expiry" is what you'll actually exercise (the fix adds a 15-min `exp` claim); fixation/predictable-ID/logout-invalidation are cookie-session concepts, general knowledge, not tested here
 
-<!-- Connect cookie flags to W5: HttpOnly stops XSS theft, SameSite stops CSRF, Secure forces HTTPS. Explain session fixation briefly (attacker sets the id before login). ~5 min. -->
+<!-- Connect cookie flags to W5: HttpOnly stops XSS theft, SameSite stops CSRF, Secure forces HTTPS. Be upfront that this lab doesn't touch cookies — don't let students expect a cookie-based task today. Explain session fixation briefly (attacker sets the id before login) as general knowledge. ~5 min. -->
 
 ---
 
@@ -103,7 +104,7 @@ GET /api/orders/2   → someone else's  😱
 
 > Best practices: separation of duties · least privilege · implicit deny
 
-<!-- Quick taxonomy; RBAC is what they'll implement in the lab. Stress the three best-practice principles — especially implicit deny (default to no access). ~4 min. -->
+<!-- Quick taxonomy — general knowledge. Today's lab does NOT implement RBAC/ABAC: the actual fix is a flat ownership check (`order["owner"] != user`), no roles or permissions structure at all. Don't tell students they'll build RBAC today; they won't. Stress the three best-practice principles — especially implicit deny (default to no access). ~4 min. -->
 
 ---
 
@@ -142,11 +143,11 @@ GET /uploads/backdoor.php?cmd=ls%20-l                200   ← RCE
 
 ## CWE mapping
 
-- **CWE-639 / CWE-284** — IDOR / improper access control
-- **CWE-287** — improper authentication
-- **CWE-345 / CWE-347** — insufficient verification / bad signature
+- **CWE-639** — IDOR / missing ownership check
+- **CWE-347** — improper signature verification (`alg:none` forgery)
+- **CWE-321** — use of a hardcoded/weak cryptographic key (the guessable HMAC secret)
 
-<!-- Reference for the worksheet. ~1 min. -->
+<!-- Reference for the worksheet — these three are what's actually graded (worksheet header + Q1). CWE-321 is easy to drop since it's not the "obvious" JWT CWE, but it's the weak-secret task's specific id. ~1 min. -->
 
 ---
 
@@ -181,11 +182,11 @@ GET /uploads/backdoor.php?cmd=ls%20-l                200   ← RCE
 
 ## 🗺️ Game — IDOR Treasure Hunt + JWT Forgery
 
-1. Tamper object IDs to reach other users' data → each secret = a flag
-2. Forge a weak JWT to become **admin**
-3. **Round 2:** implement RBAC checks + fix token signing/verification
+1. Tamper object IDs to reach **another user's** data (horizontal — become "bob," not admin) → each secret = a flag
+2. Forge a weak JWT two ways: `alg:none`, then crack the hardcoded HMAC secret
+3. **Defend:** switch to `solution_app.py` (already fixed), prove it blocks all three attacks (403 + two 401s), cite the exact fix line for each
 
-<!-- Explain before lab. Treasure hunt = enumerate ids for per-student flags. JWT forgery = alg:none or crack a weak secret. Round 2 (fix it) is graded. ~3 min. -->
+<!-- Explain before lab. Treasure hunt = enumerate ids for per-student flags — it's horizontal privilege escalation (become another regular user), not vertical (become admin); /api/admin exists in the code but no graded task ever targets it, don't imply it does. Defend is read-and-cite against a pre-written fix, not student-authored RBAC — nothing here is role-based. ~3 min. -->
 
 ---
 
@@ -194,22 +195,22 @@ GET /uploads/backdoor.php?cmd=ls%20-l                200   ← RCE
 > 📋 **Worksheet 6** — `labs/week06-authn-authz/worksheet.md` (Part 3) · **kickoff:** `docker compose up` → http://localhost:8080
 
 1. Find IDOR endpoints; enumerate other users' objects
-2. Crack/forge a weak JWT (e.g. `alg:none` or weak secret)
-3. Add ownership checks + proper JWT verification
-4. Re-test: access denied
+2. Crack/forge a weak JWT (`alg:none` AND the weak HMAC secret — two separate graded attacks)
+3. Switch to `solution_app.py`; re-test: access denied
+4. Cite the exact line that fixes each of the three attacks
 
-<!-- Logistics. Step 3-4 (defend + prove denial) graded. Q6 of the quiz asks for the object id they used + the fix + their personal flag. Also the NoteVault project access-control task. -->
+<!-- Logistics. Steps 3-4 (verify the defense + cite the fix) graded — no student-authored fix code in this lab, the fix is handed to them already written. Q6 of the quiz asks for the object id they used + the fix + their personal flag. Also the NoteVault project access-control task. -->
 
 ---
 
 ## Deliverable
 
 - IDOR + JWT findings with impact
-- Fixed authorization + token handling
+- Citation of the fix lines in `solution_app.py` for all three attacks
 - Proof the forged token / cross-user access now fails
 - **+ Audit the AI / EiPE / Prompt Problem** (see worksheet)
 
-<!-- Before/after + proof. AI-resilient tasks count. -->
+<!-- Before/after + proof — "citation," not "you wrote a fix": the correct app is provided pre-written. AI-resilient tasks count. -->
 
 ---
 

@@ -26,16 +26,16 @@ Pre-Midterm · Weeks 1–6
 
 ## Map of the half
 
-| Wk | Topic | One-line |
-|---|---|---|
-| 1 | Threat modeling | think like an attacker; STRIDE |
-| 2 | SDLC & tooling | SAST/DAST/SCA/fuzzing; shift left |
-| 3 | Crypto | KDFs, AEAD; avoid ECB/MD5 |
-| 4 | Injection | data ≠ code; parameterize |
-| 5 | XSS | encode per context; CSP |
-| 6 | Auth & access | authorize every request |
+| Wk | Topic | OWASP/CWE | One-line |
+|---|---|---|---|
+| 1 | Threat modeling | A06, CWE-501 | think like an attacker; STRIDE |
+| 2 | SDLC & tooling | A02/04/05, CWE-89/78/327/798 | SAST/DAST/SCA/fuzzing; shift left |
+| 3 | Crypto | A04, CWE-327 | KDFs, AEAD; avoid ECB/MD5 |
+| 4 | Injection | A05, CWE-89/78/434 | data ≠ code; parameterize |
+| 5 | XSS | A05, CWE-79/352 | encode per context; CSP |
+| 6 | Auth & access | A01, CWE-639/347 | authorize every request |
 
-<!-- Fast recap — cold-call one student per row to give the one-liner from memory. Don't lecture; it's retrieval practice. ~10 min. -->
+<!-- Fast recap — cold-call one student per row to give the one-liner from memory. Don't lecture; it's retrieval practice. This column condenses each week's own graded OWASP/CWE scope, not a verbatim README quote — most weeks' READMEs carry a richer tag than this one-line abbreviation (e.g. Week 3's README also cites CWE-916/330, Week 6's also cites A07/CWE-287/321); Week 2's row spans all three of its graded categories (A05 injection, A04 weak hash, A02 secrets/misconfig) since no single category is the week's real content. ~10 min. -->
 
 ---
 
@@ -52,16 +52,16 @@ Categories × point values:
 
 ## 🧪 Mock CTF
 
-Same format as Week 9:
+Same format as Week 9, **6 challenges**, ~150 min:
 
 - Injection (SQLi / command)
-- XSS (reflected/stored/DOM)
+- XSS (**stored** only — reflected/DOM aren't in this mock)
 - Auth / IDOR / JWT
-- Crypto (crack a hash / ECB oracle)
+- Crypto (crack a hash — the ECB oracle is a Week 3 *lab* task, not part of this mock)
 
 > No surprises on exam day.
 
-<!-- Run the EXACT Week 9 format/timing (see mock-ctf.md) so the real CTF feels familiar. Circulate; offer hints that cost points. The point is calibration: they should leave knowing what they can/can't do. ~90 min. -->
+<!-- Run the EXACT Week 9 format (see mock-ctf.md) so the real CTF feels familiar — but the TIMING is 150 min per AGENDA.md and mock-ctf.md itself, not 90; get this wrong on stage and the room's schedule breaks by an hour. Circulate; offer hints that cost points. The point is calibration: they should leave knowing what they can/can't do. ~150 min. -->
 
 ---
 

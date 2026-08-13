@@ -52,18 +52,18 @@ Software Security · Nutthakorn Chalaemwongwan
 ## Bug classes
 
 - **CWE-121** stack overflow · **CWE-787** OOB write
-- **CWE-416** use-after-free · **CWE-134** format string
-- **CWE-193** off-by-one · integer overflow
+- **CWE-134** format string · **CWE-242** dangerous function (`gets()`)
+- *(this week's binary: no UAF, no off-by-one — those are real bug classes but not in this lab's code)*
 
-<!-- Map the family. Note these aren't only stack overflows — UAF (free then use) and format-string are just as exploitable. CWE-787 (out-of-bounds write) was #1 in the CWE Top 25 for 2021–2023 (CWE-79/XSS retook #1 in 2024). ~3 min. -->
+<!-- Map the family — these four are what's actually in vuln.c/fuzz_harness.c, verified against the source. UAF and off-by-one are legitimate classes worth mentioning exist, but don't cite them as "this week's bug classes" — nothing here demonstrates them. CWE-121 (this week's actual bug) ranks #14 in the 2025 CWE Top 25 — a stronger, on-topic stat than the old CWE-787-was-#1 line, which is now #5. ~3 min. -->
 
 ---
 
 ## Fuzzing — how bugs are found today
 
 ```bash
-clang -fsanitize=address,fuzzer harness.c -o fuzz && ./fuzz   # libFuzzer
-afl-fuzz -i seeds -o out -- ./vuln @@                          # AFL++
+clang -g -fsanitize=address,fuzzer fuzz_harness.c -o fuzz && ./fuzz   # libFuzzer
+afl-fuzz -i seeds -o out -- ./vuln @@                                  # AFL++
 ```
 
 - Coverage-guided mutation finds crashes fast
@@ -75,23 +75,23 @@ afl-fuzz -i seeds -o out -- ./vuln @@                          # AFL++
 
 ## Exploiting a stack overflow
 
-1. Find offset to return address (cyclic pattern)
-2. Overwrite RA → jump to `win()` / shellcode
+1. Find offset to return address with a **cyclic pattern** — verify it, don't assume it: this build's offset is 72 bytes, but enabling the stack canary alone moves it to 80 (the canary word sits between buffer and return address)
+2. Overwrite RA → jump to `win()`
 3. Format string: `%x%x%x` leak, `%n` write
 
-<!-- Walk the exploit method. Cyclic pattern (De Bruijn) tells you EXACTLY how many bytes until the return address. Then overwrite it with the address of win(). Format string: %x leaks stack, %n writes — a primitive most students haven't seen. This is round 2 (pwn). ~6 min. -->
+<!-- Walk the exploit method. Cyclic pattern (De Bruijn) tells you exactly how many bytes for THIS specific build — stress that 72 is a fact about the unhardened binary, not a fact about the bug; the sim/exploit-chain diagram shows this shift explicitly. Then overwrite it with the address of win(). Format string: %x leaks stack, %n writes — a primitive most students haven't seen. This is round 2 (pwn). ~6 min. -->
 
 ---
 
 ## Mitigations raise the bar
 
-- **Stack canaries** — detect overwrite before return
-- **ASLR** — randomize addresses
-- **NX/DEP** — no code execution on the stack
-- **PIE** — position-independent executables
-- …each makes the same exploit harder
+- **FORTIFY_SOURCE** — checks the copy itself, at call time (`__strcpy_chk`)
+- **Stack canaries** — detect overwrite at function return, *after* the copy already happened
+- **ASLR** / **PIE** — randomize addresses
+- **NX/DEP** — blocks executing shellcode planted *on the stack* — irrelevant to this exploit, which returns into existing code (`win()`), never injects shellcode
+- On **this lab's hardened build, FORTIFY fires first** — `*** buffer overflow detected ***: terminated`. The canary never gets a chance to speak. Verify the order yourself before teaching it as "canary catches it" — that's the wrong answer this lab's own materials were rewritten to correct.
 
-<!-- Each defense breaks one step of the previous slide: canary detects the overwrite, NX stops shellcode-on-stack, ASLR/PIE hide the addresses. Key honest point: they raise cost, they don't eliminate the bug — attackers chain leaks to defeat them. ~5 min. -->
+<!-- THE key correction this slide needed: FORTIFY_SOURCE checks at the copy call, before the function even returns — so on the hardened build it always wins the race against the canary, which only checks at return time. This lab's own interactive sim literally calls "the canary detects it" the week's most reliable wrong answer — don't teach it. NX is a real mitigation but not for THIS exploit (ret2win, no injected shellcode) — say so explicitly rather than implying all four defenses equally harden the one attack just demonstrated. Worksheet Q4 grades naming all four (canary/PIE/NX/FORTIFY) + what each defeats — FORTIFY must be on this slide. ~5 min. -->
 
 ---
 
@@ -117,7 +117,7 @@ afl-fuzz -i seeds -o out -- ./vuln @@                          # AFL++
 
 ## Deliverable
 
-> 📋 **Worksheet 11** — `labs/week11-memory-safety-exploitation/worksheet.md` (Part 3) · **kickoff:** in the **toolbox container** (`labs/toolbox`): `clang -fsanitize=address,fuzzer fuzz_harness.c -o fuzz && ./fuzz`
+> 📋 **Worksheet 11** — `labs/week11-memory-safety-exploitation/worksheet.md` (Part 3) · **kickoff:** in the **toolbox container** (`labs/toolbox` — Apple clang has no libFuzzer runtime): `clang -g -fsanitize=address,fuzzer fuzz_harness.c -o fuzz && ./fuzz`
 
 - Fuzzing crash + exploit script
 - Annotated Ghidra/gdb analysis

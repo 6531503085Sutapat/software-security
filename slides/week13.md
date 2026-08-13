@@ -52,10 +52,10 @@ Software Security · Nutthakorn Chalaemwongwan
 ```
 
 - Over-broad policies = blast radius
-- Grant only the actions/resources needed
-- CWE-732 (bad permissions), CWE-16 (config)
+- `Resource:"*"` → **CWE-732** (incorrect permission assignment); `Action:"*"` → **CWE-269** (improper privilege management) — they're graded as two distinct findings on the *same* policy, not one
+- Fix: scope to one bucket + one action, add a `Condition` (e.g. `s3:prefix`) — not just a narrower ARN
 
-<!-- The worked example — this `*:*` policy is the Misconfig Hunt round 1 and the quiz. If a credential with this leaks, the attacker owns everything. Ask the class to rewrite it as read-only on one bucket. Least privilege = smallest possible blast radius. ~6 min. -->
+<!-- The worked example — this `*:*` policy is the Misconfig Hunt round 1 and the quiz. If a credential with this leaks, the attacker owns everything. This is 100% manual review — Trivy's config scanner does not parse standalone IAM JSON at all, say so explicitly so students don't wait for a scanner to flag it. Ask the class to rewrite it as read-only on one bucket, with a Condition. Least privilege = smallest possible blast radius. ~6 min. -->
 
 ---
 
@@ -82,14 +82,17 @@ Software Security · Nutthakorn Chalaemwongwan
 ## Container image hardening
 
 ```bash
-trivy config /src       # IaC/Dockerfile misconfig
-trivy image myapp:lab   # image CVEs
+docker run --rm -v "$PWD:/src" aquasec/trivy config /src                    # misconfig
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  aquasec/trivy image week13-hardened:lab                              # image CVEs
 ```
 
-- Minimal/distroless base, drop root, pin versions
+- Multi-stage build: `python:3.11-slim@sha256:...` (compiles) → **distroless** `gcr.io/distroless/python3-debian12@sha256:...` (runs) — a smaller runtime image with no shell/package manager, `USER 65532:65532` (non-root)
+- `@sha256:...` **digest** pins, not just a version tag — a tag can be repointed later, a digest can't
 - Re-scan to prove reduced findings
+- **Trivy only catches 3 of 6 planted defects** (`:latest`, root user, secret-in-ENV) — `COPY . .`, `chmod -R 777`, and unpinned `pip install` need **manual review**, no rule fires
 
-<!-- Hands-on — this is the lab's insecure→hardened Dockerfile. `trivy config` finds the misconfig (root user, latest tag); `trivy image` finds CVEs in the base. Drop root + distroless = container escape gives far less. Re-scan to prove improvement. ~5 min. -->
+<!-- Hands-on — this is the lab's insecure→hardened Dockerfile, always run dockerized (never a bare local trivy binary), against week13-hardened:lab (not a generic myapp:lab). The Trivy-blind-spot point is the actual lesson of this lab, not an aside — half the graded findings need a human, not a tool. Re-scan to prove improvement. ~5 min. -->
 
 ---
 
@@ -102,29 +105,27 @@ trivy image myapp:lab   # image CVEs
 
 ---
 
-## 🔍 Game — Misconfig Hunt (CloudGoat-style)
+## 🔍 Game — Misconfig Hunt
 
-Each misconfiguration **found + fixed** = a flag:
+**9 flags** — each misconfiguration **found + explained** = a flag:
 
-1. Over-permissive IAM (`*:*`) → least privilege
-2. Exposed bucket → lock down
-3. Env-var secrets → secrets manager
-4. Vulnerable Dockerfile → harden + re-scan
+1. **Container (6):** `:latest` tag, root user, secret-in-ENV, `COPY . .`, `chmod -R 777`, unpinned `pip install`
+2. **IAM (3):** `Resource:"*"` (CWE-732), `Action:"*"` (CWE-269), missing `Condition` scoping
 
-<!-- Explain before lab. Find AND fix = the flag (defending is the point). Q6 of the quiz asks for one misconfig they fixed + the principle it violated. ~3 min. -->
+<!-- Explain before lab: 9 flags total, two categories only — no separate bucket/storage flag, no IaC/localstack target exists in this lab. Find AND explain (why it's a finding, which fix applies) = the flag. Q6 of the quiz asks for one misconfig they explained + the principle it violated. ~3 min. -->
 
 ---
 
 ## Deliverable
 
-> 📋 **Worksheet 13** — `labs/week13-cloud-container/worksheet.md` (Part 3) · **kickoff:** `bash scan.sh` (trivy config over Dockerfiles + IAM JSON)
+> 📋 **Worksheet 13** — `labs/week13-cloud-container/worksheet.md` (Parts 1–4) · **kickoff:** `bash scan.sh` (trivy config over the **Dockerfiles only** — IAM JSON is manual review, Trivy doesn't parse it)
 
-- Before/after IAM policy + Dockerfile
-- Trivy reports showing reduced risk
+- Before/after IAM policy + Dockerfile, all 9 flags explained
+- Trivy reports showing reduced risk (container half only)
 - Note on secrets remediation
 - **+ Audit the AI / EiPE / Prompt Problem** (see worksheet)
 
-<!-- Before/after artifacts + the trivy delta prove the fix. AI-resilient tasks count. -->
+<!-- Before/after artifacts + the trivy delta prove the container-side fix; IAM has no scanner delta to show, it's reasoned/written. Don't let "trivy over Dockerfiles + IAM JSON" stand — that's the exact misconception this lab's own history already fixed once. AI-resilient tasks count. -->
 
 ---
 
