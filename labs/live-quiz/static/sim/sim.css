@@ -569,3 +569,10 @@ input.jwt-forge-in{font-size:.95rem;padding:.4rem .5rem}
 .prompt-guard-step.is-blocked{border-color:var(--blue)}
 .prompt-guard-step.is-bad{border-color:var(--orange);background:rgba(227,82,5,.08)}
 .prompt-guard-step.is-fixed{border-color:var(--blue)}
+
+/* ── gate-check (Week 15, software-security): findings vs the CI gate ── */
+.gate-check-row{display:flex;align-items:flex-start;gap:.55rem;padding:.45rem .5rem;
+  border:1px solid var(--line);border-radius:6px;margin-bottom:.4rem;cursor:pointer}
+.gate-check-row input{width:1.1rem;height:1.1rem;margin-top:.15rem;flex:0 0 auto}
+.gate-check-text{font-size:.88rem}
+.gate-check-meta{color:var(--mut);font-size:.76rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}

@@ -413,6 +413,7 @@ SIMS = {
     "mass-assign": "Which fields actually get stored? (Week 10)",
     "iam-scope": "Two findings, one statement: Action vs Resource wildcards (Week 13)",
     "prompt-guard": "Three layers, watched one at a time (Week 14)",
+    "gate-check": "Does this PR pass the gate? (Week 15)",
     "sqli-parse": "How concatenation changes the SQL parse tree (Week 4)",
     "aes-modes": "Why ECB leaks a picture, and what CBC's XOR costs (Week 3)",
     "ecdsa-malleability": "One signature, two spellings: (r, s) and (r, n − s) (Cryptography, Week 11)",
@@ -439,6 +440,7 @@ SIM_SOURCE = {
     "mass-assign": ("software-security", "week10-api-security"),
     "iam-scope": ("software-security", "week13-cloud-container"),
     "prompt-guard": ("software-security", "week14-ai-llm-security"),
+    "gate-check": ("software-security", "week15-devsecops-pipeline"),
     "sqli-parse": ("software-security", "week04-injection"),
     "aes-modes": ("software-security", "week03-cryptography"),
     # Course slugs here are the deployed URL slugs ($COURSES in production —

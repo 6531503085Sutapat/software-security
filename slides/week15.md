@@ -48,7 +48,11 @@ Software Security · Nutthakorn Chalaemwongwan
 - Least-privilege token: `contents: read`, `security-events: write` — don't hand the pipeline more than it needs
 - Upload SARIF → GitHub Security tab
 
-<!-- The worked example — this is the lab's actual pipeline. Be precise: Trivy's active jobs are fs (SCA) and config (IaC) — the image-scan step exists in the YAML but is commented out/optional, don't claim it's active. The "runs twice" pattern (report step + separate gate step) is what Part 2 Q1 is built around — say it explicitly. The KEY line is "fail build on HIGH/CRITICAL": a gate that only warns gets ignored. ~6 min. -->
+```sim
+gate-check
+```
+
+<!-- The worked example — this is the lab's actual pipeline. Be precise: Trivy's active jobs are fs (SCA) and config (IaC) — the image-scan step exists in the YAML but is commented out/optional, don't claim it's active. The "runs twice" pattern (report step + separate gate step) is what Part 2 Q1 is built around — say it explicitly. The sim's 2 decoys are the actual worksheet nuance: chmod 777 has no Trivy rule at any severity, while FROM:latest IS detected (DS-0001) but rated MEDIUM and filtered by severity:HIGH,CRITICAL — same green build, different reason. The KEY line is "fail build on HIGH/CRITICAL": a gate that only warns gets ignored. ~6 min. -->
 
 ---
 
@@ -129,6 +133,14 @@ Software Security · Nutthakorn Chalaemwongwan
 - security.txt; a path for researchers to report
 
 <!-- The professional/ethical close: finding a bug is step one; managing it to a fix (with SLAs) is the job. Coordinated disclosure + security.txt = how to receive reports responsibly. Connects to the course ethics theme. ~3 min. -->
+
+---
+
+## One decision, made twice
+
+![Two panels showing the same yes-or-no decision at two different times. Build time: the CI gate's HIGH/CRITICAL severity filter, not the scanner itself, decides what a build refuses — root user (DS-0002, HIGH) is caught, :latest (DS-0001, MEDIUM) slips past the filter. Run time: the /admin handler makes the identical decision on an exception — fail-open returns 200 and logs nothing (silent bypass, A09); fail-closed returns 403 and logs event=authz_failure without ever logging the token itself (CWE-532). Both defaults, unexamined, are yes: the gate exits 0 on anything it wasn't told to fail on, the handler returns 200 on anything that threw. Nobody chose — that silence is A10, CWE-636.](img/fail-closed.svg)
+
+<!-- The synthesis slide, and arguably the whole course's closing argument: "secure by default" means someone has to have DECIDED the default, twice here — once in YAML severity filters, once in an except block. An unexamined default is always permissive. Walk both panels, land on the bottom line before the game. ~5 min. -->
 
 ---
 
