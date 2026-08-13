@@ -1,0 +1,43 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>Which package actually installs?</h1>
+<p class="lead">Set both versions and the index mode, then watch the resolver
+decide — the same choice <code>pip install acme-internal-utils</code> makes
+in Task 2, computed live from the real rule, not looked up.</p>
+<div class="wrap">
+  <div class="card">
+    <div class="resolver-confusion-cards">
+      <div class="resolver-confusion-card" id="priv-card">
+        <h3>Private index</h3>
+        <p class="resolver-confusion-name">acme-internal-utils</p>
+        <label for="priv">Version</label>
+        <input type="text" id="priv" value="1.4.0" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="resolver-confusion-card" id="pub-card">
+        <h3>Public index</h3>
+        <p class="resolver-confusion-name">acme-internal-utils <span class="hint">(attacker's)</span></p>
+        <label for="pub">Version</label>
+        <input type="text" id="pub" value="99.0.0" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+    <fieldset class="resolver-confusion-mode">
+      <legend>Resolver mode</legend>
+      <label class="resolver-confusion-radio">
+        <input type="radio" name="mode" id="mode-single"> <code>--index-url</code> (single, trusted)
+      </label>
+      <label class="resolver-confusion-radio">
+        <input type="radio" name="mode" id="mode-merged" checked> <code>--extra-index-url</code> (merged, shops around)
+      </label>
+    </fieldset>
+    <div class="preset" id="presets"></div>
+  </div>
+  <div class="card">
+    <h3>Resolver decision</h3>
+    <p class="verdict" id="verdict"></p>
+    <p id="explain"></p>
+  </div>
+</div>
+<script src="/static/sim/resolver-confusion.js?v={{ asset_v }}"></script>
+</body></html>

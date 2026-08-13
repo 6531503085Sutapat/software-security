@@ -409,6 +409,7 @@ SIMS = {
     "stride-drill": "Name the threat: STRIDE applied to one endpoint (Week 1)",
     "fuzz-verdict": "What actually crashes harness.c, computed live (Week 2)",
     "triage-drill": "Which bug is this really? Raw findings, deduplicated (Week 2)",
+    "resolver-confusion": "Which package actually installs? Computed live (Week 12)",
     "sqli-parse": "How concatenation changes the SQL parse tree (Week 4)",
     "aes-modes": "Why ECB leaks a picture, and what CBC's XOR costs (Week 3)",
     "ecdsa-malleability": "One signature, two spellings: (r, s) and (r, n − s) (Cryptography, Week 11)",
@@ -431,6 +432,7 @@ SIM_SOURCE = {
     "stride-drill": ("software-security", "week01-threat-modeling"),
     "fuzz-verdict": ("software-security", "week02-sdlc-tooling"),
     "triage-drill": ("software-security", "week02-sdlc-tooling"),
+    "resolver-confusion": ("software-security", "week12-supply-chain"),
     "sqli-parse": ("software-security", "week04-injection"),
     "aes-modes": ("software-security", "week03-cryptography"),
     # Course slugs here are the deployed URL slugs ($COURSES in production —

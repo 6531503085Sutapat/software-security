@@ -62,6 +62,18 @@ Software Security · Nutthakorn Chalaemwongwan
 
 ---
 
+## Try it — which package actually installs?
+
+Set both versions and the index mode. The resolver's real rule decides.
+
+```sim
+resolver-confusion
+```
+
+<!-- Let them find the uncomfortable case themselves: merged mode with the private version numerically HIGHER also happens to be "safe" — but say explicitly that this is not a defense, just luck, since the attacker picks their own version number and will publish something higher. The only real fix in this sim is switching to single-index mode. Ties directly to Task 2 and Task 4's defense #2. ~4 min. -->
+
+---
+
 ## SCA — find vulnerable deps
 
 ```bash
@@ -133,6 +145,14 @@ docker run --rm -e COSIGN_EXPERIMENTAL=1 \
 - Automate SCA in CI (next week)
 
 <!-- The payoff checklist, now with the exact flags Task 4 grades. --require-hashes and single-index-url are what actually stops dependency confusion — "pin + scope" alone is too vague to reconstruct on the exam. Verify-before-deploy kills tampered artifacts; MFA on maintainer/CI accounts kills the xz/CircleCI vector. "Automate in CI" sets up W15. ~4 min. -->
+
+---
+
+## The whole journey, one dependency
+
+![Six hops a dependency crosses from a public registry into production, each with its own attack and the control that answers it: registry (typosquatting → one trusted index), resolver (dependency confusion → scope the namespace), fetch (compromised maintainer → lockfile with hashes), build (stale pins → SCA in CI), image (no inventory → SBOM), deploy (unsigned image → Sigstore keyless gate). "We scanned our code" covers none of this — SAST reads the code you wrote, all six hops are code you didn't.](img/supply-chain.svg)
+
+<!-- The synthesis slide — everything from the last five slides (SAST/SCA, SBOM, Cosign, the defenses checklist) is one column each in this diagram, chained in the order a real dependency actually travels. Walk it left to right ONE time, don't re-teach each hop — the point is showing they were never separate tools, they're six links in the same chain. Land on the closing line before moving to the game. ~5 min. -->
 
 ---
 
