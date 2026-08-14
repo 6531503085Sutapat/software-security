@@ -161,7 +161,7 @@ stride-drill
 
 ## 🎲 Game — Elevation of Privilege
 
-- Microsoft's free **STRIDE card deck**
+- Microsoft's free **STRIDE card deck** — [github.com/adamshostack/eop](https://github.com/adamshostack/eop)
 - Play cards against the sample app's data-flow diagram
 - Each valid threat tied to a real element = a point
 - Outcome: a team-built STRIDE model
