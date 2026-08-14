@@ -1626,7 +1626,7 @@ body.lx-page {
    that don't need to. EVERY .lx- selector here still contains .lx-, so this
    cannot match /host or /play — same rule the rest of this layer follows.
    ========================================================================== */
-.lx-prose { max-width: 900px; }
+.lx-prose { max-width: 900px; margin-left: auto; margin-right: auto; }
 .lx-prose > :first-child { margin-top: 0; }
 .lx-prose h2 {
   margin: var(--lx-sp-7) 0 var(--lx-sp-3); color: var(--lx-ink-1);
