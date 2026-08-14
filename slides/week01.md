@@ -165,8 +165,9 @@ stride-drill
 - Play cards against the sample app's data-flow diagram
 - Each valid threat tied to a real element = a point
 - Outcome: a team-built STRIDE model
+- No printer? Worksheet Task 3 has a built-in digital deck — same 78 cards, one shared screen
 
-<!-- Explain the game before the lab: it gamifies the STRIDE pass we just did. Each suit = a STRIDE category; you play a card by naming a concrete threat on the DFD. Make it competitive (leaderboard). It lowers the barrier for students who freeze on a blank page. ~3 min. -->
+<!-- Explain the game before the lab: it gamifies the STRIDE pass we just did. Each suit = a STRIDE category; you play a card by naming a concrete threat on the DFD. Make it competitive (leaderboard). It lowers the barrier for students who freeze on a blank page. Mention the digital deck up front so no one wastes time hunting for a printer. ~3 min. -->
 
 ---
 

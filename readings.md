@@ -6,7 +6,7 @@ Curated, **free**, authoritative resources to read **before/after** each week. P
 ## Foundations
 - **W1 — Threat Modeling**
   - ⭐ OWASP Threat Modeling Cheat Sheet — https://cheatsheetseries.owasp.org/cheatsheets/Threat_Modeling_Cheat_Sheet.html
-  - Microsoft *Elevation of Privilege* (STRIDE card game) — https://www.microsoft.com/en-us/download/details.aspx?id=20303
+  - Microsoft *Elevation of Privilege* (STRIDE card game) — https://www.microsoft.com/en-us/download/details.aspx?id=20303 (or play it in-browser, no printer needed — Worksheet 1 Task 3)
   - CISA *Secure by Design* — https://www.cisa.gov/securebydesign
 - **W2 — Secure SDLC, Tooling & Fuzzing**
   - ⭐ OWASP DevSecOps Guideline — https://owasp.org/www-project-devsecops-guideline/

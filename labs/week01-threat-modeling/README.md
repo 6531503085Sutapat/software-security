@@ -18,7 +18,7 @@
 - Frame the course with **"Secure by Design"** (CISA) and the industry shift to memory-safe languages.
 
 ## 🎲 Signature game — "Elevation of Privilege"
-Play Microsoft's free STRIDE threat-modeling card deck against the sample app's DFD — each valid threat scores a point. Get the deck (print-and-play PDF, free, Creative Commons): [github.com/adamshostack/eop](https://github.com/adamshostack/eop).
+Play Microsoft's free STRIDE threat-modeling card deck against the sample app's DFD — each valid threat scores a point. Get the deck (print-and-play PDF, free, Creative Commons): [github.com/adamshostack/eop](https://github.com/adamshostack/eop). No printer? Worksheet Task 3 embeds a digital deck — same 78 cards, playable in-browser.
 
 ## Lab 0 — Environment setup (do once)
 1. Install **Docker Desktop** (macOS/Windows) or Docker Engine + Compose (Linux).
