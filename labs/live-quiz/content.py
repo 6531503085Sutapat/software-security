@@ -421,6 +421,7 @@ SIMS = {
     "jwt-forge": "Editing a JWT: base64url is encoding, not sealing (Week 6)",
     "stack-frame": "What a stack canary detects and what FORTIFY_SOURCE prevents (Week 11)",
     "xss-context": "One value, four sinks: why escaping is context-dependent (Week 5)",
+    "eop-deck": "Draw a card, tie it to your DFD — no printer needed (Week 1)",
 }
 
 # Which unit each simulation belongs to. /sim's own copy says "each one is
@@ -452,6 +453,7 @@ SIM_SOURCE = {
     "jwt-forge": ("software-security", "week06-authn-authz"),
     "stack-frame": ("software-security", "week11-memory-safety-exploitation"),
     "xss-context": ("software-security", "week05-xss-client-side"),
+    "eop-deck": ("software-security", "week01-threat-modeling"),
 }
 
 

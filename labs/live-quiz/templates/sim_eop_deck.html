@@ -1,0 +1,27 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title><link rel="stylesheet" href="/static/sim/sim.css"></head>
+<body>
+<h1>Elevation of Privilege — digital deck</h1>
+<p class="lead">The real EoP deck (<a href="https://github.com/adamshostack/eop">github.com/adamshostack/eop</a>,
+CC-BY-3.0) as a drawable pile, no printing or cutting — for Task 3. Draw a card, try to tie its
+threat to a real element or flow on <b>your own DFD</b>, and mark it if you can. There's no
+"correct answer" here — the point is whether you can honestly connect the card to your diagram.</p>
+<div class="card eop-card-wrap">
+  <div class="cia-triad-head">
+    <span class="cia-triad-progress">Cards drawn: <b id="drawn">0</b> · Tied to my DFD: <b id="tied">0</b></span>
+  </div>
+  <div class="eop-suits" id="suit-row"></div>
+  <div class="eop-card" id="card">
+    <p class="eop-suit-name" id="suit-name"></p>
+    <p class="eop-card-text" id="card-text"></p>
+  </div>
+  <div class="eop-actions">
+    <button class="cia-triad-next" id="draw" type="button">Draw a card →</button>
+    <button class="eop-tie" id="tie" type="button" hidden>✓ Tied it to my DFD</button>
+    <button class="eop-pass" id="pass" type="button" hidden>✗ Pass — no honest match</button>
+  </div>
+  <p class="cia-triad-done" id="done">✓ All six STRIDE suits drawn at least once — that's a full pass over your diagram.</p>
+</div>
+<script src="/static/sim/eop-deck.js?v={{ asset_v }}"></script>
+</body></html>
