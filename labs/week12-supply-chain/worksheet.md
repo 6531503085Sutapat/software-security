@@ -4,7 +4,7 @@
 > **Aligned:** OWASP 2025 — A03 Software Supply Chain Failures · A08 Software or Data Integrity Failures · **CWE:** CWE-1104, CWE-829, CWE-1357, CWE-1395
 > **Signature game:** 📦 Dependency Confusion Heist
 >
-> **Ethics note:** The dependency-confusion / typosquat exercise runs **only against the instructor-provided private registry in the isolated lab network** (`dependency-confusion.md`). **Never** plant or publish look-alike packages on the real PyPI or npm — that is an attack on every downstream user.
+> **Ethics note:** This lab has **no live private/public registry to attack** — the dependency-confusion exercise is a controlled walkthrough (`dependency-confusion.md`) plus the interactive resolver simulation in Task 2, not a real package pull. **Never** plant or publish look-alike packages on the real PyPI or npm — that is an attack on every downstream user, and nothing in this lab requires it.
 
 ## Part 1 — Student Information
 
@@ -51,10 +51,29 @@ Read `requirements.txt` and list the pinned packages with their versions. Note w
 
 ### Task 2 — Dependency Confusion Heist (35 min)
 **Goal:** Watch the wrong package win — A03 / CWE-1357.
-**Steps (against the lab's private + "public" indexes, per `dependency-confusion.md`):**
-1. `pip install -v acme-internal-utils` and note the source URL/version served.
-2. Re-resolve so the higher-versioned public look-alike (`==99.0.0`) wins; observe the `PWNED.txt` marker proving install-time code ran.
-**Deliverable:** the source URL/version before vs. after confusion + the marker proof.
+
+**Reality check:** this lab does **not** stand up a live private/public registry. `acme-internal-utils` is
+a worked example, not an installable package — there is nothing to actually `pip install` here (the name
+doesn't exist on real PyPI either, so don't expect that to work as a shortcut). Task 2 is a controlled
+walkthrough of the resolver's own rule, using the simulation below, which computes the real
+"highest version wins" logic live instead of just asserting the outcome.
+
+```sim
+resolver-confusion
+```
+
+**Steps:**
+1. Read `dependency-confusion.md`'s "Dependency confusion (substitution)" section for the mechanism.
+2. In the simulation, load the **"the attack"** preset (private `1.4.0`, public `99.0.0`, merged /
+   `--extra-index-url` mode) and record which index the resolver picks and why.
+3. Keep the same version numbers and switch to the **single-index** (`--index-url`) mode; record how the
+   verdict changes — this is the resolver behavior Task 4's "single trusted index" defense relies on.
+4. Try the **"win the race"** preset (private version numerically higher than public) and note why the
+   sim's own explanation calls that "not a defense."
+
+**Deliverable:** a screenshot of the simulation's verdict in both index modes (merged vs. single) for the
+same version pair, plus one sentence on why an attacker defeats the "keep my internal version number high"
+idea.
 
 ### Task 3 — SBOM + signing/verification (30 min)
 **Goal:** Produce a component inventory and prove integrity — A08.
@@ -71,11 +90,15 @@ Read `requirements.txt` and list the pinned packages with their versions. Note w
 ### Task 4 — Defend / fix it (35 min)
 **Goal:** Stop dependency confusion and lock integrity — defenses from `dependency-confusion.md` + `sign.sh`.
 **Steps:**
-1. **Pin + hashes:** convert to `pip install --require-hashes -r requirements.txt` (or a committed lockfile); re-run Task 2 step 2 and show a hash mismatch blocks the substitution.
-2. **Single trusted index:** use one `--index-url` instead of `--extra-index-url`; explain why the resolver stops shopping around.
+1. **Pin + hashes:** run `pip install --require-hashes -r requirements.txt` against this lab's own
+   `requirements.txt` (it has no hashes yet) and record pip's refusal — `ERROR: Hashes are required in
+   --require-hashes mode...` plus the `--hash=sha256:…` line pip prints for you. That refusal is the same
+   mechanism that would block a real confusion substitution: once hashes are required, a package that
+   doesn't match — from *either* index — cannot install silently.
+2. **Single trusted index:** use one `--index-url` instead of `--extra-index-url`; explain why the resolver stops shopping around (tie this back to Task 2's single-index verdict).
 3. **Namespace scoping:** describe reserving/namespacing the internal package name.
 4. **Provenance gate:** state how the `cosign verify` from `sign.sh` becomes a gate before a simulated deploy.
-**Deliverable:** before/after of which registry served the package + the one defense you found most effective and why.
+**Deliverable:** the `--require-hashes` refusal output (step 1) + the simulation's before/after verdict for merged vs. single index (from Task 2) + the one defense you found most effective and why.
 
 ## Part 4 — Reflection
 

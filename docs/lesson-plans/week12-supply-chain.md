@@ -36,9 +36,10 @@ By the end of this week a student can:
   version) and the `pip-audit` advisory IDs.
 - P2 — Turn that output into a 3-row remediation table (package → current → fixed) with each finding's
   advisory ID and severity.
-- P3 — Run the confusion: `pip install -v acme-internal-utils`, record the source URL/version served,
-  then re-resolve so the higher-versioned public look-alike (`==99.0.0`) wins, and point at the
-  `PWNED.txt` marker as proof that install-time code ran.
+- P3 — Run the confusion: no live registry ships with this lab, so this is the interactive resolver
+  simulation (`/sim/resolver-confusion`, embedded in Worksheet 12 Task 2) computing the real
+  "highest version wins" rule for `acme-internal-utils` `1.4.0` (private) vs. `99.0.0` (public); toggle
+  merged vs. single-index mode and record the verdict each way.
 - P4 — Generate a CycloneDX SBOM from the built image and locate a named component's entry in it.
 - P5 — Read a `cosign verify` PASS, and show that an unsigned image **fails** verification.
 - P6 — Apply the four defences from `dependency-confusion.md` and `sign.sh`: pin + hashes, a single
@@ -79,10 +80,11 @@ requirements file, the resolved tree or the whole image. The count is not the fi
     2026-07-26 on Apple Silicon (arm64): it builds in seconds, all wheels resolve, and no `--platform`
     flag is needed. Building it in advance also switches on step 3/3 of `sca_scan.sh`, which otherwise
     prints `(image 'week12-supplychain:lab' not built yet …)` and skips.
-  - **Stand up Task 2's registries.** Both `worksheet.md` and `dependency-confusion.md` say the exercise
-    runs against an *instructor-provided* private registry plus a lab "public" index hosting the
-    higher-versioned look-alike. ⬚ — **the repository does not ship that registry**, so it must exist
-    before the session or Task 2 cannot run as written (see §8).
+  - **Task 2's registry gap is closed, not open.** `worksheet.md` and `dependency-confusion.md` used to say
+    the exercise runs against an *instructor-provided* private registry plus a lab "public" index — that
+    repository never existed and was fixed 2026-08-14: both documents now point students at the
+    `/sim/resolver-confusion` simulation (already wired into `slides/week12.md`) instead of a live `pip
+    install`. Nothing to stand up before the session; see §8 for what this changes about grading.
   - **Decide the registry for signing.** `sign.sh`'s own header says keyless signing "needs a
     browser/OIDC flow and registry push access; in class this is a guided demo, not an offline step."
     ⬚ — the repository names no registry.
@@ -98,7 +100,7 @@ requirements file, the resolved tree or the whole image. The count is not the fi
 | 0:55–1:05 | Break | | |
 | 1:05–1:35 | Deep dive + real cases | The case table from the slides: **SolarWinds** (2020) trojanised vendor update → 18k orgs · **Log4Shell** (2021) RCE in a ubiquitous logging dependency · **event-stream** (npm) malicious dep stole crypto-wallet keys · **XZ Utils** (2024) backdoor planted in `liblzma` · **CircleCI** (2023) stolen CI tokens → customer secrets. Attacks are shifting **upstream**: registry → maintainer → CI/CD. Spend the time on XZ (the worksheet's Part 4 Q2 asks for it): a patient attacker became a trusted maintainer over years, and the lesson is that trust in maintainers is itself attackable | Lecture + short discussion: "what would have caught this?" |
 | 1:35–1:55 | Defences | SCA and what it produces (CVE + fixed version) — `npm audit`, `trivy fs`, OWASP dependency-check; CWE-1104 / CWE-829. Then integrity: **SBOM** (CycloneDX/SPDX) as the ingredient list, **SLSA** Build Track levels **L0–L3** (the old "1–4" numbering is v0.1 and deprecated), **A08:2025**. Keyless signing with Cosign — `trivy image --format cyclonedx` → `cosign sign` → `cosign verify`, identity-based via OIDC so there is no key to leak; an unsigned or tampered image fails. The managed option they will meet in industry: GHAS — secret scanning + push protection, CodeQL, Dependabot. The closing checklist: pin versions + lockfiles, scope internal registries, verify signatures before deploy (admission policy), store an SBOM per release, MFA on dev/CI/cloud accounts, automate SCA in CI (Week 15) | Lecture with the sign → verify loop demonstrated live |
-| 1:55–2:00 | Brief the game | 📦 **"Dependency Confusion Heist"** — Round 1 attack: plant/identify a typosquat or higher-version public package and watch it get pulled into a build. Round 2 defend: pin + scope, SBOM, sign & verify, provenance gate. State the ethics boundary here, not in the lab: controlled registry only, never the real PyPI/npm | Instruction |
+| 1:55–2:00 | Brief the game | 📦 **"Dependency Confusion Heist"** — Round 1 attack: no live registry in this lab — the resolver simulation computes "highest version wins" live for the `acme-internal-utils` example. Round 2 defend: pin + scope, SBOM, sign & verify, provenance gate. State the ethics boundary here, not in the lab: never the real PyPI/npm | Instruction |
 
 **Checks for understanding during lecture**
 - After the attack-vector slide: cold-call *"your internal package is called `acme-internal-utils`. What
@@ -119,9 +121,9 @@ Worksheet 12's own task names and minute budgets.
 |---|---|---|---|
 | 0:00–0:15 | **Task 0 — Onboarding (15 min)** | Read `requirements.txt` and list the pinned packages with their versions; note why they are intentionally outdated (each is deliberately an old release so SCA tools flag its known CVEs) | The package/version table + which OWASP/CWE this maps to |
 | 0:15–0:50 | **Task 1 — SCA scan: build the remediation worklist (35 min)** | `bash sca_scan.sh`; read the `trivy fs` table (CVE, installed vs. fixed version) and the `pip-audit` advisory IDs (GHSA-/PYSEC-); pick three findings and record CVE/advisory id, severity and the fixed version | The SCA output + a 3-row remediation table (package → current → fixed) |
-| 0:50–1:25 | **Task 2 — Dependency Confusion Heist (35 min)** | Against the lab's private + "public" indexes, per `dependency-confusion.md`: `pip install -v acme-internal-utils` and note the source URL/version served; then re-resolve so the higher-versioned public look-alike (`==99.0.0`) wins, and observe the `PWNED.txt` marker proving install-time code ran | The source URL/version before vs. after confusion + the marker proof |
+| 0:50–1:25 | **Task 2 — Dependency Confusion Heist (35 min)** | No live registry: use the `/sim/resolver-confusion` simulation (embedded in `worksheet.md`, per `dependency-confusion.md`) to watch the higher-versioned public look-alike (`==99.0.0`) beat the private one (`==1.4.0`) in merged (`--extra-index-url`) mode, then watch single-index (`--index-url`) mode block it | The simulation's verdict, merged vs. single-index, for the same version pair |
 | 1:25–1:55 | **Task 3 — SBOM + signing/verification (30 min)** | After `bash sign.sh week12-supplychain:lab`, open `sbom.cdx.json` and find Flask's entry; read the `cosign verify` PASS; negative test `cosign verify --certificate-identity-regexp '.*' --certificate-oidc-issuer-regexp '.*' python:3.9-slim` and confirm the unsigned image fails with `Error: no signatures found` | The SBOM Flask component entry + the verify PASS + the negative-test failure |
-| 1:55–2:30 | **Task 4 — Defend / fix it (35 min)** | **Pin + hashes:** convert to `pip install --require-hashes -r requirements.txt` (or a committed lockfile); re-run Task 2 step 2 and show a hash mismatch blocks the substitution. **Single trusted index:** use one `--index-url` instead of `--extra-index-url` and explain why the resolver stops shopping around. **Namespace scoping:** describe reserving/namespacing the internal package name. **Provenance gate:** state how the `cosign verify` from `sign.sh` becomes a gate before a simulated deploy | Before/after of which registry served the package + the one defence they found most effective and why |
+| 1:55–2:30 | **Task 4 — Defend / fix it (35 min)** | **Pin + hashes:** run `pip install --require-hashes -r requirements.txt` against the lab's own (unhashed) `requirements.txt` and show pip's refusal — the same mechanism that would block a hash-mismatched confusion substitution. **Single trusted index:** use one `--index-url` instead of `--extra-index-url` and explain why the resolver stops shopping around (ties to Task 2's single-index verdict). **Namespace scoping:** describe reserving/namespacing the internal package name. **Provenance gate:** state how the `cosign verify` from `sign.sh` becomes a gate before a simulated deploy | The `--require-hashes` refusal output + the sim's before/after verdict + the one defence they found most effective and why |
 | 2:30–2:55 | **AI-resilient tasks (25 min)** | *Audit the AI* (critique an AI-written exploit or fix, quoting the exact wrong line), *Explain-in-Plain-English*, *Prompt Problem* | Written answers (start in class, finish as homework) |
 | 2:55–3:00 | **Micro-demo + submit (5 min)** | 2–3 rotating students give a 2–3 min "show your exploit/fix"; everyone submits | Worksheet PDF → Classroom; code → GitHub |
 
@@ -176,8 +178,9 @@ Worksheet 12's own task names and minute budgets.
 
 *Audit the AI* and the *EiPE / Prompt Problem* count toward the Defense + Reflection score, per the
 worksheet. Partial credit is available where a student explains a mechanism correctly but could not land
-the tool run — which matters more than usual this week, because two of the tasks depend on
-infrastructure outside the student's control (§8).
+the tool run — which still matters this week, because Task 3's `cosign sign` step depends on registry
+push access outside the student's control (§8); Task 2/4's registry dependency was resolved 2026-08-14
+(see §3, §8).
 
 ## 7. Materials
 
@@ -186,8 +189,8 @@ infrastructure outside the student's control (§8).
 - Slides: `slides/week12.md`
 - Tooling images: `aquasec/trivy:latest` (SCA + SBOM), `python:3.9-slim` (pip-audit host and the lab
   image's base), `gcr.io/projectsigstore/cosign:latest` (signing/verification)
-- Task 2 infrastructure: ⬚ instructor-provided private registry + lab "public" index (not in this
-  repository)
+- Task 2 infrastructure: none needed — `/sim/resolver-confusion` (`labs/live-quiz/static/sim/resolver-confusion.js`
+  + `templates/sim_resolver_confusion.html`) replaces the never-shipped private/public registry (fixed 2026-08-14)
 - References (from the lab README): https://slsa.dev/ · https://www.sigstore.dev/ ·
   https://cyclonedx.org/ · https://owasp.org/www-project-dependency-check/
 - Project tie-in: apply the week's lesson to [NoteVault](../../project/README.md) where it fits
@@ -197,8 +200,8 @@ infrastructure outside the student's control (§8).
 
 | Risk | Mitigation |
 |---|---|
-| **Task 2 — the signature game — needs a registry this repository does not ship.** `worksheet.md` and `dependency-confusion.md` both say "instructor-provided private registry"; there is no compose file, script or fixture for it in `labs/week12-supply-chain/`, and an unfiltered `grep -r acme-internal-utils .` (2026-07-26) finds the name only inside those two documents — there is no package to serve | Stand it up (⬚ — the method is not recorded here) and smoke-test `pip install -v acme-internal-utils` on the room's network *before* the session. If it is not available, Task 2 degrades to a walkthrough of `dependency-confusion.md` on the projector and the deliverable becomes written: which index would have served the package, and why. Say so at 0:00 so nobody burns 35 minutes on a broken `pip` invocation |
-| **The registry gap also removes the only hands-on part of Task 4.** Task 4 step 1 ends "re-run Task 2 step 2 and show a hash mismatch blocks the substitution" — that needs the same two indexes. Steps 2–4 are written as *explain* / *describe* / *state* and survive as prose | Without the registry, 25 marks of defence become written work plus the local half of step 1 (generating hashes and watching `--require-hashes` reject an unhashed requirement, which does run offline). Grade the mechanism, and mark the before/after registry line as ⬚ rather than penalising it |
+| **RESOLVED 2026-08-14 — Task 2 never had a registry this repository ships, and now doesn't claim to.** `worksheet.md` and `dependency-confusion.md` used to say "instructor-provided private registry"; there was no compose file, script or fixture for it in `labs/week12-supply-chain/`, and an unfiltered `grep -r acme-internal-utils .` (2026-07-26) found the name only inside those two documents — verified again 2026-08-14 with a live `pip install -v acme-internal-utils` in a throwaway container (`ERROR: No matching distribution found`) and a PyPI JSON-API check (404) — there is no package to serve, on either side, real or lab-provided | Both documents now point at `/sim/resolver-confusion` (embedded via a `` ```sim `` fence in Worksheet 12 Task 2), which computes the real merged-vs-single-index resolution live. Nothing to stand up before the session — the sim is already deployed with `slides/week12.md`'s copy |
+| **The registry gap also used to remove the only hands-on part of Task 4 — now it doesn't.** Task 4 step 1 used to end "re-run Task 2 step 2 and show a hash mismatch blocks the substitution," which needed the same two indexes. It's rewritten to run `pip install --require-hashes -r requirements.txt` against the lab's own (unhashed) `requirements.txt` — verified 2026-08-14, this fails immediately with `ERROR: Hashes are required in --require-hashes mode...` and prints the real sha256 for `Flask==1.1.4`, entirely offline, no registry needed | No mitigation needed — step 1 is now a real, runnable command against files already in the lab folder |
 | **`sign.sh` step 2 fails on a local-only image, and `set -e` then kills step 3.** Verified 2026-07-26: `cosign sign --yes week12-supplychain:lab` resolves the bare tag to Docker Hub and errors with `Error: signing [week12-supplychain:lab]: accessing entity: GET https://index.docker.io/v2/library/week12-supplychain/manifests/lab: UNAUTHORIZED: authentication required`. Cosign works against a *registry*, not the local daemon, so the "verify PASS" half of Task 3 never prints | Push the image to a registry the class can write to first (⬚ — none is named in the repo), or run step 2 as the guided demo `sign.sh`'s own header says it is. Step 1 (SBOM) and the negative test both run standalone, so Task 3's other two deliverables are unaffected — run the three commands separately rather than the whole script when signing is a demo |
 | **Students omit the `--certificate-identity*` flags on the negative test.** Bare `cosign verify python:3.9-slim` stops at `Error: --certificate-identity or --certificate-identity-regexp is required for verification in keyless mode` — a *usage* error that proves nothing about signatures (verified against cosign v3.1.2). With the flags it prints `Error: no signatures found`, which is the real evidence | The worksheet now carries both flags. If a student submits the usage error, send them back: the deliverable is proof that verification **failed closed** on an unsigned image, not any failure at all |
 | **`sbom.cdx.json` is not git-ignored.** `sign.sh` writes it into the lab folder; `.gitignore` lists `sbom.json` and `sbom.xml` but not `sbom.cdx.json`, so it shows up as an untracked file (verified 2026-07-26 — 229 KB, CycloneDX 1.7, 119 components) | Have students keep the file with their evidence and delete it from the working tree at the end of the session. The curriculum monorepo's parity gate compares every file in the lab directory, so a leftover SBOM breaks it |

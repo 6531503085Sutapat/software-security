@@ -158,10 +158,10 @@ docker run --rm -e COSIGN_EXPERIMENTAL=1 \
 
 ## 📦 Game — Dependency Confusion Heist
 
-1. **Attack:** in a controlled registry, plant/identify a typosquat or higher-version public pkg that gets pulled in
+1. **Attack:** no live registry in this lab — use the resolver simulation to watch a higher-version public pkg beat the private one
 2. **Defend:** pin + scope; generate SBOM; sign & verify with Cosign; add a provenance gate
 
-<!-- Explain before lab — all in a controlled local registry (ethics: never publish a real typosquat). Defend side is graded. The SLSA self-assessment makes them reason about their own pipeline. ~3 min. -->
+<!-- Explain before lab — the resolver simulation stands in for a live registry (ethics: never publish a real typosquat). Defend side is graded. The SLSA self-assessment makes them reason about their own pipeline. ~3 min. -->
 
 ---
 
