@@ -275,10 +275,11 @@ here will want several up at once. See §9 for the fix.
 (threat model 20 / findings 25 / remediation 25 / supply chain 15 / CI 10 / presentation 5) and
 `labs/week16-capstone/worksheet.md` (threat model 15 / exploitation 20 / remediation 20 / SBOM +
 signing 15 / CI 15 / demo & Q&A 15), plus that worksheet's 1–5 peer-review rubric.
-`instructor/GRADEBOOK.md` names **`project/README.md`'s** as *the* project rubric. Note a defect to
-fix in the lab folder rather than in this plan: `ctf.md` line 6 points at
-`../week16-capstone/worksheet.md` and calls it "the Week 19 worksheet" — there is no `worksheet.md`
-in `labs/week19-final-ctf-capstone/`.
+`instructor/GRADEBOOK.md` names **`project/README.md`'s** as *the* project rubric. `ctf.md` line 6
+cross-references `../week16-capstone/worksheet.md` and labels it "the capstone project rubric" — the
+link is intentional (that is where the dual-rubric comparison and the project checklist live), and
+the label now matches what the link points to. Earlier drafts called the same target "the Week 19
+worksheet", which was misleading; that wording has been retired.
 
 **Individual vs team.** Both instruments in this session are team-graded, which is unusual for this
 course: individual work is ~75% of the mark (course specification §8), and the bounded team
