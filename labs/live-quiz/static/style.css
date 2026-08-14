@@ -1818,6 +1818,91 @@ body.lx-page {
 .lx-mod-t { margin: 0; font: inherit; color: inherit; display: inline; }
 
 /* ==========================================================================
+   TEACHER DASHBOARD — console / assess / work. These three pages used to be
+   split across two pre-.lx- systems: console on .stage/.masthead/.console-body,
+   assess+work on .pwrap/.join-card — the SAME wrapper the real, live,
+   student-facing "join a live game" screen (player.html) still uses, along
+   with error.html and submit_work.html. Reusing .join-card here was the risk:
+   any dashboard-specific tweak would have leaked onto those live student
+   pages. Everything below is a dedicated set that shares only the .lx-page
+   tokens (so dark mode "just works" the same as the rest of the site) and
+   touches nothing .pwrap/.join-card/.pjoin depend on.
+   ========================================================================== */
+.lx-dashhead {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: var(--lx-sp-4) var(--lx-sp-6); flex-wrap: wrap; margin: 0 0 var(--lx-sp-5);
+}
+.lx-dashhead .lx-h1 { margin-bottom: 6px; }
+.lx-dashhead .lx-btn { flex: none; }
+
+.lx-panelstack { display: flex; flex-direction: column; gap: var(--lx-sp-5); max-width: 760px; }
+.lx-panel {
+  padding: var(--lx-sp-5); border: 1px solid var(--lx-stroke); border-radius: var(--lx-r-card);
+  background: var(--lx-surface);
+}
+.lx-panel h1 { margin: 0 0 var(--lx-sp-2); font: 600 22px/28px var(--sans); color: var(--lx-ink-1); }
+.lx-panel h2 { margin: var(--lx-sp-5) 0 var(--lx-sp-2); font: 600 17px/24px var(--sans); color: var(--lx-ink-1); }
+.lx-panel > .lx-btn, .lx-panel > form { margin-top: var(--lx-sp-3); }
+
+.lx-subform { padding: var(--lx-sp-3) 0; border-top: 1px solid var(--lx-stroke); }
+.lx-subform:first-of-type { border-top: 0; padding-top: 0; }
+
+.lx-select {
+  display: block; width: 100%; padding: 10px var(--lx-sp-3);
+  border: 1px solid var(--lx-stroke); border-radius: var(--lx-r-in);
+  background: var(--lx-surface); color: var(--lx-ink-1);
+  font: 400 16px/24px var(--sans);
+}
+.lx-select:focus { outline: 2px solid var(--kosen-blue-deep); outline-offset: 1px; }
+.lx-select--sm { width: auto; padding: 8px 10px; font-size: 14px; }
+
+.lx-form--wide { max-width: 620px; }
+.lx-field--row { display: flex; gap: var(--lx-sp-2); align-items: center; }
+.lx-field--row > * { flex: 1 1 0; }
+.lx-field--row > .in-narrow { flex: 0 0 6rem; }
+.lx-field:not(.lx-field--row) > .lx-input + .lx-textarea,
+.lx-field:not(.lx-field--row) > .lx-textarea + .lx-input { margin-top: 6px; }
+
+.lx-table-wrap { overflow-x: auto; margin-top: var(--lx-sp-3); }
+.lx-table { width: 100%; border-collapse: collapse; font: 400 15px/22px var(--sans); }
+.lx-table th, .lx-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--lx-stroke); }
+.lx-table th { font: 600 13px/18px var(--sans); color: var(--lx-ink-2); text-transform: uppercase; letter-spacing: .04em; }
+.lx-table td { color: var(--lx-ink-1); font-variant-numeric: tabular-nums; }
+.lx-table tbody tr:last-child td { border-bottom: 0; }
+
+.lx-caption { margin: var(--lx-sp-2) 0 0; font: 400 13px/20px var(--sans); color: var(--lx-ink-3); }
+
+.lx-badge { display: inline-block; padding: 1px 8px; border-radius: var(--lx-r-pill); font: 700 12px/18px var(--sans); }
+.lx-badge--warn { background: #FDF0EC; color: #7A2A0F; }
+
+.lx-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--lx-sp-3); }
+.lx-listcard {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--lx-sp-3) var(--lx-sp-4);
+  flex-wrap: wrap; padding: var(--lx-sp-4); border: 1px solid var(--lx-stroke); border-radius: var(--lx-r-card);
+  background: var(--lx-surface);
+}
+.lx-listcard-main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.lx-listcard-t { font: 600 16px/22px var(--sans); color: var(--lx-ink-1); }
+.lx-listcard-t--link { text-decoration: none; }
+.lx-listcard-t--link:hover { text-decoration: underline; }
+.lx-listcard-sub { font: 400 14px/20px var(--sans); color: var(--lx-ink-2); }
+.lx-listcard-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.lx-listcard-actions { display: flex; align-items: center; gap: var(--lx-sp-2); flex-wrap: wrap; }
+
+.lx-inline-form { display: flex; align-items: center; gap: var(--lx-sp-2); flex-wrap: wrap; }
+
+.lx-chip {
+  display: inline-block; padding: 2px 9px; border: 1px solid var(--lx-stroke); border-radius: var(--lx-r-pill);
+  background: var(--lx-ground); font: 400 12px/18px var(--sans); color: var(--lx-ink-2);
+}
+
+.lx-btn--sm { padding: 7px var(--lx-sp-3); font-size: 13px; }
+.lx-btn--ghost { background: transparent; border: 1px solid var(--lx-stroke); color: var(--lx-ink-1); }
+.lx-btn--ghost:hover { background: var(--lx-hover); }
+.lx-btn--danger { color: var(--a-red-d); border-color: rgba(226, 27, 60, .4); }
+.lx-btn--danger:hover { background: rgba(226, 27, 60, .08); }
+
+/* ==========================================================================
    DARK MODE. The simulations already honoured prefers-color-scheme, so a
    dark-OS student got a bright page with a dark iframe sitting in the middle of
    it. Only the .lx-page token block is remapped — one place, and the game
@@ -1846,6 +1931,7 @@ body.lx-page {
   .lx-page .lx-err { background: #2A1410; border-color: #7A3A28; color: #FFC2AE; }
   .lx-page .lx-btn { background: #1E7FC2; }
   .lx-page .lx-btn:hover { background: #2E93D8; }
+  .lx-page .lx-badge--warn { background: #2A1410; border: 1px solid #7A3A28; color: #FFC2AE; }
 
   /* THE UNIT TILES. These carry hardcoded LIGHT fills (#EEF6FB and friends) with
      `color: var(--lx-ink-1)` — which the token remap above turns near-white, so

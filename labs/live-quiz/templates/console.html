@@ -1,74 +1,54 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Console — KOSEN·KMITL Live Quiz</title><link rel="stylesheet" href="/static/style.css?v={{ asset_v }}"></head>
-<body><div class="stage">
-  <header class="masthead">
-    <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
-      <div class="sub">Live Quiz · Teacher console</div></div>
-    {#- The four teacher tools are four separate route groups (/console, /assess,
-        /work, /host) and until now NOTHING linked them: this page, the one you
-        land on after signing in, offered only its own set editor and Sign out.
-        Reaching the graded quizzes or the worksheet marking meant typing the URL
-        from memory, in class, with students waiting. Plain links, every page,
-        same order. -#}
-    <nav class="tnav" aria-label="Teacher tools">
-      <a href="/console" aria-current="page">Question sets</a>
-      <a href="/assess">Graded quizzes</a>
-      <a href="/work">Worksheets</a>
-      <a href="/host">Run a game</a>
-      <a href="/">Student view</a>
-    </nav>
-    <a class="btn-ghost" href="/logout">Sign out</a>
-  </header>
-  <div class="drule"></div>
+{% extends "base.html" %}
+{% block title %}Console — KOSEN·KMITL Live Quiz{% endblock %}
+{% block main %}
+<div class="lx-ground">
+  <div class="lx-wrap">
 
-  <!-- Session CSRF token, always present so every state-changing form on the page can carry it
-       (the per-set start/delete forms below each embed it). All titles/topics render through Jinja
-       autoescaping — never |safe. -->
-  <form hidden><input type="hidden" name="csrf_token" value="{{ csrf_token }}"></form>
+    <!-- Session CSRF token, always present so every state-changing form on the page can carry it
+         (the per-set start/delete forms below each embed it). All titles/topics render through Jinja
+         autoescaping — never |safe. -->
+    <form hidden><input type="hidden" name="csrf_token" value="{{ csrf_token }}"></form>
 
-  <div class="console-body">
-    <div class="console-top">
-      <div class="ct-txt">
-        <h1>Your question sets</h1>
-        <p class="lead">Paste a Markdown item bank, preview how many questions parse, and save it as a
+    <div class="lx-dashhead">
+      <div>
+        <p class="lx-eyebrow">Live Quiz · Teacher console</p>
+        <h1 class="lx-h1">Your question sets</h1>
+        <p class="lx-lead lx-measure">Paste a Markdown item bank, preview how many questions parse, and save it as a
           reusable set. Only you can see, edit, or start a game from your own sets.</p>
       </div>
-      <a class="btn blue" href="/console/sets/new">+ New question set</a>
+      <a class="lx-btn" href="/console/sets/new">+ New question set</a>
     </div>
 
     {% if sets %}
-    <ul class="set-list">
+    <ul class="lx-list">
       {% for s in sets %}
       {% set meta = set_meta.get(s.id, {"topics": [], "count": 0}) %}
       {% set topics = meta.topics %}
-      <li class="set-card">
-        <div class="set-main">
-          <span class="set-title">{{ s.title }}</span>
-          <div class="set-meta">
-            <span class="set-count">{{ meta.count }} question{{ '' if meta.count == 1 else 's' }}</span>
-            {% for t in topics[:3] %}<span class="topic-chip">{{ t }}</span>{% endfor %}
-            {% if topics|length > 3 %}<span class="topic-chip more">+{{ topics|length - 3 }} more</span>{% endif %}
+      <li class="lx-listcard">
+        <div class="lx-listcard-main">
+          <span class="lx-listcard-t">{{ s.title }}</span>
+          <div class="lx-listcard-meta">
+            <span class="lx-chip">{{ meta.count }} question{{ '' if meta.count == 1 else 's' }}</span>
+            {% for t in topics[:3] %}<span class="lx-chip">{{ t }}</span>{% endfor %}
+            {% if topics|length > 3 %}<span class="lx-chip">+{{ topics|length - 3 }} more</span>{% endif %}
           </div>
         </div>
-        <div class="set-actions">
+        <div class="lx-listcard-actions">
           {% if topics %}
           <!-- This SAST rule checks for Django's csrf_token template tag; this is a Flask/Jinja2
                app with no Django code, so that tag doesn't exist here. CSRF is enforced by this
                project's own mechanism instead: the hidden csrf_token field below, verified
                server-side by auth.csrf_ok()/_check_csrf() in app.py (see tests/test_auth.py). -->
-          <form class="start-form" method="post" action="/host/create"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+          <form class="lx-inline-form" method="post" action="/host/create"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="set_id" value="{{ s.id }}">
-            <span class="select-sm">
-              <select name="topic" aria-label="Topic to host from {{ s.title }}">
-                {% for t in topics %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
-              </select>
-            </span>
-            <button class="btn blue btn-sm" type="submit">Start game ▸</button>
+            <select class="lx-select lx-select--sm" name="topic" aria-label="Topic to host from {{ s.title }}">
+              {% for t in topics %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+            </select>
+            <button class="lx-btn lx-btn--sm" type="submit">Start game ▸</button>
           </form>
           {% endif %}
-          <a class="btn-ghost btn-sm" href="/console/sets/{{ s.id }}/edit">Edit</a>
+          <a class="lx-btn lx-btn--ghost lx-btn--sm" href="/console/sets/{{ s.id }}/edit">Edit</a>
           <!-- Same Django csrf_token-tag false positive as the start-form above — this form has
                its own real csrf_token field, verified server-side; see app.py's _check_csrf(). -->
           <!-- data-confirm, not onsubmit="return confirm(...)": an inline event
@@ -77,27 +57,17 @@
                teacher's own question set. console.js re-attaches the prompt. -->
           <form method="post" action="/console/sets/{{ s.id }}/delete" data-confirm="Delete this set? This cannot be undone."> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <button class="btn-ghost btn-sm danger" type="submit">Delete</button>
+            <button class="lx-btn lx-btn--ghost lx-btn--sm lx-btn--danger" type="submit">Delete</button>
           </form>
         </div>
       </li>
       {% endfor %}
     </ul>
     {% else %}
-    <div class="empty-state">
-      <div class="es-shapes" aria-hidden="true">
-        <svg viewBox="0 0 24 24" class="sw-red"><path d="M12 3 22 20H2Z"/></svg>
-        <svg viewBox="0 0 24 24" class="sw-blue"><path d="M12 2 22 12 12 22 2 12Z"/></svg>
-        <svg viewBox="0 0 24 24" class="sw-yellow"><circle cx="12" cy="12" r="10"/></svg>
-        <svg viewBox="0 0 24 24" class="sw-green"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
-      </div>
-      <div class="es-title">No question sets yet</div>
-      <p class="es-sub">Create your first set to run a live game. Paste a Markdown item bank and we'll
-        parse it into questions.</p>
-      <a class="btn blue set-new" href="/console/sets/new">+ New question set</a>
-    </div>
+    <p class="lx-empty">No question sets yet. Create your first set to run a live game — paste a Markdown item
+      bank and it parses into questions.</p>
     {% endif %}
   </div>
 </div>
 <script src="/static/confirm.js?v={{ asset_v }}"></script>
-</body></html>
+{% endblock %}

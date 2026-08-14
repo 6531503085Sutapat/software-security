@@ -1,26 +1,31 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Worksheets — KOSEN·KMITL</title><link rel="stylesheet" href="/static/style.css?v={{ asset_v }}"></head>
-<body><div class="pwrap"><section class="pjoin">
-  <div class="mark"><div class="word"><span class="k">KOSEN</span><span class="dot">·</span><span class="m">KMITL</span></div>
-    <div class="sub">Worksheet submissions</div></div>
-  <div class="join-card">
-    <h1>Assignments</h1>
-    <nav class="tnav" aria-label="Teacher tools">
-      <a href="/console">Question sets</a>
-      <a href="/assess">Graded quizzes</a>
-      <a href="/work" aria-current="page">Worksheets</a>
-      <a href="/host">Run a game</a>
-      <a href="/">Student view</a>
-    </nav>
-    <p class="lead"><a href="/work/new">new assignment</a></p>
-    {% if not assignments %}<p class="lead">Nothing set yet.</p>{% endif %}
-    <ul>
+{% extends "base.html" %}
+{% block title %}Worksheets — KOSEN·KMITL{% endblock %}
+{% block main %}
+<div class="lx-ground">
+  <div class="lx-wrap">
+    <div class="lx-dashhead">
+      <div>
+        <p class="lx-eyebrow">Worksheet submissions</p>
+        <h1 class="lx-h1">Assignments</h1>
+      </div>
+      <a class="lx-btn" href="/work/new">+ New assignment</a>
+    </div>
+    {% if not assignments %}
+    <p class="lx-empty">Nothing set yet.</p>
+    {% else %}
+    <ul class="lx-list">
       {% for a in assignments %}
-        <li><a href="/work/{{ a.id }}">{{ a.title }}</a>
-          <span class="sub">{{ a.handed_in }}/{{ a.issued }} handed in
-            {%- if a.due_at %} · due {{ a.due_at }}{% endif %}
-            {%- if a.released %} · released{% endif %}</span></li>
+        <li class="lx-listcard">
+          <div class="lx-listcard-main">
+            <a class="lx-listcard-t lx-listcard-t--link" href="/work/{{ a.id }}">{{ a.title }}</a>
+            <span class="lx-listcard-sub">{{ a.handed_in }}/{{ a.issued }} handed in
+              {%- if a.due_at %} · due {{ a.due_at }}{% endif %}
+              {%- if a.released %} · released{% endif %}</span>
+          </div>
+        </li>
       {% endfor %}
     </ul>
-  </div></section></div></body></html>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
