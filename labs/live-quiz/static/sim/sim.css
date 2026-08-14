@@ -576,3 +576,21 @@ input.jwt-forge-in{font-size:.95rem;padding:.4rem .5rem}
 .gate-check-row input{width:1.1rem;height:1.1rem;margin-top:.15rem;flex:0 0 auto}
 .gate-check-text{font-size:.88rem}
 .gate-check-meta{color:var(--mut);font-size:.76rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+/* ── eop-deck (Week 1, software-security): the EoP card deck, drawable ── */
+.eop-card-wrap{max-width:640px}
+.eop-suits{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.8rem}
+.eop-chip{--chip-color:var(--mut);display:inline-flex;align-items:center;justify-content:center;
+  width:1.6rem;height:1.6rem;border-radius:50%;border:1.5px solid var(--chip-color);
+  color:var(--chip-color);font-size:.72rem;font-weight:700;opacity:.35}
+.eop-chip.is-seen{background:var(--chip-color);color:#fff;opacity:1}
+.eop-card{--suit-color:var(--mut);min-height:6.5rem;border:1.5px dashed var(--line);
+  border-radius:8px;padding:.9rem 1rem;margin-bottom:.8rem;display:flex;flex-direction:column;
+  justify-content:center;gap:.3rem}
+.eop-card.is-shown{border-style:solid;border-color:var(--suit-color);background:var(--card)}
+.eop-suit-name{margin:0;font-size:.76rem;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--suit-color)}
+.eop-card-text{margin:0;font-size:1.05rem;font-weight:600;line-height:1.4;max-width:56ch}
+.eop-actions{display:flex;flex-wrap:wrap;gap:.5rem}
+.eop-tie{font-weight:700;border-color:var(--blue);color:var(--blue)}
+.eop-pass{color:var(--mut)}
