@@ -1,45 +1,52 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mark {{ sub.student_id }} — KOSEN·KMITL</title><link rel="stylesheet" href="/static/style.css?v={{ asset_v }}"></head>
-<body><div class="pwrap"><section class="pjoin">
-  <div class="mark"><div class="sub">{{ a.title }} · {{ sub.student_id }}</div></div>
+{% extends "base.html" %}
+{% block title %}Mark {{ sub.student_id }} — KOSEN·KMITL{% endblock %}
+{% block main %}
+<div class="lx-ground">
+  <div class="lx-wrap lx-panelstack">
+    <p class="lx-eyebrow">{{ a.title }} · {{ sub.student_id }}</p>
 
-  <div class="join-card">
-    <h1>{{ sub.student_id }}</h1>
-    <p class="lead"><a href="/work/{{ a.id }}">← hand-ins</a> ·
-      handed in {{ sub.submitted_at or '—' }}{% if late %} · <span class="integ">late</span>{% endif %}</p>
-    <h2>Files</h2>
-    {% if not files %}<p class="lead">Nothing attached.</p>{% endif %}
-    <ul>{% for f in files %}
-      <li><a href="/work/file/{{ f.id }}">{{ f.display_name }}</a>
-        <span class="sub">{{ (f.size_bytes / 1024) | round | int }} KB ·
-          sha256 {{ f.sha256[:16] }}…</span></li>
-    {% endfor %}</ul>
-    <p class="pdpa">Files download rather than open in the browser — an uploaded page
-      rendered here would run inside your grading session.</p>
-    {% if sub.note %}<h2>Student note (incl. AI-tool disclosure)</h2>
-      <p class="lead">{{ sub.note }}</p>{% endif %}
+    <div class="lx-panel">
+      <h1>{{ sub.student_id }}</h1>
+      <p class="lx-lead"><a class="lx-link" href="/work/{{ a.id }}">← hand-ins</a> ·
+        handed in {{ sub.submitted_at or '—' }}{% if late %} · <span class="lx-badge lx-badge--warn">late</span>{% endif %}</p>
+      <h2>Files</h2>
+      {% if not files %}<p class="lx-lead">Nothing attached.</p>{% endif %}
+      <ul class="lx-list">{% for f in files %}
+        <li class="lx-listcard">
+          <div class="lx-listcard-main">
+            <a class="lx-listcard-t lx-listcard-t--link" href="/work/file/{{ f.id }}">{{ f.display_name }}</a>
+            <span class="lx-listcard-sub">{{ (f.size_bytes / 1024) | round | int }} KB ·
+              sha256 {{ f.sha256[:16] }}…</span>
+          </div>
+        </li>
+      {% endfor %}</ul>
+      <p class="lx-caption">Files download rather than open in the browser — an uploaded page
+        rendered here would run inside your grading session.</p>
+      {% if sub.note %}<h2>Student note (incl. AI-tool disclosure)</h2>
+        <p class="lx-lead">{{ sub.note }}</p>{% endif %}
+    </div>
+
+    <form class="lx-panel" method="post" action="/work/{{ a.id }}/mark/{{ sub.id }}"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <h1>Rubric</h1>
+      <p class="lx-lead">{{ '%.1f'|format(score[0]) }} / {{ '%.1f'|format(score[1]) }}
+        {%- if not score[2] %} — <b>not fully marked</b>{% endif %}</p>
+      {% for r in rubric %}
+        {% set m = marks.get(r.criterion) %}
+        <div class="lx-field">
+          <label class="lx-label" for="p{{ loop.index0 }}">{{ r.criterion }} <span class="lx-toc-n">/ {{ r.max }}</span></label>
+          <input class="lx-input in-narrow" id="p{{ loop.index0 }}" name="points_{{ loop.index0 }}" type="number"
+                 step="0.5" min="0" max="{{ r.max }}"
+                 value="{{ m.points if m and m.points is not none else '' }}"
+                 placeholder="blank = not marked yet">
+          <textarea class="lx-textarea" name="comment_{{ loop.index0 }}" rows="2"
+                    placeholder="feedback">{{ m.comment if m else '' }}</textarea>
+        </div>
+      {% endfor %}
+      <button class="lx-btn" type="submit">Save marks ▸</button>
+      <p class="lx-caption">A blank score means <b>not marked yet</b>, which is not zero — the
+        export flags the whole worksheet as partial until every row has a number.</p>
+    </form>
   </div>
-
-  <form class="join-card" method="post" action="/work/{{ a.id }}/mark/{{ sub.id }}"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <h1>Rubric</h1>
-    <p class="lead">{{ '%.1f'|format(score[0]) }} / {{ '%.1f'|format(score[1]) }}
-      {%- if not score[2] %} — <b>not fully marked</b>{% endif %}</p>
-    {% for r in rubric %}
-      {% set m = marks.get(r.criterion) %}
-      <div class="field">
-        <label for="p{{ loop.index0 }}">{{ r.criterion }} <span class="sub">/ {{ r.max }}</span></label>
-        <input id="p{{ loop.index0 }}" name="points_{{ loop.index0 }}" type="number"
-               step="0.5" min="0" max="{{ r.max }}"
-               value="{{ m.points if m and m.points is not none else '' }}"
-               placeholder="blank = not marked yet">
-        <textarea name="comment_{{ loop.index0 }}" rows="2"
-                  placeholder="feedback">{{ m.comment if m else '' }}</textarea>
-      </div>
-    {% endfor %}
-    <button class="btn blue" type="submit">Save marks ▸</button>
-    <p class="pdpa">A blank score means <b>not marked yet</b>, which is not zero — the
-      export flags the whole worksheet as partial until every row has a number.</p>
-  </form>
-</section></div></body></html>
+</div>
+{% endblock %}

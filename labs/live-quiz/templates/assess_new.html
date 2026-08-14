@@ -1,43 +1,48 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Publish a quiz — KOSEN·KMITL</title><link rel="stylesheet" href="/static/style.css?v={{ asset_v }}"></head>
-<body><div class="pwrap"><section class="pjoin">
-  <div class="mark"><div class="sub">Publish a graded quiz</div></div>
-  <form class="join-card" method="post" action="/assess/new"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    {% if error %}<div class="join-err">{{ error }}</div>{% endif %}
-    <h1>Publish</h1>
-    <p class="lead">Questions are <b>frozen</b> at publish — editing the set afterwards
-      cannot change a quiz that students are sitting.</p>
-    <div class="field"><label for="set_id">Question set</label>
-      <select id="set_id" name="set_id" required>
-        {% for s in sets %}<option value="{{ s.id }}">{{ s.title }}</option>{% endfor %}
-      </select></div>
-    {# Which course this is FOR. Shown only when there is more than one, so the
-       single-course case keeps a form with no redundant choice on it. There is no
-       "all courses" option on purpose: a graded artifact belongs to exactly one
-       cohort, and an ambiguous default is how a quiz reaches the wrong class. #}
-    {% if courses|length > 1 %}
-      <div class="field"><label for="course_slug">Course</label>
-        <select id="course_slug" name="course_slug" required>
+{% extends "base.html" %}
+{% block title %}Publish a quiz — KOSEN·KMITL{% endblock %}
+{% block main %}
+<div class="lx-ground">
+  <div class="lx-wrap">
+    <form class="lx-form lx-form--wide" method="post" action="/assess/new"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <p class="lx-eyebrow">Publish a graded quiz</p>
+      <h1 class="lx-h1">Publish</h1>
+      {% if error %}<div class="lx-err" id="form-error" role="alert">{{ error }}</div>{% endif %}
+      <p class="lx-lead">Questions are <b>frozen</b> at publish — editing the set afterwards
+        cannot change a quiz that students are sitting.</p>
+      <div class="lx-field"><label class="lx-label" for="set_id">Question set</label>
+        <select class="lx-select" id="set_id" name="set_id" required>
+          {% for s in sets %}<option value="{{ s.id }}">{{ s.title }}</option>{% endfor %}
+        </select></div>
+      {# Which course this is FOR. Shown only when there is more than one, so the
+         single-course case keeps a form with no redundant choice on it. There is no
+         "all courses" option on purpose: a graded artifact belongs to exactly one
+         cohort, and an ambiguous default is how a quiz reaches the wrong class. #}
+      {% if courses|length > 1 %}
+      <div class="lx-field"><label class="lx-label" for="course_slug">Course</label>
+        <select class="lx-select" id="course_slug" name="course_slug" required>
           {% for c in courses %}<option value="{{ c.slug }}">{{ c.title }}</option>{% endfor %}
         </select></div>
-    {% endif %}
-    <div class="field"><label for="title">Title</label><input id="title" name="title"></div>
-    <div class="field"><label for="variant">Form variant (A/B)</label>
-      <input id="variant" name="variant" value="A" maxlength="8"></div>
-    <div class="field"><label for="mcq_count">How many MCQ (blank = all)</label>
-      <input id="mcq_count" name="mcq_count" type="number" min="1" value="5"></div>
-    <div class="field"><label for="short_stem">Short answer (Q6) — leave blank to omit</label>
-      <input id="short_stem" name="short_stem"
-             placeholder="Paste the flag YOU captured in this week's lab."></div>
-    <div class="field"><label for="short_points">Short-answer points</label>
-      <input id="short_points" name="short_points" type="number" step="0.5" value="3"></div>
-    <div class="field"><label for="time_limit_min">Time limit (minutes, blank = none)</label>
-      <input id="time_limit_min" name="time_limit_min" type="number" min="1" value="10"></div>
-    <label class="field opt"><input type="checkbox" name="shuffle_questions" checked>
-      <span>Shuffle question order (per student)</span></label>
-    <label class="field opt"><input type="checkbox" name="shuffle_options" checked>
-      <span>Shuffle option order (per student)</span></label>
-    <button class="btn blue" type="submit">Publish ▸</button>
-  </form></section></div></body></html>
+      {% endif %}
+      <div class="lx-field"><label class="lx-label" for="title">Title</label>
+        <input class="lx-input" id="title" name="title"></div>
+      <div class="lx-field"><label class="lx-label" for="variant">Form variant (A/B)</label>
+        <input class="lx-input" id="variant" name="variant" value="A" maxlength="8"></div>
+      <div class="lx-field"><label class="lx-label" for="mcq_count">How many MCQ (blank = all)</label>
+        <input class="lx-input" id="mcq_count" name="mcq_count" type="number" min="1" value="5"></div>
+      <div class="lx-field"><label class="lx-label" for="short_stem">Short answer (Q6) — leave blank to omit</label>
+        <input class="lx-input" id="short_stem" name="short_stem"
+               placeholder="Paste the flag YOU captured in this week's lab."></div>
+      <div class="lx-field"><label class="lx-label" for="short_points">Short-answer points</label>
+        <input class="lx-input" id="short_points" name="short_points" type="number" step="0.5" value="3"></div>
+      <div class="lx-field"><label class="lx-label" for="time_limit_min">Time limit (minutes, blank = none)</label>
+        <input class="lx-input" id="time_limit_min" name="time_limit_min" type="number" min="1" value="10"></div>
+      <label class="lx-opt"><input type="checkbox" name="shuffle_questions" checked>
+        <span>Shuffle question order (per student)</span></label>
+      <label class="lx-opt"><input type="checkbox" name="shuffle_options" checked>
+        <span>Shuffle option order (per student)</span></label>
+      <button class="lx-btn" type="submit">Publish ▸</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
