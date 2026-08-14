@@ -4,7 +4,7 @@
 > **Aligned to:** All prior weeks + OWASP Top 10 (2025) — https://owasp.org/Top10/2025/ ; CWE mapping required throughout.
 > **Signature game:** practice **CTF tournament** (web · API · binary · supply-chain · cloud · LLM) previewing Week 19, plus cross-team peer review.
 
-> ⚠️ **Ethics note:** This is a **project studio**, not an exploit lab. Demo your attack → root cause → fix **only** against your own term-project application (the [term project](../../project/README.md)) or the provided practice-CTF targets. The graded final presentation + full CTF tournament are in **Week 19**; this week is the work-in-progress warm-up.
+> ⚠️ **Ethics note:** This is a **project studio**, not an exploit lab. Demo your attack → root cause → fix **only** against your own term-project application (see `project/README.md` in the repo root) or the provided practice-CTF targets. The graded final presentation + full CTF tournament are in **Week 19**; this week is the work-in-progress warm-up.
 
 ---
 
@@ -107,7 +107,7 @@ Answer as a team (2–4 sentences each).
   byte-identical for the whole cohort *by design*, so the stamp is the only thing that makes
   the shot yours. Generic or borrowed evidence is not accepted.
 - **Personalized flag (if this lab issues one):** ____________________
-  *Flags are unique per student — submitting another student's flag is a violation. See [SUBMISSION.md](../../SUBMISSION.md).*
+  *Flags are unique per student — submitting another student's flag is a violation. How to submit: **learn.zcr.ai/submit** (full guide: `SUBMISSION.md` in the repo root).*
 - **Explain in your own words** *(graded on your reasoning, not copied text):*
   1. What did you do, and **why did the vulnerability work**?
   2. **Why does your fix actually stop it** — and what could still break it?
