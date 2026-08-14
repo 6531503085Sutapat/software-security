@@ -20,7 +20,7 @@
 - Sign and verify an artifact with Sigstore/Cosign (keyless/OIDC).
 
 ## 📦 Signature game — "Dependency Confusion Heist"
-**Round 1 — Attack:** in an instructor-provided private registry, plant/identify a typosquatted or higher-version public package and watch it get pulled into a build instead of the intended internal one.
+**Round 1 — Attack:** no live registry ships with this lab — walk the resolver's own "highest version wins" rule via `dependency-confusion.md` and the embedded resolver simulation (Worksheet 12 Task 2) and watch the wrong package win the version comparison.
 ```bash
 # SCA options
 npm audit

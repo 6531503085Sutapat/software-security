@@ -6,8 +6,10 @@
 **CWE:** CWE-1357 (reliance on insufficiently trustworthy component),
 CWE-829 (inclusion of functionality from untrusted control sphere)
 
-> This scenario is run only against the instructor-provided private registry
-> in an isolated lab network. Never plant packages on the real PyPI/npm.
+> This lab does not run a live private/public registry — `acme-internal-utils` is a worked example with
+> no installable package behind it, on either side. The mechanism below is taught with the resolver's own
+> rule and an interactive simulation (embedded in Worksheet 12 Task 2), not a real package pull. Never
+> plant packages on the real PyPI/npm.
 
 ---
 
@@ -41,15 +43,21 @@ resolver picks: ----------------------> 99.0.0     # confusion!
 
 ---
 
-## Lab steps (controlled)
+## Lab steps (simulated — there is no live registry)
 
-1. **Observe the pull.** Configure pip to see both the lab's private index and
-   the lab's "public" index. Install `acme-internal-utils` and note which
-   version/registry it came from (`pip install -v` prints the source URL).
-2. **Trigger confusion.** The instructor's "public" index already hosts a
-   higher-versioned look-alike. Re-resolve and watch the wrong one win.
-3. **Inspect the payload.** The look-alike's `setup.py` only writes a
-   `PWNED.txt` marker (benign) — proof that install-time code ran.
+1. **Read the rule.** In `--extra-index-url` (merged) mode, pip's resolver compares every version it can
+   see across every configured index and installs whichever number is highest — it has no concept of which
+   source is "trusted." In `--index-url` (single) mode, only the one configured index is ever queried; a
+   same-named package on any other index is never fetched, regardless of its version.
+2. **Watch it happen.** Worksheet 12 Task 2 embeds an interactive simulation that computes this rule live
+   for the `acme-internal-utils` `1.4.0` (private) vs. `99.0.0` (public) example — set the mode, watch the
+   verdict flip. This stands in for literally running `pip install acme-internal-utils`: there is no
+   instructor registry serving that package in this lab, and the name does not exist on real PyPI either.
+3. **The payload, conceptually.** If the public look-alike were real, its `setup.py` would run at install
+   time — before any of your own code — and a benign version of that attack typically just writes a marker
+   file (e.g. `PWNED.txt`) to prove code executed. No such file exists in this lab; it is the standard
+   illustration of CWE-829 (functionality pulled from an untrusted control sphere), not something to
+   reproduce here.
 
 ---
 
@@ -67,5 +75,5 @@ resolver picks: ----------------------> 99.0.0     # confusion!
   (tie back to `sca_scan.sh`).
 
 ## Deliverable
-A short note: which registry served the package before vs. after your fix,
-plus the one defense you found most effective and why.
+A short note: the simulation's verdict in merged vs. single-index mode for the same version pair, plus
+the one defense you found most effective and why.
