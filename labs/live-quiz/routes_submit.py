@@ -23,11 +23,18 @@ THE DOWNLOAD ENDPOINT IS THE SECURITY-CRITICAL ROUTE
 
 from __future__ import annotations
 
-import csv
 import io
 import json
 import os
 import re
+
+# CSV exports go to a file teachers open in Excel/Sheets — the stdlib csv
+# module doesn't neutralize a leading =/+/-/@, which spreadsheet apps can read
+# as a live formula (CWE-1236). defusedcsv prefixes it. The alias is not
+# cosmetic: Semgrep's csv-writer-injection rule matches the name `csv.writer`
+# syntactically, so importing defusedcsv *as* `csv` still trips it — the
+# rename is what clears CI.
+from defusedcsv import csv as safe_csv
 
 from flask import (Blueprint, abort, current_app, redirect, render_template,
                    request, session, url_for, Response)
@@ -159,7 +166,7 @@ def codes_csv(assignment_id):
                          " WHERE assignment_id = ? ORDER BY student_id",
                          (assignment_id,)).fetchall()
     buf = io.StringIO()
-    w = csv.writer(buf)
+    w = safe_csv.writer(buf)
     w.writerow(["student_id", "code"])
     for r in rows:
         w.writerow([r["student_id"], r["code"]])
@@ -202,7 +209,7 @@ def mark(assignment_id, submission_id):
 def results_csv(assignment_id):
     _owned(assignment_id)
     buf = io.StringIO()
-    w = csv.writer(buf)
+    w = safe_csv.writer(buf)
     w.writerow(["student_id", "submitted", "late", "files", "earned", "possible",
                 "percent", "fully_graded"])
     for r in S.gradebook_rows(_db(), assignment_id):

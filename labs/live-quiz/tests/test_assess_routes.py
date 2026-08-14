@@ -368,6 +368,33 @@ def test_q6_csv_is_the_shape_verify_q6_consumes(teacher, student, published):
     assert rows[0]["answer"] == "FLAG{sqli_ab12cd34}"
 
 
+def test_q6_csv_neutralizes_formula_injection_in_student_answer(teacher, student, published):
+    """The short-answer text is the one field in these exports a student fully
+    controls. A teacher opens this CSV in Excel/Sheets to grade it, so a cell
+    starting with `=`/`+`/`-`/`@` must not reach the file as a live formula
+    (CWE-1236 / OWASP CSV injection)."""
+    aid, codes = published
+    html = student.get("/quiz").get_data(as_text=True)
+    student.post("/quiz", data={"csrf_token": _csrf(html), "code": codes["65310001"]})
+    for _ in range(6):
+        page = student.get("/quiz/take").get_data(as_text=True)
+        if "Thank you" in page:
+            break
+        qid = re.search(r'name="question_id" value="(\d+)"', page).group(1)
+        data = {"csrf_token": _csrf(page), "question_id": qid}
+        if 'name="choice"' in page:
+            data["choice"] = "0"
+        else:
+            data["text"] = "=SUM(1+1)"
+        student.post("/quiz/take", data=data)
+
+    rows = list(csv.DictReader(io.StringIO(
+        teacher.get(f"/assess/{aid}/q6.csv").get_data(as_text=True))))
+    answer = rows[0]["answer"]
+    assert not answer.startswith(("=", "+", "-", "@")), (
+        f"formula-injection payload reached the exported cell unescaped: {answer!r}")
+
+
 def test_issuing_codes_is_idempotent_over_http(teacher, published):
     aid, codes = published
     page = teacher.get(f"/assess/{aid}").get_data(as_text=True)

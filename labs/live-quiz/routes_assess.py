@@ -16,8 +16,16 @@ Two audiences, two guards:
 
 from __future__ import annotations
 
-import csv
 import io
+
+# CSV exports carry the free-text short-answer submission (q6.csv) and other
+# teacher-entered fields into a file teachers open in Excel/Sheets — the stdlib
+# csv module doesn't neutralize a leading =/+/-/@, which spreadsheet apps can
+# read as a live formula (CWE-1236). defusedcsv prefixes it. The alias is not
+# cosmetic: Semgrep's csv-writer-injection rule matches the name `csv.writer`
+# syntactically, so importing defusedcsv *as* `csv` still trips it — the
+# rename is what clears CI.
+from defusedcsv import csv as safe_csv
 
 from flask import (Blueprint, abort, current_app, redirect, render_template,
                    request, session, url_for, Response)
@@ -165,7 +173,7 @@ def codes_csv(assessment_id):
         "SELECT student_id, code, redeemed_at FROM attempt_codes"
         " WHERE assessment_id = ? ORDER BY student_id", (assessment_id,)).fetchall()
     buf = io.StringIO()
-    w = csv.writer(buf)
+    w = safe_csv.writer(buf)
     w.writerow(["student_id", "code", "redeemed_at"])
     for r in rows:
         w.writerow([r["student_id"], r["code"], r["redeemed_at"] or ""])
@@ -196,7 +204,7 @@ def results_csv(assessment_id):
     _owned(assessment_id)
     rows = A.gradebook_rows(_db(), assessment_id)
     buf = io.StringIO()
-    w = csv.writer(buf)
+    w = safe_csv.writer(buf)
     w.writerow(["student_id", "attempted", "submitted", "earned", "possible",
                 "percent", "fully_graded"])
     for r in rows:
@@ -217,7 +225,7 @@ def q6_csv(assessment_id):
     becoming a second, unverified path."""
     _owned(assessment_id)
     buf = io.StringIO()
-    w = csv.writer(buf)
+    w = safe_csv.writer(buf)
     w.writerow(["student_id", "answer", "points"])
     for r in A.short_answers(_db(), assessment_id):
         w.writerow([r["student_id"], r["text"] or "",
