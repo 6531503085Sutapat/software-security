@@ -174,6 +174,17 @@ Consolidate Weeks 10–16 (+ first-half callbacks). *🎯 "Security Jeopardy: Ch
 
 **Term project.** In teams of 2–3, students take a small web/API application, threat-model it, find and document its vulnerabilities, remediate them, generate an SBOM, sign the release artifact, and wire up a security CI pipeline. Deliverables: a threat model, a vulnerability report mapped to CWE/OWASP, the fixed code, and a short demo. Each member's mark is scaled by a short **peer-contribution evaluation** (see `project/README.md`).
 
+**Term project rubric (100 pts, scales the 15% above):**
+
+| Criterion | Pts |
+|---|---|
+| Threat model quality & completeness | 20 |
+| Vulnerability findings (correctness, CWE/OWASP mapping, depth) | 25 |
+| Remediation quality (correct, minimal, well-explained) | 25 |
+| Supply-chain hardening (SBOM + signing + provenance) | 15 |
+| CI pipeline (works, fails build appropriately) | 10 |
+| Presentation & report clarity | 5 |
+
 **Teams & Houses.** Two layers, one structure:
 - **Houses** — large, persistent, **mixed-ability** groups for the whole term. They drive the season-long **CTFd leaderboard**, Hall of Fame, and the weekly games. **Houses are not graded** (pure engagement — free-riding can't affect anyone's grade).
 - **Project teams of 2–3** **nest inside** a House. This is the only *graded* group unit, protected by per-student flags + the peer-contribution evaluation.
