@@ -274,12 +274,18 @@ here will want several up at once. See §9 for the fix.
 **Which demo rubric.** Two 100-point rubrics exist and they are not identical: `project/README.md`
 (threat model 20 / findings 25 / remediation 25 / supply chain 15 / CI 10 / presentation 5) and
 `labs/week16-capstone/worksheet.md` (threat model 15 / exploitation 20 / remediation 20 / SBOM +
-signing 15 / CI 15 / demo & Q&A 15), plus that worksheet's 1–5 peer-review rubric.
-`instructor/GRADEBOOK.md` names **`project/README.md`'s** as *the* project rubric. `ctf.md` line 6
-cross-references `../week16-capstone/worksheet.md` and labels it "the capstone project rubric" — the
-link is intentional (that is where the dual-rubric comparison and the project checklist live), and
-the label now matches what the link points to. Earlier drafts called the same target "the Week 19
-worksheet", which was misleading; that wording has been retired.
+signing 15 / CI 15 / demo & Q&A 15), plus that worksheet's own 1–5 peer-review rubric. The second
+one grades the **Week 16 studio worksheet itself** — `project/README.md` calls that studio demo
+"WIP, ungraded." `instructor/GRADEBOOK.md` names **`project/README.md`'s** as *the* project rubric —
+the one that actually scores the Week 19 graded demo — and `syllabus.md` / `syllabus-mfu.md` publish
+the identical 100-pt table under "Term project rubric." `ctf.md` line 6 now links there
+(`../../project/README.md`) instead of to `labs/week16-capstone/worksheet.md`: an earlier revision
+pointed it at the worksheet and rationalized the choice as giving readers a "dual-rubric comparison"
+and the project checklist, but the worksheet itself contains no such comparison (only this lesson
+plan does, and this lesson plan isn't student-facing) — so that link sent students to a *different*,
+differently-weighted rubric for a *different*, explicitly-ungraded deliverable.
+`labs/week16-capstone/worksheet.md` Part 3 A still holds the deliverables checklist for anyone who
+wants it; `ctf.md` just no longer sends the "what am I graded on" reader there.
 
 **Individual vs team.** Both instruments in this session are team-graded, which is unusual for this
 course: individual work is ~75% of the mark (course specification §8), and the bounded team

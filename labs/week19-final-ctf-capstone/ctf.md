@@ -3,9 +3,9 @@
 **Course:** Software Security (KOSEN69) · **Covers:** the whole term
 **Time:** 150 min · **Total:** 150 pts · **Team-based** · leaderboard · Sandbox only (ethics policy applies).
 
-> Submit per challenge: the **flag** (or noted proof), the **payload/command**, and a **one-line mitigation**. Difficulty rises with points. (The graded project demo is scored separately — see the [capstone project rubric](../week16-capstone/worksheet.md).)
+> Submit per challenge: the **flag** (or noted proof), the **payload/command**, and a **one-line mitigation**. Difficulty rises with points. (The graded project demo is scored separately — see the [project rubric](../../project/README.md).)
 
-![A two-column exam blueprint showing the 150-point capstone CTF split across six categories on the left, feeding via a funnel into the six-step term project demo pipeline on the right, with the flag-payload-mitigation submission format tying the two halves together.](img/capstone-map.svg)
+![A two-column exam blueprint showing the 150-point capstone CTF split across six categories on the left, feeding via a funnel into the seven-step term project demo pipeline on the right, with the flag-payload-mitigation submission format tying the two halves together.](img/capstone-map.svg)
 
 | # | Title | Topic / target | Pts |
 |---|-------|----------------|-----|
