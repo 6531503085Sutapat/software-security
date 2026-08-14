@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 580" role="img" aria-label="Diagram mapping Week 19's two graded components. Left half: the capstone CTF tournament, 150 points total across six categories drawn from the whole term. Web exploitation covers SQL injection, command injection, stored XSS, IDOR and JWT forgery, worth 60 points, from weeks 4 to 6. API abuse covers BOLA and mass assignment, worth 15 points, from week 10. Memory safety covers a stack overflow ret2win exploit and fuzzing, worth 30 points, from week 11. Supply chain covers finding a vulnerable dependency or unsigned image, worth 10 points, from week 12. Cloud covers an exposed secret, open IAM policy or root Dockerfile, worth 15 points, from week 13. LLM and agentic covers prompt injection and indirect injection, worth 20 points, from week 14. Right half: the term project demo pipeline, a six-step left-to-right chain — threat model, vulnerabilities found, remediation, SBOM plus signed artifact, security CI/CD pipeline, and a 10-minute demo with 5-minute Q&amp;A that is graded. A funnel shape connects all six CTF categories to the vulnerabilities-found and remediation steps of the pipeline, captioned 'for real', making the point that every CTF submission's flag, payload and one-line mitigation are the same find-and-fix moves the project had to perform for real, once, against the team's own system rather than a toy target.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 650" role="img" aria-label="Diagram mapping Week 19's two graded components. Left half: the capstone CTF tournament, 150 points total across six categories drawn from the whole term. Web exploitation covers SQL injection, command injection, stored XSS, IDOR and JWT forgery, worth 60 points, from weeks 4 to 6. API abuse covers BOLA and mass assignment, worth 15 points, from week 10. Memory safety covers a stack overflow ret2win exploit and fuzzing, worth 30 points, from week 11. Supply chain covers finding a vulnerable dependency or unsigned image, worth 10 points, from week 12. Cloud covers an exposed secret, open IAM policy or root Dockerfile, worth 15 points, from week 13. LLM and agentic covers prompt injection and indirect injection, worth 20 points, from week 14. Right half: the term project demo pipeline, a seven-step left-to-right chain — threat model, vulnerabilities found, remediation, SBOM plus signed artifact, security CI/CD pipeline, a recorded video walkthrough submitted before the session and graded asynchronously on the rubric, and a three-minute live Q&amp;A, viva-style rather than a re-demo, to confirm the work is the team's own. A funnel shape connects all six CTF categories to the vulnerabilities-found and remediation steps of the pipeline, captioned 'for real', making the point that every CTF submission's flag, payload and one-line mitigation are the same find-and-fix moves the project had to perform for real, once, against the team's own system rather than a toy target.">
 <title>Week 19 capstone map: CTF tournament categories versus the project demo pipeline</title>
 <style>
   .title { fill:#111827; font: 700 15px system-ui, sans-serif; }
@@ -59,7 +59,7 @@
 
 <!-- Title -->
 <text x="360" y="30" text-anchor="middle" class="title">Week 19 Capstone: CTF Categories → Project Demo Pipeline</text>
-<text x="360" y="46" text-anchor="middle" class="subtitle">Two things get graded this week — plan revision for both.</text>
+<text x="360" y="46" text-anchor="middle" class="subtitle">Two things get graded — CTF live, project async + live Q&amp;A.</text>
 
 <!-- Left header -->
 <text x="20" y="72" class="header">CTF TOURNAMENT</text>
@@ -69,7 +69,7 @@
 
 <!-- Right header -->
 <text x="400" y="72" class="header">PROJECT DEMO PIPELINE</text>
-<text x="400" y="86" class="subhead">show it end-to-end — scored on Week 19 rubric</text>
+<text x="400" y="86" class="subhead">recorded walkthrough, graded on the rubric</text>
 
 <!-- Funnel connecting all CTF categories to Vulnerabilities-found + Remediation -->
 <polygon points="330,100 400,168 400,286 330,498" class="funnel"/>
@@ -162,16 +162,24 @@
 <text x="440" y="408" class="stepSub">automated gates</text>
 <polygon points="550,422 544,435 556,435" class="arrowHead"/>
 
-<!-- Stage 6: Demo + Q&A (graded) -->
+<!-- Stage 6: Video walkthrough (graded, async) -->
 <rect x="400" y="440" width="300" height="50" rx="6" class="cardOrange"/>
 <circle cx="418" cy="465" r="13" class="circleOrange"/>
 <text x="418" y="469" text-anchor="middle" class="stepNum">6</text>
-<text x="440" y="461" class="stepTitle">10-min demo + 5-min Q&amp;A</text>
-<text x="440" y="476" class="stepSubHi">(graded)</text>
+<text x="440" y="461" class="stepTitle">Video walkthrough</text>
+<text x="440" y="476" class="stepSubHi">graded async on rubric</text>
+<polygon points="550,490 544,503 556,503" class="arrowHead"/>
+
+<!-- Stage 7: Live Q&A (viva-style) -->
+<rect x="400" y="508" width="300" height="50" rx="6" class="cardBlue"/>
+<circle cx="418" cy="533" r="13" class="circleBlue"/>
+<text x="418" y="537" text-anchor="middle" class="stepNum">7</text>
+<text x="440" y="529" class="stepTitle">Live Q&amp;A — 3 min</text>
+<text x="440" y="544" class="stepSub">viva-style, not a re-demo</text>
 
 <!-- ===================== Footer ===================== -->
-<text x="360" y="518" text-anchor="middle" class="footer">Each CTF submission = flag + payload + mitigation.</text>
-<text x="360" y="532" text-anchor="middle" class="footer">Found → proved → fixed — same 3 moves the pipeline grades.</text>
-<text x="360" y="546" text-anchor="middle" class="footer">Not a toy target this time: the stakes are your own system.</text>
+<text x="360" y="586" text-anchor="middle" class="footer">Each CTF submission = flag + payload + mitigation.</text>
+<text x="360" y="600" text-anchor="middle" class="footer">Found → proved → fixed — same 3 moves the pipeline grades.</text>
+<text x="360" y="614" text-anchor="middle" class="footer">Not a toy target this time: the stakes are your own system.</text>
 
 </svg>
