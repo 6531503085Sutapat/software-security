@@ -7,16 +7,19 @@
     <form class="lx-form" method="post" action="/code"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
       <p class="lx-eyebrow">Weekly quiz or hand in your work</p>
       <h1 class="lx-h1">Enter your code</h1>
-      <p class="lx-lead">Works for either code on your slip — the quiz code or the
-        submission code. We'll take you to the right place.</p>
+      <p class="lx-lead">Works for either code on your slip or table — the quiz code or the
+        submission code. We'll take you to the right place. (Got a game PIN instead? That's
+        for <a href="/play">Live game</a>, not here.)</p>
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       {% if error %}<div class="lx-err" id="form-error" role="alert">{{ error }}</div>{% endif %}
       <div class="lx-field"><label class="lx-label" for="code">Code</label>
-        <input class="lx-input" id="code" name="code"{% if error %} aria-invalid="true" aria-describedby="form-error"{% endif %} autocomplete="off" autocapitalize="characters"
-               spellcheck="false" maxlength="16" required></div>
+        <input class="lx-input" id="code" name="code" value="{{ code|default('', true) }}"{% if error %} aria-invalid="true" aria-describedby="form-error"{% endif %} autocomplete="off" autocapitalize="characters"
+               spellcheck="false" maxlength="16" placeholder="e.g. 7F3KQ9RT" required>
+        <p class="lx-hint lx-hint--tight">The CODE column — not your student ID.</p></div>
       <button class="lx-btn" type="submit">Continue<span aria-hidden="true"> ▸</span></button>
-      <p class="lx-hint">Lost your slip, or the code will not work? Ask your teacher in
-        class — codes can be re-issued.</p>
+      <p class="lx-hint">Not working? Check for extra spaces and that you typed the code,
+        not your student ID, then try again. Still stuck — ask your teacher in class, codes
+        can be re-issued.</p>
     </form>
   </div>
 </div>

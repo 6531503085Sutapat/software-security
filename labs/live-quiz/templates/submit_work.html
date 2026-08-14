@@ -2,7 +2,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ a.title }} — KOSEN·KMITL</title><link rel="stylesheet" href="/static/style.css?v={{ asset_v }}"></head>
 <body><div class="pwrap"><section class="pjoin">
-  <div class="mark"><div class="sub">{{ a.title }}</div></div>
+  <a class="mark" href="/"><div class="sub">{{ a.title }}</div></a>
 
   <div class="join-card">
     <h1>Your submission</h1>
@@ -34,7 +34,7 @@
     {% if can_upload %}
     <form method="post" action="/submit/work" enctype="multipart/form-data"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <div class="field"><label for="file">Add a file (max {{ max_mb }} MB, up to {{ max_files }})</label>
+      <div class="field"><label for="file">Add a file (max {{ max_mb }} MB each, up to {{ max_files }} files total)</label>
         <input id="file" name="file" type="file" required></div>
       <button class="btn blue" type="submit">Upload ▸</button>
     </form>
@@ -46,8 +46,10 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="action" value="note">
     <h1>Your note</h1>
-    <p class="lead">Required: how you used any AI tool (search, code, translate).
-      See SUBMISSION.md.</p>
+    <p class="lead">Required: name any AI tool you used and what for (e.g. "used ChatGPT
+      to debug a null pointer"). One sentence is enough — see
+      <a href="/learn/{{ a.course_slug }}/doc/submission">SUBMISSION.md</a> for the full
+      policy.</p>
     <div class="field"><textarea name="note" rows="4" maxlength="4000">{{ sub.note }}</textarea></div>
     <button class="btn" type="submit">Save note ▸</button>
   </form>

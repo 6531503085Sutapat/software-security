@@ -319,12 +319,12 @@ def entry():
             att = A.redeem(_db(), raw, _now())
         except A.AttemptError as quiz_exc:
             return render_template("submit_entry.html", csrf_token=_csrf(),
-                                   error=str(quiz_exc)), 200
+                                   error=str(quiz_exc), code=raw), 200
         session["attempt_id"] = att["id"]
         return redirect(url_for("assess.quiz_take"))
     if kind != "submit":
         return render_template("submit_entry.html", csrf_token=_csrf(),
-                               error="That code isn't valid."), 200
+                               error="That code isn't valid.", code=raw), 200
     sub = S.redeem(_db(), raw, _now())
     session["submission_id"] = sub["id"]
     return redirect(url_for("submit.workspace"))

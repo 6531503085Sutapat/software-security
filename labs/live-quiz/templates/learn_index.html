@@ -109,7 +109,9 @@
     <p class="lx-lead lx-measure">Every document published for this course, free
       to read and open to anyone. Each row below opens the main document for
       that {{ course.unit_label|lower }}; the other documents it carries are
-      listed underneath it.</p>
+      listed underneath it. A <span class="lx-flag-graded">GRADED</span> tag just
+      means that {{ course.unit_label|lower }}'s work counts toward your mark —
+      the document itself is still free to open.</p>
 
     <ul class="lx-facts">
       <li class="lx-fact">
@@ -225,14 +227,15 @@
     <aside class="lx-aside">
       <h2 class="lx-aside-h">For enrolled students</h2>
       <p class="lx-aside-p">Everything above is open to anyone. These are not:
-        each needs a one-time code handed out on paper in class, or the class
-        VPN.</p>
+        each needs a one-time code your teacher hands out in class — on paper or
+        in Classroom — or the class VPN. Not sure which code you have?
+        <a class="lx-link" href="/code">This page works it out for you</a>.</p>
       <ul class="lx-aside-list">
         <li><a class="lx-link" href="/quiz">Weekly quiz</a>
-          <span class="lx-need">code on your slip</span>
+          <span class="lx-need">your one-time code</span>
           <span class="lx-flag-graded">GRADED</span></li>
         <li><a class="lx-link" href="/submit">Hand in your worksheet</a>
-          <span class="lx-need">code on your slip</span>
+          <span class="lx-need">your one-time code</span>
           <span class="lx-flag-graded">GRADED</span></li>
         {% if course.arena_url %}
         <li><a class="lx-link" href="{{ course.arena_url }}">Security Arena</a>
@@ -240,7 +243,7 @@
           <span class="lx-flag-graded">GRADED</span></li>
         {% endif %}
         <li><a class="lx-link" href="/play">Join a live game</a>
-          <span class="lx-need lx-need--free">PIN on screen</span></li>
+          <span class="lx-need lx-need--free">Game PIN</span></li>
       </ul>
     </aside>
 
