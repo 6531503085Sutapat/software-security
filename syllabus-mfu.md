@@ -7,7 +7,7 @@
 **Instructor:** อ.ดร.ณัฐกรณ์ แฉล้มวงศ์วาน (Nutthakorn Chalaemwongwan)
 **Coordinating instructor:** Dr. Nang Hsu Mon Pyae
 **Semester:** 1/2569 (Aug–Nov 2026)
-**Format:** 7 all-day weekend sessions, 08:00–12:00 (ภาคทฤษฎี — lecture) + 13:00–17:00 (ภาคปฏิบัติ — lab), same content and pedagogy as the parent [`software-security`](README.md) course, compressed from a 16-week weekly format into 7 all-day sessions. Sessions 1 and 2 run **back to back on the opening weekend (Sat 15 + Sun 16 Aug)**; the remaining five are fortnightly Saturdays.
+**Format:** 7 all-day weekend sessions, 08:00–12:00 (ภาคทฤษฎี — lecture) + 13:00–17:00 (ภาคปฏิบัติ — lab), same content and pedagogy as the parent [`software-security`](README.md) course, compressed from the 19-week weekly format into 7 all-day sessions. Sessions 1 and 2 run **back to back on the opening weekend (Sat 15 + Sun 16 Aug)**; the remaining five are fortnightly Saturdays.
 **Relationship to the KOSEN-KMITL offering:** same course, same content family, same AIR-Sec pedagogy, part of the same preregistered multi-institution study (MFU is the single-section cross-institution replication arm — see `instructor/research/preregistration.md` and `site-logistics.md`). This file is MFU-specific scheduling; [`syllabus.md`](syllabus.md) is the canonical 19-week KOSEN-KMITL version this content is drawn from.
 **Last updated:** ปีการศึกษา 2569
 
@@ -40,13 +40,13 @@ By the end of the course, students will be able to:
 
 ---
 
-## 3. Format Note — Why 7 Sessions Instead of 16 Weeks
+## 3. Format Note — Why 7 Sessions Instead of 19 Weeks
 
-MFU delivers this course as 7 full-day weekend sessions rather than 16 weekly meetings. Each session keeps the same **lecture → lab** structure as the KOSEN offering, just compressed: the 08:00–12:00 block covers that session's lecture content for all topics assigned to it, and the 13:00–17:00 block runs the corresponding hands-on labs/games back to back. Total contact hours and technical content are unchanged from the 16-week version — only the calendar grouping differs.
+MFU delivers this course as 7 full-day weekend sessions rather than 19 weekly meetings. Each session keeps the same **lecture → lab** structure as the KOSEN offering, just compressed: the 08:00–12:00 block covers that session's lecture content for all topics assigned to it, and the 13:00–17:00 block runs the corresponding hands-on labs/games back to back. Total contact hours and technical content are unchanged from the 19-week version — only the calendar grouping differs.
 
 **The opening weekend is a double session, and that has consequences worth naming.** Sessions 1 and 2 fall on consecutive days (Sat 15 + Sun 16 Aug), so the four topics of Weeks 1–4 — threat modeling, secure SDLC/tooling, cryptography and injection — land inside about 36 hours. Two things follow. First, there is no week between them to fix a broken environment, so the "Lab 0" setup below is not a suggestion; a laptop that cannot run Docker on Saturday morning will also not run it on Sunday morning. Second, the gap from Session 2 to Session 3 is three weeks (16 Aug → 5 Sep), the longest in the term — that gap, not the opening weekend, is where the Week 3–4 material should be consolidated through the take-home labs.
 
-**A pacing note, stated plainly rather than smoothed over:** because the 16-week content splits 6 topics before the midterm and 7 after, but the calendar gives 3 sessions before the midterm and only 2 after, per-topic time is not perfectly even — Sessions 1–3 give each topic roughly 2 lecture hours + 2 lab hours, while Sessions 5–6 compress to roughly 1.3–2 hours each per topic. Session 6's original 4-topic load has been rebalanced below (see §5) by moving the Week 15 capstone-studio content to self-study/pre-final prep rather than new taught content that session — this is a deliberate adaptation, not an oversight, and matches how the source Week 16 was already designed (no vulnerable-target lab, practice-only — `labs/week16-capstone/` holds the scrimmage/worksheet materials but no Docker lab environment).
+**A pacing note, stated plainly rather than smoothed over:** because the 19-week content splits 6 topics before the midterm and 7 after, but the calendar gives 3 sessions before the midterm and only 2 after, per-topic time is not perfectly even — Sessions 1–3 give each topic roughly 2 lecture hours + 2 lab hours, while Sessions 5–6 compress to roughly 1.3–2 hours each per topic. Session 6's original 4-topic load has been rebalanced below (see §5) by moving the Week 16 capstone-studio content to self-study/pre-final prep rather than new taught content that session — this is a deliberate adaptation, not an oversight, and matches how the source Week 16 was already designed (no vulnerable-target lab, practice-only — `labs/week16-capstone/` holds the scrimmage/worksheet materials but no Docker lab environment).
 
 ---
 
@@ -70,17 +70,17 @@ Bring a laptop able to run Docker Desktop to every session — the compressed fo
 
 ## 5. Session-by-Session Schedule
 
-| Session | Date | 16-wk equiv. | AM lecture (08:00–12:00) | PM lab (13:00–17:00) |
+| Session | Date | 19-wk equiv. | AM lecture (08:00–12:00) | PM lab (13:00–17:00) |
 |---|---|---|---|---|
 | 1 | Sat 15 Aug 69 | Wk 1–2 | Threat modeling + Secure SDLC/tooling | STRIDE game + Bug Triage/Fuzzing Race |
 | **2** | **Sun 16 Aug 69** | Wk 3–4 | Cryptography + Injection | Capture the Hash + SQLi Boss Fight |
 | 3 | Sat 5 Sep 69 | Wk 5–6 | XSS/client-side + Authn/access control | XSS Golf + IDOR Treasure Hunt/JWT Forgery |
-| **4** | **Sat 19 Sep 69** | **Wk 7–8** | **Midterm written exam** (covers Sessions 1–3) | **Midterm CTF practical** |
-| 5 | Sat 10 Oct 69 | Wk 9–11 | API security + Memory-safety + Supply chain | crAPI Raid + Pwn the Binary + Dependency Confusion Heist |
-| 6 | Sat 24 Oct 69 | Wk 12–14 | Cloud/container + AI/LLM security + DevSecOps | Misconfig Hunt + Gandalf Challenge + Break the Build |
-| **7** | **Sat 7 Nov 69** | **Wk 15–16** | **Final written exam** (cumulative, emphasis Sessions 5–6) | **Capstone CTF tournament + team project demos** |
+| **4** | **Sat 19 Sep 69** | **Wk 8–9** | **Midterm written exam** (covers Sessions 1–3) | **Midterm CTF practical** |
+| 5 | Sat 10 Oct 69 | Wk 10–12 | API security + Memory-safety + Supply chain | crAPI Raid + Pwn the Binary + Dependency Confusion Heist |
+| 6 | Sat 24 Oct 69 | Wk 13–15 | Cloud/container + AI/LLM security + DevSecOps | Misconfig Hunt + Gandalf Challenge + Break the Build |
+| **7** | **Sat 7 Nov 69** | **Wk 18–19** | **Final written exam** (cumulative, emphasis Sessions 5–6) | **Capstone CTF tournament + team project demos** |
 
-*Week 15 (capstone-studio content) is assigned as self-study/team-project work between Sessions 6 and 7 rather than new taught content in Session 6 — see §3.*
+*Week 16 (capstone-studio content) is assigned as self-study/team-project work between Sessions 6 and 7 rather than new taught content in Session 6 — see §3.*
 
 ### Session 1 (Sat 15 Aug 69) — Wk 1–2: Foundations I
 
@@ -112,12 +112,12 @@ Bring a laptop able to run Docker Desktop to every session — the compressed fo
 - ⛳ **"XSS Golf"** — shortest payload that pops `alert(1)`/steals a cookie wins; then deploy a CSP + escaping that blocks every payload; demo CSRF + defense.
 - 🗺️ **"IDOR Treasure Hunt + JWT Forgery"** — reach other users' data via object-id tampering, forge a weak JWT; implement RBAC + fix token handling.
 
-### Session 4 (Sat 19 Sep 69) — Wk 7–8: MIDTERM
+### Session 4 (Sat 19 Sep 69) — Wk 8–9: MIDTERM
 
 **AM — Written exam.** Covers Sessions 1–3: threat modeling, CWE/OWASP mapping, "spot the vuln," secure-design short answers.
 **PM — CTF practical.** Graded challenges across injection, XSS, auth/IDOR, and crypto in the sandbox.
 
-### Session 5 (Sat 10 Oct 69) — Wk 9–11: Systems & Modern Stack I
+### Session 5 (Sat 10 Oct 69) — Wk 10–12: Systems & Modern Stack I
 
 **AM — API Security / Memory-Safety & Exploitation / Software Supply-Chain Security**
 - REST/GraphQL attack surface; the OWASP API Security Top 10 (BOLA, broken authentication, excessive data exposure, mass assignment, resource consumption).
@@ -131,7 +131,7 @@ Bring a laptop able to run Docker Desktop to every session — the compressed fo
 
 *Note: this session covers three substantial topics in one day — plan for a brisk pace; the memory-safety and supply-chain labs are the most time-sensitive if running behind.*
 
-### Session 6 (Sat 24 Oct 69) — Wk 12–14: Systems & Modern Stack II
+### Session 6 (Sat 24 Oct 69) — Wk 13–15: Systems & Modern Stack II
 
 **AM — Cloud & Container Security / Security of AI/LLM-Powered Applications / DevSecOps**
 - Shared-responsibility model; IAM least privilege; secrets management; container image hardening; Kubernetes basics; **A02:2025 Security Misconfiguration**.
@@ -145,7 +145,7 @@ Bring a laptop able to run Docker Desktop to every session — the compressed fo
 
 **Assigned between Session 6 and Session 7 (self-study/team time, not new taught content):** Capstone-studio prep — teams finalize their term project (threat model → vulns → remediation → SBOM/signing → CI pipeline) and rehearse for the Session 7 capstone CTF and project demo, using Session 6's Break the Build pipeline as their working baseline.
 
-### Session 7 (Sat 7 Nov 69) — Wk 15–16: FINAL
+### Session 7 (Sat 7 Nov 69) — Wk 18–19: FINAL
 
 **AM — Written exam.** Cumulative, with emphasis on Sessions 5–6 (API, memory safety, supply chain, cloud, AI/LLM, DevSecOps).
 **PM — Capstone CTF tournament + final project demos.** A full term-spanning CTF plus each team's secured-build presentation (threat model → vulns → remediation → SBOM/signing → CI pipeline).
@@ -167,6 +167,17 @@ Same weighting as the KOSEN-KMITL offering — content and grading are unchanged
 **Individual vs team.** Your grade is dominated by **individual mastery** (worksheets, quizzes, exams ≈ 75%). **Team** work is bounded (project 15% + the Session 7 capstone CTF). The weekly-format signature games are compressed into the same PM lab blocks and score toward the **Houses leaderboard under participation** — they drive engagement, not the 30% worksheet grade.
 
 **Term project.** Same as the KOSEN offering, and *not* tied to a single session — teams of 2–3 work on it across the whole term, with a dedicated prep window between Sessions 6 and 7 (see §5). Deliverables: a threat model, a vulnerability report mapped to CWE/OWASP, the fixed code, and a short demo. Each member's mark is scaled by a short peer-contribution evaluation (see [`project/README.md`](project/README.md)).
+
+**Term project rubric (100 pts, scales the 15% above):**
+
+| Criterion | Pts |
+|---|---|
+| Threat model quality & completeness | 20 |
+| Vulnerability findings (correctness, CWE/OWASP mapping, depth) | 25 |
+| Remediation quality (correct, minimal, well-explained) | 25 |
+| Supply-chain hardening (SBOM + signing + provenance) | 15 |
+| CI pipeline (works, fails build appropriately) | 10 |
+| Presentation & report clarity | 5 |
 
 **Late submissions.** Same policy as the KOSEN offering: −10% of that item's score per day late,
 up to 3 days; not accepted after day 3 without an approved extension. In-session quizzes have no
