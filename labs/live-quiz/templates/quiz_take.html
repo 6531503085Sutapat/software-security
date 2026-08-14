@@ -25,8 +25,13 @@
         </div>
       {% endif %}
       <button class="lx-btn" type="submit">
-        {% if q.index == q.total %}Submit{% else %}Next{% endif %}<span aria-hidden="true"> ▸</span></button>
+        {% if q.index == q.total %}Submit quiz{% else %}Next question{% endif %}<span aria-hidden="true"> ▸</span></button>
+      {% if q.index == q.total %}
+      <p class="lx-hint"><b>This is your last question.</b> Submitting ends the quiz —
+        you cannot come back to change an answer.</p>
+      {% else %}
       <p class="lx-hint">You cannot return to this question after continuing.</p>
+      {% endif %}
     </form>
   </div>
 </div>

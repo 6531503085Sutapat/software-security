@@ -50,7 +50,8 @@ def entry():
         try:
             att = A.redeem(_db(), raw, _now())
         except A.AttemptError as exc:
-            return render_template("code_entry.html", csrf_token=_csrf(), error=str(exc)), 200
+            return render_template("code_entry.html", csrf_token=_csrf(),
+                                   error=str(exc), code=raw), 200
         session["attempt_id"] = att["id"]
         return redirect(url_for("assess.quiz_take"))
 
@@ -63,4 +64,4 @@ def entry():
         return redirect(url_for("submit.workspace"))
 
     return render_template("code_entry.html", csrf_token=_csrf(),
-                           error="That code isn't valid."), 200
+                           error="That code isn't valid.", code=raw), 200

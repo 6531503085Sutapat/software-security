@@ -9,18 +9,19 @@
     <form class="lx-form" method="post" action="/quiz"> <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
       <p class="lx-eyebrow">Weekly quiz</p>
       <h1 class="lx-h1">Enter your code</h1>
-      <p class="lx-lead">Use the code on your slip. It works once, for you only.</p>
+      <p class="lx-lead">Use the code on your slip or table. It works once, for you only.</p>
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       {% if error %}<div class="lx-err" id="form-error" role="alert">{{ error }}</div>{% endif %}
       <div class="lx-field"><label class="lx-label" for="code">Access code</label>
-        <input class="lx-input" id="code" name="code"{% if error %} aria-invalid="true" aria-describedby="form-error"{% endif %} autocomplete="off" autocapitalize="characters"
-               spellcheck="false" maxlength="16" required></div>
+        <input class="lx-input" id="code" name="code" value="{{ code|default('', true) }}"{% if error %} aria-invalid="true" aria-describedby="form-error"{% endif %} autocomplete="off" autocapitalize="characters"
+               spellcheck="false" maxlength="16" placeholder="e.g. 7F3KQ9RT" required>
+        <p class="lx-hint lx-hint--tight">The CODE column — not your student ID.</p></div>
       <button class="lx-btn" type="submit">Start<span aria-hidden="true"> ▸</span></button>
       <p class="lx-hint">Once you start, you cannot go back to a previous question.
         The code decides which week's quiz you get, so there is nothing else to pick.</p>
-      <p class="lx-hint">Lost your slip, or the code will not work? Ask your teacher in
-        class — codes can be re-issued. Do not use someone else's: each one is tied to
-        one student.</p>
+      <p class="lx-hint">Not working? Check for extra spaces and that you typed the code,
+        not your student ID, then try again. Still stuck — ask your teacher in class, codes
+        can be re-issued. Do not use someone else's: each one is tied to one student.</p>
       <p class="lx-hint">Not sure if this is the quiz or the worksheet?
         <a href="/code">This box takes either code</a> and sends you to the right place.</p>
     </form>

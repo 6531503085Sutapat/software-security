@@ -120,7 +120,7 @@ textarea:focus-visible, summary:focus-visible, a:focus-visible {
   display: flex; align-items: center; justify-content: space-between; gap: 20px;
   flex-wrap: wrap;
 }
-.mark { display: flex; flex-direction: column; gap: 3px; line-height: 1; }
+.mark { display: flex; flex-direction: column; gap: 3px; line-height: 1; text-decoration: none; }
 .mark .word { font: 700 clamp(20px, 2.3vw, 30px)/1 var(--serif); letter-spacing: .005em; }
 .mark .word .k { color: var(--kosen-blue); }
 .mark .word .m { color: var(--kmitl-orange); }
