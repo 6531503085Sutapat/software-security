@@ -1954,6 +1954,15 @@ body.lx-page {
   .lx-page .lx-tag { background: transparent; border-color: var(--lx-stroke); color: var(--lx-ink-2); }
   .lx-page .lx-pill { background: var(--lx-surface); border-color: var(--lx-ink-3); color: var(--lx-ink-2); }
   .lx-page .lx-tile--c, .lx-page .lx-sq--c { background-color: #2A2F36; }
+
+  /* Same class of bug on the teacher staff bar: its cream background and
+     hover tint are fixed light-mode values, but .lx-staffbar-a/-a--end's text
+     colors are --lx-ink-1/--lx-ink-3, which the remap above turns near-white —
+     near-white text sat on a light cream bar, unreadable. Caught from a real
+     dark-mode browser screenshot, not the token audit. */
+  .lx-page .lx-staffbar { background: #241C15; }
+  .lx-page .lx-staffbar-lab { color: #FF8A4C; }
+  .lx-page .lx-staffbar-a:hover { background: #3A2A1C; }
 }
 
 /* ==========================================================================
