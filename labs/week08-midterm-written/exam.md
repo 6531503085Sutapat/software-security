@@ -9,7 +9,7 @@
 
 ---
 
-![A horizontal bar divided into five point-weighted blocks shows where the 100 exam marks fall: Week 1 threat modeling (15 pts), Week 2 SDLC tooling and CWE/OWASP mapping (5 pts), Weeks 3-6 spot-the-vuln across injection/XSS/auth/crypto (25 pts), Week 4 applied SQL injection flagged as the largest single block (30 pts), and a running-theme secure-design section (25 pts).](img/exam-blueprint.svg)
+![A horizontal bar divided into four point-weighted blocks shows where the 100 exam marks fall: Section A, Concepts, 30 points across six independent 5-point items (CIA triad, STRIDE, SAST vs DAST vs SCA vs fuzzing, hashing vs encryption vs encoding, trust boundaries, least privilege and fail closed). Section B, Spot the Vulnerability, 20 points across four 5-point code-snippet items — name the flaw, cite the CWE, give the fix. Section C, Applied SQL Injection, 30 points as one continuous scenario, items C1 through C5, against a single vulnerable login query. Section D, Defense and Design, 20 points across two 10-point items on SQL injection defenses and secure password-reset design. Sections A and C are the two highest-value blocks at 30 points each, shown in the accent color; B and D are 20 points each, shown in the standard color. The exam covers Weeks 1 through 6, runs 120 minutes, and is closed book unless stated otherwise. It pairs with the Week 9 hands-on CTF practical.](img/exam-blueprint.svg)
 
 ## Section A — Concepts (30 pts, 5 each)
 
