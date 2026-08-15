@@ -13,9 +13,7 @@
 
 ## Part 2 — Lecture Questions
 Answer in your own words (2–4 sentences each).
-1. Define the CIA triad and give one concrete failure example for each of the three properties.
-
-
+1. Define the CIA triad and give one concrete failure example for each of the three properties.<br>
 Ans: CIA Triad are important priciple that can be applied to safety in all aspects. About Confidential(C) is only authorizes individuals, authorized processes, and authorized systems should access the system based on the need-to-know principle like Exposure status. In Integrity(i) information must be protected to prevent unauthorized creation, modification, or deletion like modification status. Availability(a) legitimate users should be able to access and use the required data or resources of an information system without delay whenever needed like accessibility status. for example When 'reg mfu' have many request to login at the same time that mean it lack availability.
 
 2. What is a *trust boundary*, and why does data crossing one deserve extra scrutiny?
