@@ -8,13 +8,13 @@
 
 ## Part 1 — Student Information
 | Name | Student ID | Date | Group |
-|---|---|---|---|
+|Sutapat Chucham |6531503085|15082026|---|
 | | | | |
 
 ## Part 2 — Lecture Questions
 Answer in your own words (2–4 sentences each).
 1. Define the CIA triad and give one concrete failure example for each of the three properties.
-Ans: CIA Triad are important priciple that can be applied to safety in all aspects. About Confidential(C) is only authorizes individuals, authorized processes, and authorized systems should access the system based on the need-to-know principle like Exposure status. In Intergrity(i) information must be protected to prevent unauthorized creation, modification, or deletion like modification status. Availability(a) legitimate users should be able to access and use the required data or resources of an information system without delay whenever needed like accessibility status. for example When 'reg mfu' have many request to login at the same time that mean it lack availability.
+Ans: CIA Triad are important priciple that can be applied to safety in all aspects. About Confidential(C) is only authorizes individuals, authorized processes, and authorized systems should access the system based on the need-to-know principle like Exposure status. In Integrity(i) information must be protected to prevent unauthorized creation, modification, or deletion like modification status. Availability(a) legitimate users should be able to access and use the required data or resources of an information system without delay whenever needed like accessibility status. for example When 'reg mfu' have many request to login at the same time that mean it lack availability.
 
 2. What is a *trust boundary*, and why does data crossing one deserve extra scrutiny?
 Ans:  Trust boundary is a solutions that define, enforce, or visualize zero-trust perimeters across devices, applications, and infrastructure. And without adequate protective measures, data could be leaked, hacked, or misused.
@@ -23,7 +23,7 @@ Ans:  Trust boundary is a solutions that define, enforce, or visualize zero-trus
 Ans: An attack surface is the entire area of an organization or system that is susceptible to hacking. 1.Authentication & Input Points like Exposing Unrestricted User Input & File Uploads and Complex or Multiple Authentication Paths. 2. Data & Storage Exposure like Exposing Sensitive Data via URL Parameters 
 
 4. What does each STRIDE letter map to, and which security property does each threat violate?
-Ans:Spoofing → violates authentication → pretending to be someone you're not. Tampering → violates integrity → modifying data or code you shouldn't.Repudiation → violates non-repudiation → doing something and being able to deny it. Information disclosure → violates confidentiality → leaking data. Denial of service → violates availability → making it unusable.Elevation of privilege → violates authorization → gaining rights you shouldn't have.
+Ans: Spoofing → violates authentication → pretending to be someone you're not. Tampering → violates integrity → modifying data or code you shouldn't.Repudiation → violates non-repudiation → doing something and being able to deny it. Information disclosure → violates confidentiality → leaking data. Denial of service → violates availability → making it unusable.Elevation of privilege → violates authorization → gaining rights you shouldn't have.
 
 5. What does "Secure by Design" (CISA) mean, and how does it differ from bolting security on after release?
 Ans: means security is a design property decided up front, not a patch bolted on after release.While bolting on fixes specific cases and leaves the next comparable error unprotected, Secure by Design prevents entire categories of dangers. While patching is reactive and iterative, design is proactive and scalable.
