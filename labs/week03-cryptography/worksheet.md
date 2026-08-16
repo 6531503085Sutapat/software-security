@@ -8,7 +8,7 @@
 
 ## Part 1 — Student Information
 | Name | Student ID | Date | Group |
-|---|---|---|---|
+|Sutapat Chucham|6532503085|16082026|---|
 | | | | |
 
 ## Part 2 — Lecture Questions
