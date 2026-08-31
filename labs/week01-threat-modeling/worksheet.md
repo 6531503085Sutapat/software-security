@@ -78,6 +78,25 @@ trust-boundary
 *Deliverable:* the boundary list, two owned-element reachability notes, one written chain, and the system claim.
 
 **Task 4 — Abuse cases & attacker personas (20 min)** · *Goal:* think like specific adversaries. *Steps:* define 2 personas (e.g. a curious logged-in user; an anonymous internet attacker) and write 2 abuse cases each against the sample app, tied to DFD elements. *Deliverable:* 4 abuse cases.
+Ans: Persona 1: Curious student 
+Skills: basic programming, knows how to use curl or Postman
+Goal: wants to snoop on other people's data for fun
+Abuse Case 1: The student sends a simple GET request to /notes and sees all notes from every user because there is no access control. They can read everyone's private notes without logging in.
+Tied to: /notes GET → Information Disclosure
+
+Abuse Case 2: The student sends a POST to /notes with "owner": "professor" to create a fake note pretending to be the professor. There is no authentication so the system accepts it.
+Tied to: /notes POST → Spoofing
+
+Persona 2: Anonymous attacker 
+
+Skills: knows about common web vulnerabilities like path traversal
+Goal: steal data or damage the system
+
+Abuse Case 3: The attacker sends GET /notes to collect all stored notes. Since there is no login required they can scrape everything in one request.
+Tied to: /notes GET → Information Disclosure
+
+Abuse Case 4: The attacker uploads a file with the name ../../app.py via POST /upload. Because the app uses f.filename directly without sanitizing it the file gets saved outside the uploads/ folder and could overwrite important system files.
+Tied to: /upload POST → Tampering
 
 **Task 5 — Path-traversal deep-dive (25 min)** · *Goal:* analyze the riskiest flow. *Steps:* trace `/upload` → `/files/<name>`; explain how `../` in a filename escapes `uploads/`; sketch the secure design (`secure_filename`, store outside web root, allow-list extensions). *Deliverable:* the data flow + secure-design note.
 
