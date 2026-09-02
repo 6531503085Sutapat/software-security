@@ -1,209 +1,81 @@
 """
-NoteVault — a small team note-sharing web app + JSON API (term-project starter).
-
-This is your TERM-PROJECT TARGET. It is a normal-looking app that contains several
-realistic security weaknesses. Your job (see project/README.md): threat-model it,
-find and document the vulnerabilities, fix them, and harden the build/release.
-
-We do NOT list the vulnerabilities here — finding them is the assignment.
-
-Run:  docker compose up   (then http://localhost:8080)
+Tiny sample web app for Week 1 threat modeling.
 """
-import hashlib
-import hmac
 import os
 import sqlite3
-import subprocess
-
-import jwt  # PyJWT
-from flask import Flask, request, jsonify, render_template_string, redirect, make_response
+from flask import Flask, request, jsonify, send_from_directory
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-DB = "/tmp/notevault.db"
-SECRET = "notevault-dev-secret"  # used to sign session tokens
+DB = "notes.db"
+UPLOAD_DIR = os.path.abspath("uploads")
+ALLOWED_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.pdf'}
 
-# Anti-copying: every team's build is seeded with a marker derived from their own TEAM_ID, so
-# any evidence a team submits (SQLi dump, IDOR response, admin-panel screenshot) that shows the
-# admin's notes carries a value traceable to exactly one team — see instructor/anti-cheating.md.
-TEAM_ID = os.environ.get("TEAM_ID", "unassigned")
-TEAM_SALT = os.environ.get("TEAM_SALT", "notevault-anti-copy-dev-salt")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+def init_db():
+    with sqlite3.connect(DB) as con:
+        con.execute("CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY, owner TEXT, body TEXT)")
+        con.commit()
 
-def team_marker():
-    return hmac.new(TEAM_SALT.encode(), TEAM_ID.encode(), hashlib.sha256).hexdigest()[:12]
+def is_extension_allowed(filename):
+    if not filename or '.' not in filename:
+        return False
+    # os.path.splitext safely extracts the final extension
+    _, ext = os.path.splitext(filename)
+    return ext.lower() in ALLOWED_EXTENSIONS
 
+@app.route("/notes", methods=["GET", "POST"])
+def notes():
+    with sqlite3.connect(DB) as con:
+        if request.method == "POST":
+            owner = request.json.get("owner", "anon")
+            body = request.json.get("body", "")
+            # Parameterized query prevents SQL injection
+            con.execute("INSERT INTO notes (owner, body) VALUES (?, ?)", (owner, body))
+            con.commit()
+        rows = con.execute("SELECT id, owner, body FROM notes").fetchall()
+    return jsonify(rows)
 
-PAGE = """
-<!doctype html><title>NoteVault</title>
-<h1>NoteVault</h1>
-{% if user %}<p>Signed in as <b>{{ user }}</b> · <a href="/logout">logout</a>
-  {% if is_admin %}· <a href="/admin">admin</a>{% endif %}</p>
-<form method=post action="/notes"><input name=title placeholder=title>
-  <input name=body placeholder=note><button>Add note</button></form>
-<h3>Your notes</h3>{{ notes_html|safe }}
-<form action="/search"><input name=q placeholder="search notes"><button>Search</button></form>
-{% else %}
-<form method=post action="/login">user <input name=username> pass <input name=password type=password>
-  <button>Login</button></form>
-<form method=post action="/register">new: <input name=username> <input name=password type=password>
-  <button>Register</button></form>
-{% endif %}
-"""
+@app.route("/upload", methods=["POST"])
+def upload():
+    if "file" not in request.files:
+        return jsonify({"error": "No file part"}), 400
 
+    f = request.files["file"]
 
-def db():
-    con = sqlite3.connect(DB)
-    con.row_factory = sqlite3.Row
-    return con
+    if f.filename == '':
+        return jsonify({"error": "No selected file"}), 400
 
+    # FIX 1: Strict File Extension Allow-list
+    if not is_extension_allowed(f.filename):
+        return jsonify({"error": "Extension not allowed"}), 415
 
-def seed():
-    con = db()
-    con.executescript(
-        "DROP TABLE IF EXISTS users; DROP TABLE IF EXISTS notes;"
-        "CREATE TABLE users (id INTEGER PRIMARY KEY, username TEXT, password TEXT, role TEXT);"
-        "CREATE TABLE notes (id INTEGER PRIMARY KEY, owner TEXT, title TEXT, body TEXT);"
-    )
-    con.executemany("INSERT INTO users (username, password, role) VALUES (?,?,?)",
-                    [("alice", hashlib.md5(b"alicepw").hexdigest(), "user"),
-                     ("admin", hashlib.md5(b"admin123").hexdigest(), "admin")])
-    con.executemany("INSERT INTO notes (owner, title, body) VALUES (?,?,?)",
-                    [("alice", "groceries", "milk, eggs"),
-                     ("admin", "infra", "prod db password is hunter2"),
-                     ("admin", "build-tag", "team=%s marker=%s" % (TEAM_ID, team_marker()))])
-    con.commit()
-    con.close()
+    # FIX 2a: Filename Sanitization (Base defense)
+    # Strips out path manipulation characters like '../'
+    filename = secure_filename(f.filename)
+    if not filename:
+        return jsonify({"error": "Invalid filename"}), 400
 
+    target_path = os.path.join(UPLOAD_DIR, filename)
+    real_path = os.path.abspath(target_path)
 
-def current_user():
-    tok = request.cookies.get("session", "")
-    if not tok:
-        return None
-    try:
-        data = jwt.decode(tok, SECRET, algorithms=["HS256", "none"])
-        return data.get("sub")
-    except Exception:
-        return None
+    # FIX 2b: Final Path Resolution Check (Defense in Depth)
+    # os.path.commonpath guarantees the target is genuinely a child of UPLOAD_DIR
+    if os.path.commonpath([UPLOAD_DIR, real_path]) != UPLOAD_DIR:
+        return jsonify({"error": "Path traversal attempt detected"}), 403
 
+    f.save(real_path)
+    return jsonify({
+        "message": "File uploaded successfully",
+        "filename": filename
+    }), 200
 
-def role_of(username):
-    con = db()
-    r = con.execute("SELECT role FROM users WHERE username = ?", (username,)).fetchone()
-    con.close()
-    return r["role"] if r else None
-
-
-@app.route("/")
-def home():
-    user = current_user()
-    notes_html = ""
-    if user:
-        con = db()
-        rows = con.execute("SELECT id,title,body FROM notes WHERE owner = ?", (user,)).fetchall()
-        con.close()
-        notes_html = "".join(
-            "<li>#%d <b>%s</b>: %s</li>" % (r["id"], r["title"], r["body"]) for r in rows)
-    return render_template_string(PAGE, user=user, is_admin=(user and role_of(user) == "admin"),
-                                  notes_html=notes_html)
-
-
-@app.route("/register", methods=["POST"])
-def register():
-    username = request.form.get("username") or (request.json or {}).get("username")
-    password = request.form.get("password") or (request.json or {}).get("password")
-    role = request.form.get("role") or (request.json or {}).get("role") or "user"
-    con = db()
-    con.execute("INSERT INTO users (username, password, role) VALUES (?,?,?)",
-                (username, hashlib.md5(password.encode()).hexdigest(), role))
-    con.commit()
-    con.close()
-    return redirect("/")
-
-
-@app.route("/login", methods=["POST"])
-def login():
-    username = request.form.get("username") or (request.json or {}).get("username")
-    password = request.form.get("password") or (request.json or {}).get("password")
-    con = db()
-    q = "SELECT * FROM users WHERE username = '%s' AND password = '%s'" % (
-        username, hashlib.md5((password or "").encode()).hexdigest())
-    row = con.execute(q).fetchone()
-    con.close()
-    if not row:
-        return "login failed", 401
-    tok = jwt.encode({"sub": username}, SECRET, algorithm="HS256")
-    resp = make_response(redirect("/"))
-    resp.set_cookie("session", tok)
-    return resp
-
-
-@app.route("/logout")
-def logout():
-    resp = make_response(redirect("/"))
-    resp.delete_cookie("session")
-    return resp
-
-
-@app.route("/notes", methods=["POST"])
-def add_note():
-    user = current_user()
-    if not user:
-        return "auth required", 401
-    title = request.form.get("title", "")
-    body = request.form.get("body", "")
-    con = db()
-    con.execute("INSERT INTO notes (owner,title,body) VALUES (?,?,?)", (user, title, body))
-    con.commit()
-    con.close()
-    return redirect("/")
-
-
-@app.route("/api/notes/<int:nid>")
-def api_note(nid):
-    if not current_user():
-        return jsonify(error="auth required"), 401
-    con = db()
-    r = con.execute("SELECT id,owner,title,body FROM notes WHERE id = ?", (nid,)).fetchone()
-    con.close()
-    return (jsonify(dict(r)) if r else (jsonify(error="not found"), 404))
-
-
-@app.route("/search")
-def search():
-    user = current_user()
-    if not user:
-        return "auth required", 401
-    term = request.args.get("q", "")
-    con = db()
-    q = "SELECT id,title,body FROM notes WHERE owner='%s' AND body LIKE '%%%s%%'" % (user, term)
-    rows = con.execute(q).fetchall()
-    con.close()
-    return render_template_string("<a href=/>back</a><ul>" +
-        "".join("<li>%s: %s</li>" % (r["title"], r["body"]) for r in rows) + "</ul>")
-
-
-@app.route("/admin")
-def admin():
-    user = current_user()
-    if not user or role_of(user) != "admin":
-        return "forbidden", 403
-    con = db()
-    rows = con.execute("SELECT id,username,password,role FROM users").fetchall()
-    con.close()
-    return jsonify([dict(r) for r in rows])
-
-
-@app.route("/export")
-def export():
-    if not current_user():
-        return "auth required", 401
-    fmt = request.args.get("fmt", "txt")
-    # convenience "export" feature
-    out = subprocess.run("echo exporting notes as " + fmt, shell=True,
-                         capture_output=True, text=True)
-    return "<pre>%s</pre>" % out.stdout
-
+@app.route("/files/<name>")
+def files(name):
+    # send_from_directory inherently prevents path traversal on the read side
+    return send_from_directory(UPLOAD_DIR, name)
 
 if __name__ == "__main__":
-    seed()
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    init_db()
+    app.run(host="0.0.0.0", port=5000)
