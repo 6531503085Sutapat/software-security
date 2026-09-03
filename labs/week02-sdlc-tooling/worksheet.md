@@ -9,15 +9,20 @@
 ## Part 1 — Student Information
 | Name | Student ID | Date | Group |
 |---|---|---|---|
-| | | | |
+| Sutapat Chucham | 6531503085 | 03 Sep 2026 | - |
 
 ## Part 2 — Lecture Questions
 Answer in your own words (2–4 sentences each).
 1. Distinguish SAST, DAST, and SCA — what does each see, and when in the SDLC does each run?
+Ans:<br> SAST focuses on testing the source code of applications. Early in development (IDE, pull requests, build).<br> DAST method use it to find application vulnerabilities in various type and Penetration Testing from outside. Not only source code, but focus whole application.Late in development or staging/production (running state).<br> SCA focuses on Open-source libraries and third-party dependencies. Build time or CI/CD pipeline.
 2. What is secret scanning, and why do hardcoded secrets keep ending up in repos?
+ans:<br>Secret scanning is a security process that automatically scans code and other data sources for sensitive information. code is often shared through repositories.hardcoded secrets frequently lead to unintentional exposure.
 3. What does "shift-left / DevSecOps" mean in practice for a CI pipeline?
+Ans:<br> shift-left / DevSecOps in a Continuous Integration (CI) pipeline, automatic security tests and checks are run as soon as code is written, committed, or opened as a pull request. They are not run at the end of development.
 4. Why is coverage-guided fuzzing considered the dominant modern bug-finding technique?
+Ans:<br>Switch from random spectrum guessing to a feedback system that uses coverage navigation to install binaries, modify input data, and record any changes that reach the new code coverage.
 5. Define true positive vs. false positive in scanner triage, and why misclassifying both directions is costly.
+Ans:<br>True Positive (TP): The scanner correctly identifies an actual threat. <br> False Positive (FP): The scanner flags a safe item as a threat.<br>Misclassification in either way drags down everything, costs money, or might put people in danger.
 
 ![A left to right SDLC pipeline showing SAST at write code, secret scanning at commit, SCA and fuzzing at build, and DAST at deploy, with what each tool cannot see written underneath it.](img/sdlc-gates.svg)
 
