@@ -8,9 +8,8 @@
 
 ## Part 1 — Student Information
 | Name | Student ID | Date | Group |
-|Sutapat Chucham|6532503085|03 Sep 2026|---|
-| | | | |
-
+|Sutapat Chucham|6531503085|03 Sep 2026|-|
+Sutapat Chucham|6531503085|03 Sep 2026|-|
 ## Part 2 — Lecture Questions
 Answer in your own words (2–4 sentences each).
 1. Distinguish hashing, encryption, and encoding — and give one job each is the wrong tool for.
