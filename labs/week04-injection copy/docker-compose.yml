@@ -1,0 +1,16 @@
+services:
+  injection-lab:
+    image: python:3.12-slim
+    working_dir: /lab
+    ports:
+      - "8080:5000"
+    volumes:
+      - ./:/lab
+    # Per-student flags: python3 ../../instructor/seed_flags.py env <STUDENT_ID> > .env
+    environment:
+      - FLAG_SQLI
+      - FLAG_CMDI
+    command: >
+      bash -c "pip install --no-cache-dir flask &&
+               echo '--- vulnerable app on :8080 (use solution_app.py for the fixed version) ---' &&
+               python vulnerable_app.py"

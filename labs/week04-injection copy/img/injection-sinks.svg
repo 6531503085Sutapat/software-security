@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 500" role="img" aria-label="One untrusted request value in the Week 4 injection lab reaches three different interpreters, and each interpreter needs its own fix. The source on the left is untrusted input from request.args and request.files in vulnerable_app.py. Three arrows fan out from it. The first arrow, labelled becomes SQL code, reaches the SQL engine SQLite, CWE-89, where the query is built as string concatenation, quote WHERE username equals percent s quote percent user; the same flaw is in the search route via UNION SELECT; the payload is slash login question mark user equals x quote OR quote 1 quote equals quote 1 quote double dash. Its control is a parameterised query, execute of sql with the tuple user and pw: the value is bound as data, not syntax, so quotes lose their power. The second arrow, labelled becomes shell code, reaches the OS shell slash bin slash sh minus c, CWE-78, where subprocess dot run is called on ping minus c 1 plus host with shell equals True; the payload is slash ping question mark host equals 127.0.0.1 semicolon id. Its control is an argument vector, the list ping, minus c, 1, host, with shell equals False plus a regular expression allow-list, so there is no shell left to read the semicolon. The third arrow, labelled becomes a file path, reaches a filesystem write, CWE-434, where the destination is os dot path dot join of UPLOAD_DIR and the attacker-supplied f dot filename, with any name and any extension accepted; the payload is a POST to slash upload with the file shell dot py. Its control is to validate the type: secure_filename of the name, plus an extension allow-list of dot txt, dot png, dot jpg and dot pdf, so shell dot py is rejected with a 400. The conclusion at the bottom is that one input filter cannot guard three grammars: escaping quotes does nothing to a semicolon in a shell, and a safe filename does nothing to SQL, so the fix belongs at the sink that parses the value. The fixes are in solution_app.py at lines 52 to 55 and 62 to 66 for SQL, 74 to 77 for the shell, and 86 to 93 for the upload.">
+<title>One untrusted value, three interpreters — SQL, shell and filesystem sinks in the Week 4 injection lab, each with its own fix</title>
+<style>
+  text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .bg    { fill:#ffffff; }
+  .ttl   { fill:#111827; font-size:16px; font-weight:700; }
+  .sub   { fill:#6b7280; font-size:11.5px; }
+  .colh  { fill:#6b7280; font-size:11px; font-weight:700; letter-spacing:.5px; }
+  .box   { stroke-width:1.6; }
+  .src   { fill:#fff1ea; stroke:#E35205; }
+  .sink  { fill:#fff7f3; stroke:#E35205; }
+  .ctrl  { fill:#f1f8fd; stroke:#017BC4; }
+  .foot  { fill:#fff7f3; stroke:#E35205; stroke-dasharray:6 4; }
+  .badge { fill:#ffffff; stroke:#E35205; stroke-width:1.3; }
+  .hO    { fill:#E35205; font-size:12.5px; font-weight:700; }
+  .hB    { fill:#017BC4; font-size:12px; font-weight:700; }
+  .hD    { fill:#111827; font-size:12px; font-weight:700; }
+  .body  { fill:#111827; font-size:11px; }
+  .mut   { fill:#6b7280; font-size:10.5px; }
+  .cwe   { fill:#E35205; font-size:10.5px; font-weight:700; }
+  .rel   { fill:#6b7280; font-size:10.5px; }
+  .relk  { fill:#E35205; font-size:10.5px; font-weight:700; }
+  .code  { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11px; fill:#111827; }
+  .codeo { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11px; fill:#E35205; font-weight:600; }
+  .codeb { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11px; fill:#017BC4; font-weight:600; }
+  .pay   { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:10.5px; fill:#E35205; font-weight:700; }
+  .fmono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:10.5px; fill:#6b7280; }
+  .ao    { stroke:#E35205; fill:none; stroke-width:2; }
+  .ab    { stroke:#017BC4; fill:none; stroke-width:2; }
+  .mko   { fill:#E35205; }
+  .mkb   { fill:#017BC4; }
+  .warn  { fill:#E35205; }
+  .warni { fill:#fff7f3; }
+  .chk   { stroke:#017BC4; fill:none; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+  .xm    { stroke:#E35205; fill:none; stroke-width:2.2; stroke-linecap:round; }
+  .xr    { stroke:#E35205; fill:none; stroke-width:2.2; }
+  @media (prefers-color-scheme: dark) {
+    .bg    { fill:#11151a; }
+    .ttl   { fill:#e9edf2; }
+    .sub   { fill:#9aa3ad; }
+    .colh  { fill:#9aa3ad; }
+    .mut   { fill:#9aa3ad; }
+    .rel   { fill:#9aa3ad; }
+    .fmono { fill:#9aa3ad; }
+    .src   { fill:#2b1a12; stroke:#ff7a3d; }
+    .sink  { fill:#251a14; stroke:#ff7a3d; }
+    .ctrl  { fill:#122633; stroke:#4aa3dd; }
+    .foot  { fill:#251a14; stroke:#ff7a3d; }
+    .badge { fill:#11151a; stroke:#ff7a3d; }
+    .hO    { fill:#ff7a3d; }
+    .hB    { fill:#4aa3dd; }
+    .hD    { fill:#e9edf2; }
+    .body  { fill:#e9edf2; }
+    .code  { fill:#e9edf2; }
+    .codeo { fill:#ff7a3d; }
+    .codeb { fill:#4aa3dd; }
+    .pay   { fill:#ff7a3d; }
+    .cwe   { fill:#ff7a3d; }
+    .relk  { fill:#ff7a3d; }
+    .ao    { stroke:#ff7a3d; }
+    .ab    { stroke:#4aa3dd; }
+    .mko   { fill:#ff7a3d; }
+    .mkb   { fill:#4aa3dd; }
+    .warn  { fill:#ff7a3d; }
+    .warni { fill:#251a14; }
+    .chk   { stroke:#4aa3dd; }
+    .xm    { stroke:#ff7a3d; }
+    .xr    { stroke:#ff7a3d; }
+  }
+</style>
+<defs>
+  <marker id="ho" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" refX="9.5" refY="5" orient="auto">
+    <path class="mko" d="M0,0.6 L9.5,5 L0,9.4 Z"/>
+  </marker>
+  <marker id="hb" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" refX="9.5" refY="5" orient="auto">
+    <path class="mkb" d="M0,0.6 L9.5,5 L0,9.4 Z"/>
+  </marker>
+</defs>
+
+<rect class="bg" x="0" y="0" width="720" height="500"/>
+
+<text class="ttl" x="16" y="28">One untrusted value, three interpreters</text>
+<text class="sub" x="16" y="47">Week 4 · OWASP A05 Injection · CWE-89 · CWE-78 · CWE-434</text>
+
+<text class="colh" x="16" y="68">SOURCE</text>
+<text class="colh" x="224" y="68">THE SINK — vulnerable_app.py</text>
+<text class="colh" x="486" y="68">THE CONTROL — solution_app.py</text>
+
+<!-- SOURCE -->
+<rect class="box src" x="16" y="132" width="112" height="168" rx="8"/>
+<text class="hO" x="72" y="162" text-anchor="middle">Untrusted</text>
+<text class="hO" x="72" y="178" text-anchor="middle">input</text>
+<text class="code" x="72" y="202" text-anchor="middle">request.args</text>
+<text class="code" x="72" y="218" text-anchor="middle">request.files</text>
+<text class="body" x="72" y="246" text-anchor="middle">one value</text>
+<text class="body" x="72" y="261" text-anchor="middle">reaches three</text>
+<text class="body" x="72" y="276" text-anchor="middle">interpreters</text>
+
+<!-- FAN ARROWS -->
+<path class="ao" d="M128,192 L140,192 L140,120 L220,120" marker-end="url(#ho)"/>
+<path class="ao" d="M128,216 L220,216" marker-end="url(#ho)"/>
+<path class="ao" d="M128,240 L140,240 L140,312 L220,312" marker-end="url(#ho)"/>
+
+<text class="rel"  x="184" y="100" text-anchor="middle">becomes</text>
+<text class="relk" x="184" y="112" text-anchor="middle">SQL code</text>
+<text class="rel"  x="184" y="196" text-anchor="middle">becomes</text>
+<text class="relk" x="184" y="208" text-anchor="middle">shell code</text>
+<text class="rel"  x="184" y="292" text-anchor="middle">becomes a</text>
+<text class="relk" x="184" y="304" text-anchor="middle">file path</text>
+
+<!-- SINK 1 : SQL -->
+<rect class="box sink" x="224" y="78" width="244" height="84" rx="8"/>
+<polygon class="warn" points="243,85 251,100 235,100"/>
+<rect class="warni" x="242.2" y="90" width="1.7" height="5"/>
+<rect class="warni" x="242.2" y="97" width="1.7" height="1.7"/>
+<text class="hD" x="258" y="99">SQL engine · SQLite</text>
+<rect class="badge" x="396" y="86" width="62" height="17" rx="8.5"/>
+<text class="cwe" x="427" y="98.5" text-anchor="middle">CWE-89</text>
+<text class="codeo" x="236" y="119">"WHERE username='%s'" % user</text>
+<text class="mut" x="236" y="134">same flaw in /search — UNION SELECT</text>
+<text x="236" y="152"><tspan class="mut">payload</tspan><tspan class="pay" dx="6">/login?user=x' OR '1'='1'--</tspan></text>
+
+<!-- SINK 2 : SHELL -->
+<rect class="box sink" x="224" y="174" width="244" height="84" rx="8"/>
+<polygon class="warn" points="243,181 251,196 235,196"/>
+<rect class="warni" x="242.2" y="186" width="1.7" height="5"/>
+<rect class="warni" x="242.2" y="193" width="1.7" height="1.7"/>
+<text class="hD" x="258" y="195">OS shell · sh -c</text>
+<rect class="badge" x="396" y="182" width="62" height="17" rx="8.5"/>
+<text class="cwe" x="427" y="194.5" text-anchor="middle">CWE-78</text>
+<text class="codeo" x="236" y="215">run("ping -c 1 " + host,</text>
+<text class="codeo" x="252" y="230">shell=True)</text>
+<text x="236" y="248"><tspan class="mut">payload</tspan><tspan class="pay" dx="6">/ping?host=127.0.0.1;id</tspan></text>
+
+<!-- SINK 3 : FILESYSTEM -->
+<rect class="box sink" x="224" y="270" width="244" height="84" rx="8"/>
+<polygon class="warn" points="243,277 251,292 235,292"/>
+<rect class="warni" x="242.2" y="282" width="1.7" height="5"/>
+<rect class="warni" x="242.2" y="289" width="1.7" height="1.7"/>
+<text class="hD" x="258" y="291">Filesystem write</text>
+<rect class="badge" x="392" y="278" width="66" height="17" rx="8.5"/>
+<text class="cwe" x="425" y="290.5" text-anchor="middle">CWE-434</text>
+<text class="codeo" x="236" y="311">dest = os.path.join(UPLOAD_DIR,</text>
+<text class="codeo" x="252" y="326">f.filename)  # any name/ext</text>
+<text x="236" y="344"><tspan class="mut">payload</tspan><tspan class="pay" dx="6">POST /upload  f=shell.py</tspan></text>
+
+<!-- SINK -> CONTROL -->
+<path class="ab" d="M468,120 L482,120" marker-end="url(#hb)"/>
+<path class="ab" d="M468,216 L482,216" marker-end="url(#hb)"/>
+<path class="ab" d="M468,312 L482,312" marker-end="url(#hb)"/>
+
+<!-- CONTROL 1 -->
+<rect class="box ctrl" x="486" y="78" width="218" height="84" rx="8"/>
+<polyline class="chk" points="498,91 503,96 511,86"/>
+<text class="hB" x="517" y="96">Parameterised query</text>
+<text class="codeb" x="498" y="118">execute(sql, (user, pw))</text>
+<text class="body" x="498" y="135">bound as data, not syntax —</text>
+<text class="body" x="498" y="150">quotes lose their power</text>
+
+<!-- CONTROL 2 -->
+<rect class="box ctrl" x="486" y="174" width="218" height="84" rx="8"/>
+<polyline class="chk" points="498,187 503,192 511,182"/>
+<text class="hB" x="517" y="192">Argument vector</text>
+<text class="codeb" x="498" y="214">["ping","-c","1",host]</text>
+<text class="body" x="498" y="231">shell=False + regex allow-list</text>
+<text class="body" x="498" y="246">no shell left to read ';'</text>
+
+<!-- CONTROL 3 -->
+<rect class="box ctrl" x="486" y="270" width="218" height="84" rx="8"/>
+<polyline class="chk" points="498,283 503,288 511,278"/>
+<text class="hB" x="517" y="288">Validate the type</text>
+<text class="codeb" x="498" y="310">secure_filename(name)</text>
+<text class="body" x="498" y="327">ext in .txt .png .jpg .pdf</text>
+<text class="body" x="498" y="342">shell.py rejected — 400</text>
+
+<!-- CONCLUSION -->
+<rect class="box foot" x="16" y="376" width="688" height="92" rx="8"/>
+<circle class="xr" cx="46" cy="406" r="13" fill="none"/>
+<path class="xm" d="M40,400 L52,412 M52,400 L40,412"/>
+<text class="hO" x="72" y="404">One filter cannot guard three grammars</text>
+<text class="body" x="72" y="424">Escaping quotes does nothing to ';' in a shell, and a safe</text>
+<text class="body" x="72" y="440">filename does nothing to SQL. Fix it at the sink that parses it.</text>
+<text class="fmono" x="72" y="458">fixes: solution_app.py L52-55 + L62-66 · L74-77 · L86-93</text>
+</svg>
