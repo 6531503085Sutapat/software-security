@@ -13,7 +13,7 @@ UPLOAD_DIR = os.path.abspath("uploads")
 ALLOWED_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.pdf'}
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-def init_db():
+def init_db(): 
     con = sqlite3.connect(DB)
     con.execute("CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY, owner TEXT, body TEXT)")
     con.commit(); con.close()
