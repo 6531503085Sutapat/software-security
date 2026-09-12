@@ -8,8 +8,8 @@
 
 ## Part 1 — Student Information
 | Name | Student ID | Date | Group |
-|Sutapat Chucham |6531503085|15082026|---|
-| | | | |
+|---|---|---|---|
+| Sutapat Chucham | 6531503085 | 30 Aug 2026| |
 
 ## Part 2 — Lecture Questions
 Answer in your own words (2–4 sentences each).
