@@ -61,6 +61,11 @@ def login():
     # CWE-89: SQL injection — user input concatenated straight into the query.
     # Try:  /login?user=alice'--&pw=x   or   /login?user=x' OR '1'='1'--&pw=x
     q = "SELECT id, username FROM users WHERE username = '%s' AND password = '%s'" % (user, pw)
+    #  VULNERABLE
+    #q = "SELECT * FROM users WHERE username = '" + user + "' AND password = '" + pw + "'"
+    #cursor.execute(q)
+    # SAFE
+    #cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (user, pw))
     row = db().execute(q).fetchone()
     return ("Welcome %s\n" % row[1]) if row else "Login failed\n"
 
