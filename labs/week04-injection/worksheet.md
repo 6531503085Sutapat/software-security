@@ -16,16 +16,16 @@
 
 Answer in 2–4 sentences each.
 
-1. Why does a **parameterized query** (`execute(sql, (params,))`) defeat SQL injection, while string formatting (`"... '%s'" % user`) does not? Reference how the database treats data vs. code.
+1. Why does a **parameterized query** (`execute(sql, (params,))`) defeat SQL injection, while string formatting (`"... '%s'" % user`) does not? Reference how the database treats data vs. code.<br>
 Ans: String formatting builds the SQL statement in Python first, so when database sees it, user data quotes appear the same as developer code quotes. Parameterise query sends structure with? placeholder to database first, locks grammar, then binds value as pure data. Thus, input can only fill a slot and cannot affect grammar regardless of character.
-2. In the `/ping` endpoint, `subprocess.run("ping -c 1 " + host, shell=True)` is vulnerable. Explain how `shell=True` turns user input into **CWE-78**, and how an argument array (`["ping","-c","1",host]`) removes the shell.
+2. In the `/ping` endpoint, `subprocess.run("ping -c 1 " + host, shell=True)` is vulnerable. Explain how `shell=True` turns user input into **CWE-78**, and how an argument array (`["ping","-c","1",host]`) removes the shell.<br>
 Ans: When shell=True, /bin/sh scans the concatenated text for special characters like ; or |, without knowing which portion is argument. This allowed attackers to create new commands like cat /etc/passwd instead of hostname. In array form, ["ping","-c","1",host] skips the shell and passes a single literal parameter to the program without parsing.
-3. Distinguish **input validation** (allow-list) from **output handling**. Why is validation alone insufficient defense for SQLi?
+3. Distinguish **input validation** (allow-list) from **output handling**. Why is validation alone insufficient defense for SQLi? <br>
 Ans: Validation checks input shape (allow-list of characters, length, etc.), while output processing controls how input is interpreted (SQL, shell, HTML). Validation alone is insufficient since legitimate input (like O'Brien) might be problematic in SQL context, and blocking every unsafe character breaks genuine users. Parameterise (output processing) is the true remedy, validation is merely an extra layer. A string's hazard depends on where it ends up, not just how it looks.
-4. The `/upload` route saves any filename to disk (**CWE-434**). What two properties must a directory and a filename have for an upload to become remote code execution, and which does `solution_app.py` remove?
+4. The `/upload` route saves any filename to disk (**CWE-434**). What two properties must a directory and a filename have for an upload to become remote code execution, and which does `solution_app.py` remove?<br>
 Ans: For upload to become RCE, server must be able to access folder and attacker must control filename/extension (like shell.php). If just one true, exploit fails because repair filename in executable folder sits unused or attacker filename in non-executable folder is harmless static file. Solution_app.py usually removes attacker control over filename by generating a random name server-side. Check the diff to see which one been patched.
 
-5. What is a **UNION-based** SQLi, and why must the injected `SELECT` return the same number of columns as the original query? Relate to `/search?q=' UNION SELECT username,password FROM users--`.
+5. What is a **UNION-based** SQLi, and why must the injected `SELECT` return the same number of columns as the original query? Relate to `/search?q=' UNION SELECT username,password FROM users--`.<br>
 Ans: UNION-based injection uses SQL UNION to stack second SELECT results upon the first, allowing attackers to access data from tables app never intended to expose. Mismatched column counts create database errors instead of data returns because UNION merge row by row, lining up the first column of each SELECT. So attackers probe using UNION SELECT NULL--, NULL--, etc., utilising error or success as signal to identify proper column count before swapping in real target like username, password.
 
 
