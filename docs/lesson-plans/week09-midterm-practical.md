@@ -92,7 +92,7 @@ there is in a teaching week. Per-student flags and identity-stamped evidence car
 ```bash
 export FLAG_SALT='<this cohort's salt — never published>'   # instructor/anti-cheating.md §A
 python3 instructor/seed_flags.py gen students.txt -o flags.csv     # authoritative table
-python3 instructor/seed_flags.py env <STUDENT_ID> > .env           # in the lab folder that uses it
+python3 instructor/seed_flags.py env 6531503085 > .env           # in the lab folder that uses it
 python3 instructor/seed_flags.py verify 'FLAG{...}' students.txt   # who was this issued to?
 ```
 

