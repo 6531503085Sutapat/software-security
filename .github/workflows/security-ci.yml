@@ -39,7 +39,7 @@ jobs:
     container:
       image: semgrep/semgrep:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Semgrep scan -> SARIF
         # Produce SARIF always; do NOT fail here so the SARIF can upload.
@@ -53,7 +53,7 @@ jobs:
 
       - name: Upload Semgrep SARIF
         if: always()              # upload even if a later step fails
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@4bfa242aa49c5f7c6770b98670d354a7dfac05f8 # v3.39.1
         with:
           sarif_file: semgrep.sarif
           category: semgrep
@@ -70,11 +70,11 @@ jobs:
     name: SCA + IaC (Trivy)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       # --- Filesystem / dependency (SCA) scan -> SARIF (report, no fail) ---
       - name: Trivy fs (SCA) -> SARIF
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           skip-dirs: "labs/week01-threat-modeling,labs/week02-sdlc-tooling,labs/week03-cryptography,labs/week04-injection,labs/week05-xss-client-side,labs/week06-authn-authz,labs/week07-review-midterm-prep,labs/week08-midterm-written,labs/week09-midterm-practical,labs/week10-api-security,labs/week11-memory-safety-exploitation,labs/week12-supply-chain,labs/week13-cloud-container,labs/week14-ai-llm-security,labs/week15-devsecops-pipeline,labs/week16-capstone,labs/week17-review-final-prep,labs/week18-final-written,labs/week19-final-ctf-capstone,labs/toolbox,project/starter-app"
           scan-type: fs
@@ -86,14 +86,14 @@ jobs:
 
       - name: Upload Trivy fs SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@4bfa242aa49c5f7c6770b98670d354a7dfac05f8 # v3.39.1
         with:
           sarif_file: trivy-fs.sarif
           category: trivy-fs
 
       # --- IaC / Dockerfile misconfiguration scan -> SARIF ---
       - name: Trivy config (IaC) -> SARIF
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           skip-dirs: "labs/week01-threat-modeling,labs/week02-sdlc-tooling,labs/week03-cryptography,labs/week04-injection,labs/week05-xss-client-side,labs/week06-authn-authz,labs/week07-review-midterm-prep,labs/week08-midterm-written,labs/week09-midterm-practical,labs/week10-api-security,labs/week11-memory-safety-exploitation,labs/week12-supply-chain,labs/week13-cloud-container,labs/week14-ai-llm-security,labs/week15-devsecops-pipeline,labs/week16-capstone,labs/week17-review-final-prep,labs/week18-final-written,labs/week19-final-ctf-capstone,labs/toolbox,project/starter-app"
           scan-type: config
@@ -104,14 +104,14 @@ jobs:
 
       - name: Upload Trivy config SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@4bfa242aa49c5f7c6770b98670d354a7dfac05f8 # v3.39.1
         with:
           sarif_file: trivy-config.sarif
           category: trivy-config
 
       # --- GATE: re-scan with exit-code 1 so HIGH/CRITICAL FAILS the build ---
       - name: Gate — fail on HIGH/CRITICAL (SCA)
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           skip-dirs: "labs/week01-threat-modeling,labs/week02-sdlc-tooling,labs/week03-cryptography,labs/week04-injection,labs/week05-xss-client-side,labs/week06-authn-authz,labs/week07-review-midterm-prep,labs/week08-midterm-written,labs/week09-midterm-practical,labs/week10-api-security,labs/week11-memory-safety-exploitation,labs/week12-supply-chain,labs/week13-cloud-container,labs/week14-ai-llm-security,labs/week15-devsecops-pipeline,labs/week16-capstone,labs/week17-review-final-prep,labs/week18-final-written,labs/week19-final-ctf-capstone,labs/toolbox,project/starter-app"
           scan-type: fs
@@ -121,7 +121,7 @@ jobs:
           exit-code: "1"          # <-- real failure semantics, not `|| true`
 
       - name: Gate — fail on HIGH/CRITICAL (IaC)
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           skip-dirs: "labs/week01-threat-modeling,labs/week02-sdlc-tooling,labs/week03-cryptography,labs/week04-injection,labs/week05-xss-client-side,labs/week06-authn-authz,labs/week07-review-midterm-prep,labs/week08-midterm-written,labs/week09-midterm-practical,labs/week10-api-security,labs/week11-memory-safety-exploitation,labs/week12-supply-chain,labs/week13-cloud-container,labs/week14-ai-llm-security,labs/week15-devsecops-pipeline,labs/week16-capstone,labs/week17-review-final-prep,labs/week18-final-written,labs/week19-final-ctf-capstone,labs/toolbox,project/starter-app"
           scan-type: config
@@ -132,7 +132,7 @@ jobs:
       # - name: Build image
       #   run: docker build -t app:ci .
       # - name: Gate — fail on image CVEs
-      #   uses: aquasecurity/trivy-action@v0.36.0
+      #   uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
       #   with:
       #     scan-type: image
       #     image-ref: app:ci
@@ -146,7 +146,7 @@ jobs:
     name: Secrets (Gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           fetch-depth: 0          # full history so history-buried secrets are caught
 
@@ -159,7 +159,7 @@ jobs:
 
       - name: Upload Gitleaks SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@4bfa242aa49c5f7c6770b98670d354a7dfac05f8 # v3.39.1
         with:
           sarif_file: gitleaks.sarif
           category: gitleaks
