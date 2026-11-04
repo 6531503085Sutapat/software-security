@@ -76,7 +76,7 @@ jobs:
       - name: Trivy fs (SCA) -> SARIF
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-        skip-dirs: "labs/week01-threat-modeling,labs/week02-sdlc-tooling,labs/week03-cryptography,labs/week04-injection,labs/week05-xss-client-side,labs/week06-authn-authz,labs/week07-review-midterm-prep,labs/week08-midterm-written,labs/week09-midterm-practical,labs/week10-api-security,labs/week11-memory-safety-exploitation,labs/week12-supply-chain,labs/week13-cloud-container,labs/week14-ai-llm-security,labs/week15-devsecops-pipeline,labs/week16-capstone,labs/week17-review-final-prep,labs/week18-final-written,labs/week19-final-ctf-capstone,labs/toolbox,project/starter-app"
+          skip-dirs: "labs/week01-threat-modeling,labs/week02-sdlc-tooling,labs/week03-cryptography,labs/week04-injection,labs/week05-xss-client-side,labs/week06-authn-authz,labs/week07-review-midterm-prep,labs/week08-midterm-written,labs/week09-midterm-practical,labs/week10-api-security,labs/week11-memory-safety-exploitation,labs/week12-supply-chain,labs/week13-cloud-container,labs/week14-ai-llm-security,labs/week15-devsecops-pipeline,labs/week16-capstone,labs/week17-review-final-prep,labs/week18-final-written,labs/week19-final-ctf-capstone,labs/toolbox,project/starter-app"
           scan-type: fs
           scanners: vuln,secret
           format: sarif
@@ -95,7 +95,7 @@ jobs:
       - name: Trivy config (IaC) -> SARIF
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-        skip-dirs: "labs/week01-threat-modeling,labs/week02-sdlc-tooling,labs/week03-cryptography,labs/week04-injection,labs/week05-xss-client-side,labs/week06-authn-authz,labs/week07-review-midterm-prep,labs/week08-midterm-written,labs/week09-midterm-practical,labs/week10-api-security,labs/week11-memory-safety-exploitation,labs/week12-supply-chain,labs/week13-cloud-container,labs/week14-ai-llm-security,labs/week15-devsecops-pipeline,labs/week16-capstone,labs/week17-review-final-prep,labs/week18-final-written,labs/week19-final-ctf-capstone,labs/toolbox,project/starter-app"
+          skip-dirs: "labs/week01-threat-modeling,labs/week02-sdlc-tooling,labs/week03-cryptography,labs/week04-injection,labs/week05-xss-client-side,labs/week06-authn-authz,labs/week07-review-midterm-prep,labs/week08-midterm-written,labs/week09-midterm-practical,labs/week10-api-security,labs/week11-memory-safety-exploitation,labs/week12-supply-chain,labs/week13-cloud-container,labs/week14-ai-llm-security,labs/week15-devsecops-pipeline,labs/week16-capstone,labs/week17-review-final-prep,labs/week18-final-written,labs/week19-final-ctf-capstone,labs/toolbox,project/starter-app"
           scan-type: config
           format: sarif
           output: trivy-config.sarif
@@ -113,7 +113,7 @@ jobs:
       - name: Gate — fail on HIGH/CRITICAL (SCA)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-        skip-dirs: "labs/week01-threat-modeling,labs/week02-sdlc-tooling,labs/week03-cryptography,labs/week04-injection,labs/week05-xss-client-side,labs/week06-authn-authz,labs/week07-review-midterm-prep,labs/week08-midterm-written,labs/week09-midterm-practical,labs/week10-api-security,labs/week11-memory-safety-exploitation,labs/week12-supply-chain,labs/week13-cloud-container,labs/week14-ai-llm-security,labs/week15-devsecops-pipeline,labs/week16-capstone,labs/week17-review-final-prep,labs/week18-final-written,labs/week19-final-ctf-capstone,labs/toolbox,project/starter-app"
+          skip-dirs: "labs/week01-threat-modeling,labs/week02-sdlc-tooling,labs/week03-cryptography,labs/week04-injection,labs/week05-xss-client-side,labs/week06-authn-authz,labs/week07-review-midterm-prep,labs/week08-midterm-written,labs/week09-midterm-practical,labs/week10-api-security,labs/week11-memory-safety-exploitation,labs/week12-supply-chain,labs/week13-cloud-container,labs/week14-ai-llm-security,labs/week15-devsecops-pipeline,labs/week16-capstone,labs/week17-review-final-prep,labs/week18-final-written,labs/week19-final-ctf-capstone,labs/toolbox,project/starter-app"
           scan-type: fs
           scanners: vuln,secret
           severity: HIGH,CRITICAL
@@ -123,7 +123,7 @@ jobs:
       - name: Gate — fail on HIGH/CRITICAL (IaC)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-        skip-dirs: "labs/week01-threat-modeling,labs/week02-sdlc-tooling,labs/week03-cryptography,labs/week04-injection,labs/week05-xss-client-side,labs/week06-authn-authz,labs/week07-review-midterm-prep,labs/week08-midterm-written,labs/week09-midterm-practical,labs/week10-api-security,labs/week11-memory-safety-exploitation,labs/week12-supply-chain,labs/week13-cloud-container,labs/week14-ai-llm-security,labs/week15-devsecops-pipeline,labs/week16-capstone,labs/week17-review-final-prep,labs/week18-final-written,labs/week19-final-ctf-capstone,labs/toolbox,project/starter-app"
+          skip-dirs: "labs/week01-threat-modeling,labs/week02-sdlc-tooling,labs/week03-cryptography,labs/week04-injection,labs/week05-xss-client-side,labs/week06-authn-authz,labs/week07-review-midterm-prep,labs/week08-midterm-written,labs/week09-midterm-practical,labs/week10-api-security,labs/week11-memory-safety-exploitation,labs/week12-supply-chain,labs/week13-cloud-container,labs/week14-ai-llm-security,labs/week15-devsecops-pipeline,labs/week16-capstone,labs/week17-review-final-prep,labs/week18-final-written,labs/week19-final-ctf-capstone,labs/toolbox,project/starter-app"
           scan-type: config
           severity: HIGH,CRITICAL
           exit-code: "1"
