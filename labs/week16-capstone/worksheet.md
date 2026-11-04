@@ -12,7 +12,7 @@
 
 | Name | Student ID | Date | Group |
 |------|-----------|------|-------|
-|      |           |      |       |
+|   Sutapat Chucham |     6531503085      |   30 Oct 2026   |       |
 
 ---
 
@@ -23,10 +23,15 @@
 Answer as a team (2–4 sentences each).
 
 1. State your project's **top-3 risks** from your threat model and the STRIDE/attack category each falls under.
+**Ans:** 
 2. For your headline vulnerability, give its **CWE id** and **OWASP 2025** category, and one sentence on root cause.
+**Ans:** 
 3. What does your **SBOM** cover, how was it generated, and what would you do if a dependency in it got a new CVE next week?
+**Ans:** 
 4. How is your build artifact **signed**, and how would a consumer verify the signature (and why does signing matter for supply-chain trust)?
+**Ans:** 
 5. Which **CI gate(s)** from Week 15 (Semgrep / Trivy / Gitleaks, fail-closed on HIGH/CRITICAL) does your pipeline enforce, and what does a failing build look like?
+**Ans:** 
 
 ---
 
@@ -80,8 +85,11 @@ Answer as a team (2–4 sentences each).
 ## Part 4 — Reflection (Lessons Learned)
 
 1. **Lessons learned.** What surprised your team most while threat-modeling and fixing your own app?
+**Ans:**
 2. **What you'd harden next.** Given more time, which control would you add first (e.g., least-privilege IAM, image hardening, output handling, fail-closed paths), and why?
+**Ans:**
 3. **CTF takeaway.** Which practice-CTF category was hardest for your team, and what will you drill before Week 19?
+**Ans:**
 
 ---
 
@@ -110,7 +118,9 @@ Answer as a team (2–4 sentences each).
   *Flags are unique per student — submitting another student's flag is a violation. How to submit: **learn.zcr.ai/submit** (full guide: `SUBMISSION.md` in the repo root).*
 - **Explain in your own words** *(graded on your reasoning, not copied text):*
   1. What did you do, and **why did the vulnerability work**?
+  **Ans:**
   2. **Why does your fix actually stop it** — and what could still break it?
+  **Ans:**
 
 ---
 
@@ -119,8 +129,11 @@ Answer as a team (2–4 sentences each).
 AI is a power tool you must **distrust** — you are graded on your *critique*, not the AI's answer.
 
 1. Ask an AI assistant to exploit **or** fix this week's vulnerability. Paste its full answer.
+**Ans:**
 2. **Find what's wrong or risky** in it — insecure code, a subtly incomplete fix, a hallucinated API/function/CVE, a missed edge case, or wrong reasoning. Quote the exact line(s).
+**Ans:**
 3. Produce the **correct, verified** version yourself and explain in 2–3 sentences why the AI's output was insufficient.
+**Ans:**
 
 > Disclose your AI use in the Part 1 table. This task counts toward your **Defense + Reflection** score.
 
@@ -129,6 +142,8 @@ AI is a power tool you must **distrust** — you are graded on your *critique*, 
 ## 🧠 Comprehension & Prompt (required)
 
 **A. Explain in Plain English (EiPE).** In 2–3 sentences, in your own words, describe what this week's vulnerable code/endpoint actually *does* and *why it is exploitable* — explain the mechanism, don't dump jargon.
+**Ans:**
 
 **B. Prompt Problem.** Write a **single prompt** that makes an AI produce a *correct, secure* fix for one finding. Run it: does the exploit now fail? If not, refine the prompt and try again. Submit the **final prompt + the verified result**.
 *Graded on the prompt's precision and your verification — this trains problem decomposition and AI literacy (Denny et al. 2024).*
+**Ans:**
