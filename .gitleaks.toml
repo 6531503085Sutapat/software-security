@@ -24,4 +24,5 @@ paths = [
   # fire on — same secret as the vulnerable-repo path above, just quoted a
   # second time as a teaching illustration.
   '''slides/week02\.md''',
+  '''docs/lesson-plans/week15-devsecops-pipeline\.md''',
 ]
